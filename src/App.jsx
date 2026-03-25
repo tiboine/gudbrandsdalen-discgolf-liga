@@ -104,6 +104,7 @@ export default function DiscGolfLeague() {
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [pendingInvites, setPendingInvites] = useState([]);
+  const [coPlayerSearch, setCoPlayerSearch] = useState("");
 
   useEffect(() => {
     if (!showRegister || locationStatus !== "idle") return;
@@ -387,11 +388,11 @@ export default function DiscGolfLeague() {
             )}
             {filtered.length > 0 && (
             <div style={{ background: "rgba(255,255,255,0.7)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "32px 1fr 60px 50px 80px", padding: "10px 14px", fontSize: 10, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700, borderBottom: "1px solid rgba(0,0,0,0.06)", background: "rgba(255,255,255,0.5)" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "22px 1fr 50px 44px 70px", padding: "10px 14px", fontSize: 10, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700, borderBottom: "1px solid rgba(0,0,0,0.06)", background: "rgba(255,255,255,0.5)" }}>
                 <div>#</div><div>Spiller</div><div style={{ textAlign: "right" }}>Snitt</div><div style={{ textAlign: "right" }}>Pts</div><div style={{ textAlign: "right" }}>Trend</div>
               </div>
               {filtered.map((p, i) => (
-                <div key={p.id} onClick={() => setSelectedPlayer(p)} style={{ display: "grid", gridTemplateColumns: "32px 1fr 60px 50px 80px", padding: "12px 14px", alignItems: "center", cursor: "pointer", borderBottom: "1px solid rgba(0,0,0,0.04)", background: i === 0 ? "rgba(101,163,13,0.06)" : "transparent", transition: "background 0.2s" }}
+                <div key={p.id} onClick={() => setSelectedPlayer(p)} style={{ display: "grid", gridTemplateColumns: "22px 1fr 50px 44px 70px", padding: "12px 14px", alignItems: "center", cursor: "pointer", borderBottom: "1px solid rgba(0,0,0,0.04)", background: i === 0 ? "rgba(101,163,13,0.06)" : "transparent", transition: "background 0.2s" }}
                   onMouseEnter={e => e.currentTarget.style.background = "rgba(101,163,13,0.08)"}
                   onMouseLeave={e => e.currentTarget.style.background = i === 0 ? "rgba(101,163,13,0.06)" : "transparent"}>
                   <div style={{ fontSize: 13, fontWeight: 800, color: i < 3 ? "#4a8a10" : "#8a9a80" }}>{i + 1}</div>
@@ -399,7 +400,7 @@ export default function DiscGolfLeague() {
                     <div style={{ width: 30, height: 30, minWidth: 30, minHeight: 30, borderRadius: "50%", overflow: "hidden", background: "rgba(101,163,13,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, border: "1px solid rgba(0,0,0,0.08)", flexShrink: 0 }}>
                       {p.avatar?.startsWith("http") ? <img src={p.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (p.name?.[0] ?? "?")}
                     </div>
-                    <div style={{ minWidth: 0 }}><div style={{ fontSize: 13, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div><div style={{ fontSize: 10, color: "#6b7a58" }}>{p.rounds} runder · {p.division}</div></div>
+                    <div style={{ minWidth: 0 }}><div style={{ fontSize: 13, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name.split(" ")[0]}</div><div style={{ fontSize: 10, color: "#6b7a58" }}>{p.rounds}r · {p.division}</div></div>
                   </div>
                   <div style={{ textAlign: "right", fontSize: 13, fontWeight: 600, color: p.avg <= 0 ? "#4a8a10" : "#ef4444" }}>{p.avg > 0 ? "+" : ""}{p.avg}</div>
                   <div style={{ textAlign: "right", fontSize: 15, fontWeight: 900 }}>{p.pts}</div>
@@ -814,23 +815,26 @@ export default function DiscGolfLeague() {
                           })}
                         </div>
                       )}
+                      <input type="text" placeholder="Søk etter spiller..." value={coPlayerSearch} onChange={e => setCoPlayerSearch(e.target.value)} style={{ width: "100%", padding: "8px 12px", borderRadius: 10, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 13, outline: "none", boxSizing: "border-box", marginBottom: 6 }} />
                       <div style={{ maxHeight: 140, overflowY: "auto", borderRadius: 12, background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.08)", padding: 4 }}>
                         {(() => {
+                          const q = coPlayerSearch.toLowerCase().trim();
                           const others = allProfiles.filter(p => p.id !== user?.id && !selectedCoPlayers.includes(p.id));
-                          const recent = others.filter(p => recentCoPlayers.includes(p.id));
-                          const rest = others.filter(p => !recentCoPlayers.includes(p.id));
+                          const filtered = q ? others.filter(p => p.full_name?.toLowerCase().includes(q)) : others;
+                          const recent = filtered.filter(p => recentCoPlayers.includes(p.id));
+                          const rest = filtered.filter(p => !recentCoPlayers.includes(p.id));
                           const sorted = [...recent.sort((a, b) => recentCoPlayers.indexOf(a.id) - recentCoPlayers.indexOf(b.id)), ...rest];
                           return sorted.length === 0 ? (
-                            <div style={{ padding: 12, fontSize: 12, color: "#8a9a70", textAlign: "center" }}>Ingen andre spillere registrert ennå</div>
+                            <div style={{ padding: 12, fontSize: 12, color: "#8a9a70", textAlign: "center" }}>{q ? "Ingen treff" : "Ingen andre spillere registrert ennå"}</div>
                           ) : sorted.map(p => (
-                            <div key={p.id} onClick={() => setSelectedCoPlayers(prev => [...prev, p.id])} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 8, cursor: "pointer", transition: "background 0.15s" }}
+                            <div key={p.id} onClick={() => { setSelectedCoPlayers(prev => [...prev, p.id]); setCoPlayerSearch(""); }} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 8, cursor: "pointer", transition: "background 0.15s" }}
                               onMouseEnter={e => e.currentTarget.style.background = "rgba(101,163,13,0.08)"}
                               onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                               <div style={{ width: 24, height: 24, minWidth: 24, borderRadius: "50%", overflow: "hidden", background: "rgba(101,163,13,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, border: "1px solid rgba(0,0,0,0.06)", flexShrink: 0 }}>
                                 {p.avatar_url?.startsWith("http") ? <img src={p.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (p.full_name?.[0] ?? "?")}
                               </div>
                               <span style={{ fontSize: 13, fontWeight: 600, color: "#1c2b12" }}>{p.full_name}</span>
-                              {recentCoPlayers.includes(p.id) && <span style={{ fontSize: 9, color: "#8a9a70", marginLeft: "auto" }}>Nylig</span>}
+                              {!q && recentCoPlayers.includes(p.id) && <span style={{ fontSize: 9, color: "#8a9a70", marginLeft: "auto" }}>Nylig</span>}
                             </div>
                           ));
                         })()}
@@ -900,7 +904,7 @@ export default function DiscGolfLeague() {
                     setEditRound(null);
                     setSelectedCoPlayers([]);
                     setRegSuccess(true);
-                    setTimeout(() => { setRegSuccess(false); setShowRegister(false); setRegForm({ course: "", score: "", date: "" }); setEditRound(null); setRegError(""); setRegNote(""); }, 2000);
+                    setTimeout(() => { setRegSuccess(false); setShowRegister(false); setRegForm({ course: "", score: "", date: "" }); setEditRound(null); setRegError(""); setRegNote(""); setCoPlayerSearch(""); }, 2000);
                   }} style={{ width: "100%", padding: 14, border: "none", borderRadius: 14, background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 24px rgba(101,163,13,0.25)", marginTop: 4 }}>{editRound ? "Lagre endring ✓" : "Registrer 🥏"}</button>
                   <button onClick={() => { setShowRegister(false); setEditRound(null); setRegError(""); }} style={{ width: "100%", padding: 12, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#6b7a58", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Avbryt</button>
                 </div>
@@ -1049,7 +1053,7 @@ export default function DiscGolfLeague() {
             {/* Pending invites */}
             {pendingInvites.length > 0 && (
               <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "#4a8a10", marginBottom: 8 }}>Venter på din bekreftelse</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#4a8a10", marginBottom: 8 }}>Runde-invitasjoner</div>
                 {pendingInvites.map(inv => (
                   <div key={inv.id} style={{ background: "rgba(101,163,13,0.07)", border: "1px solid rgba(101,163,13,0.2)", borderRadius: 12, padding: "12px 14px", marginBottom: 8 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>🥏 {inv.profiles?.full_name ?? "Noen"} tagget deg</div>
@@ -1057,16 +1061,15 @@ export default function DiscGolfLeague() {
                     <div style={{ display: "flex", gap: 8 }}>
                       <button onClick={async () => {
                         await supabase.from("round_invites").update({ status: "confirmed" }).eq("id", inv.id);
-                        // Pre-fill register form with same course and date
                         setRegForm({ course: inv.rounds?.course_id ?? "", score: "", date: inv.rounds?.date ?? "" });
                         setShowNotifications(false);
                         setShowRegister(true);
                         loadPendingInvites();
-                      }} style={{ flex: 1, padding: "8px 0", borderRadius: 10, border: "none", background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>✅ Registrer min score</button>
+                      }} style={{ flex: 1, padding: "8px 0", borderRadius: 10, border: "1px solid rgba(101,163,13,0.3)", background: "rgba(101,163,13,0.1)", color: "#4a8a10", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>🥏 Registrer min score</button>
                       <button onClick={async () => {
-                        await supabase.from("round_invites").update({ status: "declined" }).eq("id", inv.id);
+                        await supabase.from("round_invites").update({ status: "confirmed" }).eq("id", inv.id);
                         loadPendingInvites();
-                      }} style={{ padding: "8px 14px", borderRadius: 10, border: "1px solid rgba(0,0,0,0.1)", background: "rgba(0,0,0,0.04)", color: "#6b7a58", fontWeight: 600, fontSize: 12, cursor: "pointer" }}>Avslå</button>
+                      }} style={{ flex: 1, padding: "8px 0", borderRadius: 10, border: "none", background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>👍 Bekreft</button>
                     </div>
                   </div>
                 ))}
