@@ -121,8 +121,25 @@ export default function DiscGolfLeague() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("profiles").select("division").eq("id", user.id).single()
-      .then(({ data }) => { if (data?.division) setUserDivision(data.division); });
+    // Ensure profile exists (critical for Google OAuth users)
+    const ensureProfile = async () => {
+      const { data: existing } = await supabase.from("profiles").select("id, division").eq("id", user.id).single();
+      if (existing) {
+        if (existing.division) setUserDivision(existing.division);
+      } else {
+        // Profile doesn't exist yet — create it
+        await supabase.from("profiles").upsert({
+          id: user.id,
+          full_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split("@")[0] || "Ukjent",
+          avatar_url: user.user_metadata?.avatar_url || null,
+          division: "Rekreasjons",
+        }, { onConflict: "id" });
+      }
+      // Reload data after ensuring profile
+      loadRounds();
+      loadPlayers();
+    };
+    ensureProfile();
   }, [user]);
 
   const signInWithGoogle = () => supabase.auth.signInWithOAuth({
