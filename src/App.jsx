@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
+import { BADGE_ICONS } from "./components/BadgeIcons";
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -26,6 +27,45 @@ const STABLEFORD_INFO = [
   { place: "1.", pts: 14 }, { place: "2.", pts: 12 }, { place: "3.", pts: 10 },
   { place: "4.", pts: 8 }, { place: "5.", pts: 6 }, { place: "6.", pts: 5 },
   { place: "7.", pts: 4 }, { place: "8.", pts: 3 }, { place: "9-10.", pts: 2 },
+];
+
+const getMaxStreak = (rounds) => {
+  if (!rounds.length) return 0;
+  const dates = [...new Set(rounds.map(r => r.date))].sort();
+  let maxStreak = 1, current = 1;
+  for (let i = 1; i < dates.length; i++) {
+    const prev = new Date(dates[i - 1]);
+    const curr = new Date(dates[i]);
+    const diff = (curr - prev) / (1000 * 60 * 60 * 24);
+    if (diff === 1) { current++; maxStreak = Math.max(maxStreak, current); }
+    else { current = 1; }
+  }
+  return maxStreak;
+};
+
+const BADGE_DEFS = [
+  { id: "forste_kast", name: "Første kast", desc: "Registrer din første runde", check: (p, rounds) => rounds.length >= 1 },
+  { id: "pa_gli", name: "På gli", desc: "Spill 3 dager på rad", check: (p, rounds) => getMaxStreak(rounds) >= 3 },
+  { id: "ildsjel", name: "Ildsjel", desc: "Spill 5 dager på rad", check: (p, rounds) => getMaxStreak(rounds) >= 5 },
+  { id: "ustoppelig", name: "Ustoppelig", desc: "Spill 7 dager på rad", check: (p, rounds) => getMaxStreak(rounds) >= 7 },
+  { id: "legende", name: "Legende", desc: "Spill 10 dager på rad", check: (p, rounds) => getMaxStreak(rounds) >= 10 },
+  { id: "utforsker", name: "Utforsker", desc: "Spill 3 forskjellige baner", check: (p, rounds) => new Set(rounds.map(r => r.course_id)).size >= 3 },
+  { id: "kartlegger", name: "Kartlegger", desc: "Spill alle banene i ligaen", check: (p, rounds, courses) => new Set(rounds.map(r => r.course_id)).size >= courses.length },
+  { id: "under_par", name: "Under par", desc: "Score under par", check: (p, rounds) => rounds.some(r => r.score < 0) },
+  { id: "banekonge", name: "Banekonge", desc: "Beste score på en bane", check: (p, rounds, courses, allRounds) => {
+    return courses.some(c => {
+      const courseRounds = allRounds.filter(r => r.course_id === c.id);
+      if (!courseRounds.length) return false;
+      const best = Math.min(...courseRounds.map(r => r.score));
+      return rounds.some(r => r.course_id === c.id && r.score === best);
+    });
+  }},
+  { id: "podium", name: "Podium", desc: "Topp 3 i ligatabellen", check: (p, rounds, courses, allRounds, players) => {
+    const idx = players.findIndex(pl => pl.id === p?.id);
+    return idx >= 0 && idx < 3;
+  }},
+  { id: "dedikert", name: "Dedikert", desc: "Fullfør 10 runder", check: (p, rounds) => rounds.length >= 10 },
+  { id: "lagspiller", name: "Lagspiller", desc: "Tagg 5 medspillere", check: () => false },
 ];
 
 function getDistance(lat1, lng1, lat2, lng2) {
@@ -352,7 +392,7 @@ export default function DiscGolfLeague() {
           >+ Registrer runde</button>
 
           <div style={{ display: "flex", gap: 4, background: "rgba(0,0,0,0.06)", borderRadius: 12, padding: 4 }}>
-            {[{ id: "tabell", label: "Ligatabell", icon: "🏆" }, { id: "runder", label: "Runder", icon: "📋" }, { id: "baner", label: "Baner", icon: "🗺️" }, { id: "regler", label: "Poeng", icon: "📊" }, { id: "intro", label: "Ny her?", icon: "👋" }, ...(isAdmin ? [{ id: "admin", label: "Admin", icon: "🔧" }] : [])].map(t => (
+            {[{ id: "tabell", label: "Ligatabell", icon: "🏆" }, { id: "runder", label: "Runder", icon: "📋" }, { id: "baner", label: "Baner", icon: "🗺️" }, { id: "regler", label: "Poeng", icon: "📊" }, { id: "badges", label: "Badges", icon: "🏅" }, { id: "intro", label: "Ny her?", icon: "👋" }, ...(isAdmin ? [{ id: "admin", label: "Admin", icon: "🔧" }] : [])].map(t => (
               <button key={t.id} onClick={() => setTab(t.id)} style={{ flex: 1, padding: "10px 6px", border: "none", borderRadius: 10, background: tab === t.id ? "#ffffff" : "transparent", color: tab === t.id ? "#4a8a10" : "#6b7a58", fontWeight: tab === t.id ? 700 : 500, fontSize: 12, cursor: "pointer", transition: "all 0.2s", boxShadow: tab === t.id ? "0 1px 4px rgba(0,0,0,0.1)" : "none" }}>
                 <div style={{ fontSize: 14, marginBottom: 2 }}>{t.icon}</div>{t.label}
               </button>
@@ -365,6 +405,31 @@ export default function DiscGolfLeague() {
 
         {tab === "tabell" && (
           <div>
+            {(() => {
+              const now = new Date();
+              const dayOfWeek = now.getDay(); // 0=Sun, 1=Mon...
+              const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+              const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + mondayOffset);
+              const mondayStr = monday.toISOString().split("T")[0];
+              const sunday = new Date(monday);
+              sunday.setDate(sunday.getDate() + 6);
+              const sundayStr = sunday.toISOString().split("T")[0];
+              const weekRounds = realRounds.filter(r => r.date >= mondayStr && r.date <= sundayStr);
+              if (weekRounds.length === 0) return null;
+              const best = weekRounds.reduce((a, b) => a.score < b.score ? a : b);
+              const playerName = best.profiles?.full_name ?? "Ukjent";
+              const courseName = COURSES.find(c => c.id === best.course_id)?.name || best.course_name || "Ukjent bane";
+              const scoreStr = best.score === 0 ? "E" : best.score > 0 ? `+${best.score}` : `${best.score}`;
+              return (
+                <div style={{ background: "linear-gradient(135deg, rgba(251,191,36,0.12), rgba(251,191,36,0.04))", border: "1px solid rgba(251,191,36,0.3)", borderRadius: 14, padding: "12px 16px", marginBottom: 14, display: "flex", alignItems: "center", gap: 10, animation: "fadeSlideUp 0.4s ease" }}>
+                  <div style={{ fontSize: 24, flexShrink: 0 }}>⭐</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#b07a00", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 2 }}>Ukens spiller</div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: "#1c2b12" }}>{playerName} <span style={{ fontWeight: 600, color: "#6b7a58" }}>— {scoreStr} på {courseName.split(" ")[0]}</span></div>
+                  </div>
+                </div>
+              );
+            })()}
             <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
               {["Alle", "Åpen", "Rekreasjons"].map(d => (
                 <button key={d} onClick={() => setDivision(d)} style={{ padding: "6px 14px", border: "1px solid", borderColor: division === d ? "#65A30D" : "rgba(0,0,0,0.1)", borderRadius: 20, background: division === d ? "rgba(101,163,13,0.12)" : "rgba(255,255,255,0.6)", color: division === d ? "#4a8a10" : "#6b7a58", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>{d}</button>
@@ -531,6 +596,16 @@ export default function DiscGolfLeague() {
                     <span key={j} style={{ fontSize: 10, padding: "3px 8px", borderRadius: 8, background: "rgba(0,0,0,0.05)", border: "1px solid rgba(0,0,0,0.08)", color: tag.color || "#6b7a58", fontWeight: 600 }}>{tag.label}</span>
                   ))}
                 </div>
+                {(() => {
+                  const courseRounds = realRounds.filter(r => r.course_id === c.id);
+                  if (courseRounds.length === 0) return null;
+                  const bestRound = courseRounds.reduce((a, b) => a.score < b.score ? a : b);
+                  const scoreStr = bestRound.score === 0 ? "E" : bestRound.score > 0 ? `+${bestRound.score}` : `${bestRound.score}`;
+                  const playerName = bestRound.profiles?.full_name ?? "Ukjent";
+                  return (
+                    <div style={{ marginTop: 8, fontSize: 11, color: "#b07a00", fontWeight: 700, background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.15)", borderRadius: 8, padding: "5px 10px", display: "inline-block" }}>🏆 Banerekord: {scoreStr} ({playerName})</div>
+                  );
+                })()}
                 {selectedCourse?.id === c.id && (
                   <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid rgba(0,0,0,0.08)", animation: "fadeSlideUp 0.3s ease" }}>
                     <div style={{ fontSize: 12, color: "#4a5a38", lineHeight: 1.6, marginBottom: 12 }}>{c.desc}</div>
@@ -564,6 +639,41 @@ export default function DiscGolfLeague() {
               <div style={{ fontWeight: 700, color: "#4a8a10", marginBottom: 4 }}>💡 Slik fungerer det</div>
               Hver runde du spiller i ligaen gir poeng basert på din plassering blant alle som spilte den runden. Ved likt resultat deles poengene. Sesongen har 12 planlagte runder, men kun dine 8 beste teller — så du kan misse noen runder uten å tape for mye!
             </div>
+          </div>
+        )}
+
+        {tab === "badges" && (
+          <div style={{ animation: "fadeSlideUp 0.4s ease" }}>
+            {(() => {
+              const myProfile = user ? { id: user.id } : null;
+              const myRounds = user ? realRounds.filter(r => r.user_id === user.id) : [];
+              const earnedCount = BADGE_DEFS.filter(b => b.check(myProfile, myRounds, COURSES, realRounds, players)).length;
+              return (
+                <>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                    <div style={{ fontSize: 16, fontWeight: 800 }}>Badges</div>
+                    <div style={{ fontSize: 13, color: "#4a8a10", fontWeight: 700 }}>{earnedCount} av {BADGE_DEFS.length} oppnådd</div>
+                  </div>
+                  {!user && (
+                    <div style={{ textAlign: "center", padding: "16px", background: "rgba(101,163,13,0.07)", border: "1px solid rgba(101,163,13,0.15)", borderRadius: 14, marginBottom: 16, fontSize: 13, color: "#4a5a38" }}>Logg inn for å se dine badges!</div>
+                  )}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+                    {BADGE_DEFS.map((badge) => {
+                      const earned = user ? badge.check(myProfile, myRounds, COURSES, realRounds, players) : false;
+                      return (
+                        <div key={badge.id} style={{ background: earned ? "rgba(101,163,13,0.08)" : "rgba(255,255,255,0.7)", border: earned ? "1px solid rgba(101,163,13,0.3)" : "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "14px 8px", textAlign: "center", boxShadow: earned ? "0 0 16px rgba(101,163,13,0.15)" : "0 2px 8px rgba(0,0,0,0.05)", transition: "all 0.3s" }}>
+                          <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
+                            {BADGE_ICONS[badge.id] ? BADGE_ICONS[badge.id]({ locked: !earned }) : <div style={{ width: 64, height: 64, background: "#eee", borderRadius: "50%" }} />}
+                          </div>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: earned ? "#4a8a10" : "#6b7a58", marginBottom: 2 }}>{badge.name}</div>
+                          <div style={{ fontSize: 10, color: "#8a9a70", lineHeight: 1.4 }}>{badge.desc}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              );
+            })()}
           </div>
         )}
 
@@ -1042,6 +1152,68 @@ export default function DiscGolfLeague() {
                     </div>
                   </div>
               {myRounds.length === 0 && <div style={{ marginTop: 10, fontSize: 11, color: "#8a9a70", textAlign: "center", fontStyle: "italic" }}>Registrer din første runde for å se statistikk 🚀</div>}
+                </div>
+              );
+            })()}
+
+            {/* Aktivitetskalender */}
+            {(() => {
+              const myRounds = realRounds.filter(r => r.user_id === user.id);
+              const roundsByDate = {};
+              myRounds.forEach(r => { roundsByDate[r.date] = (roundsByDate[r.date] || 0) + 1; });
+              const now = new Date();
+              // Show last 3 months
+              const months = [];
+              for (let m = 2; m >= 0; m--) {
+                const d = new Date(now.getFullYear(), now.getMonth() - m, 1);
+                months.push({ year: d.getFullYear(), month: d.getMonth() });
+              }
+              const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Des"];
+              // Build all weeks across 3 months
+              const allDays = [];
+              months.forEach(({ year, month }) => {
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                for (let d = 1; d <= daysInMonth; d++) {
+                  const date = new Date(year, month, d);
+                  const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+                  allDays.push({ date, dateStr, count: roundsByDate[dateStr] || 0, month, day: d });
+                }
+              });
+              // Group into weeks (Mon-Sun)
+              const weeks = [];
+              let currentWeek = new Array(7).fill(null);
+              allDays.forEach(day => {
+                const dow = (day.date.getDay() + 6) % 7; // 0=Mon ... 6=Sun
+                currentWeek[dow] = day;
+                if (dow === 6) { weeks.push(currentWeek); currentWeek = new Array(7).fill(null); }
+              });
+              if (currentWeek.some(d => d !== null)) weeks.push(currentWeek);
+              const sz = 11, gap = 2;
+              return (
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Aktivitet</div>
+                  {/* Month labels */}
+                  <div style={{ display: "flex", gap: 0, marginBottom: 4, paddingLeft: 0, fontSize: 9, color: "#8a9a70", fontWeight: 600 }}>
+                    {months.map(({ month }) => (
+                      <div key={month} style={{ flex: 1, textAlign: "center" }}>{monthNames[month]}</div>
+                    ))}
+                  </div>
+                  <div style={{ display: "flex", gap: gap, overflowX: "auto", paddingBottom: 4 }}>
+                    {weeks.map((week, wi) => (
+                      <div key={wi} style={{ display: "flex", flexDirection: "column", gap: gap }}>
+                        {week.map((day, di) => (
+                          <div key={di} title={day ? `${day.dateStr}: ${day.count} runde${day.count !== 1 ? "r" : ""}` : ""} style={{ width: sz, height: sz, borderRadius: 2, background: !day ? "transparent" : day.count === 0 ? "rgba(0,0,0,0.06)" : day.count === 1 ? "rgba(101,163,13,0.4)" : "rgba(101,163,13,0.8)", transition: "background 0.2s" }} />
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6, fontSize: 9, color: "#8a9a70" }}>
+                    <span>Mindre</span>
+                    {[0, 1, 2].map(n => (
+                      <div key={n} style={{ width: sz, height: sz, borderRadius: 2, background: n === 0 ? "rgba(0,0,0,0.06)" : n === 1 ? "rgba(101,163,13,0.4)" : "rgba(101,163,13,0.8)" }} />
+                    ))}
+                    <span>Mer</span>
+                  </div>
                 </div>
               );
             })()}
