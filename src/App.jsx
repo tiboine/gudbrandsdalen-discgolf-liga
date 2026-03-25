@@ -103,6 +103,13 @@ export default function DiscGolfLeague() {
   const [userLocation, setUserLocation] = useState(null);
   const [locationStatus, setLocationStatus] = useState("idle"); // idle | loading | done | denied
   const [user, setUser] = useState(null);
+  const [showAuth, setShowAuth] = useState(false);
+  const [authMode, setAuthMode] = useState("login"); // "login" | "signup"
+  const [authForm, setAuthForm] = useState({ email: "", password: "", name: "" });
+  const [authError, setAuthError] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
+  const [realRounds, setRealRounds] = useState([]);
+  const [roundsLoading, setRoundsLoading] = useState(false);
 
   useEffect(() => {
     if (!showRegister || locationStatus !== "idle") return;
@@ -133,6 +140,38 @@ export default function DiscGolfLeague() {
     provider: "google",
     options: { redirectTo: "https://gudbrandsdalen-discgolf-liga.vercel.app" }
   });
+
+  const signInWithEmail = async () => {
+    setAuthLoading(true); setAuthError("");
+    const { error } = await supabase.auth.signInWithPassword({ email: authForm.email, password: authForm.password });
+    setAuthLoading(false);
+    if (error) { setAuthError("Feil e-post eller passord"); return; }
+    setShowAuth(false); setAuthForm({ email: "", password: "", name: "" });
+  };
+
+  const signUpWithEmail = async () => {
+    if (!authForm.name.trim()) { setAuthError("Skriv inn navnet ditt"); return; }
+    setAuthLoading(true); setAuthError("");
+    const { error } = await supabase.auth.signUp({
+      email: authForm.email, password: authForm.password,
+      options: { data: { full_name: authForm.name } }
+    });
+    setAuthLoading(false);
+    if (error) { setAuthError(error.message); return; }
+    setAuthError(""); setShowAuth(false);
+    setAuthForm({ email: "", password: "", name: "" });
+  };
+
+  const loadRounds = async () => {
+    const { data } = await supabase
+      .from("rounds")
+      .select("*, profiles(full_name, avatar_url)")
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (data) setRealRounds(data);
+  };
+
+  useEffect(() => { loadRounds(); }, []);
 
   const signOut = () => supabase.auth.signOut();
 
@@ -175,7 +214,7 @@ export default function DiscGolfLeague() {
                   <span style={{ fontSize: 11, fontWeight: 700, color: "#4a7a10" }}>{user.user_metadata?.full_name?.split(" ")[0] ?? "Profil"}</span>
                 </button>
               ) : (
-                <button onClick={signInWithGoogle} style={{ fontSize: 11, color: "#fff", background: "linear-gradient(135deg, #65A30D, #4a7a0a)", padding: "5px 12px", borderRadius: 20, border: "none", cursor: "pointer", fontWeight: 700 }}>Logg inn</button>
+                <button onClick={() => { setShowAuth(true); setAuthMode("login"); }} style={{ fontSize: 11, color: "#fff", background: "linear-gradient(135deg, #65A30D, #4a7a0a)", padding: "5px 12px", borderRadius: 20, border: "none", cursor: "pointer", fontWeight: 700 }}>Logg inn</button>
               )}
             </div>
           </div>
@@ -196,7 +235,7 @@ export default function DiscGolfLeague() {
           >+ Registrer runde</button>
 
           <div style={{ display: "flex", gap: 4, background: "rgba(0,0,0,0.06)", borderRadius: 12, padding: 4 }}>
-            {[{ id: "tabell", label: "Ligatabell", icon: "🏆" }, { id: "runder", label: "Runder", icon: "📋" }, { id: "baner", label: "Baner", icon: "🗺️" }, { id: "regler", label: "Poeng", icon: "📊" }].map(t => (
+            {[{ id: "tabell", label: "Ligatabell", icon: "🏆" }, { id: "runder", label: "Runder", icon: "📋" }, { id: "baner", label: "Baner", icon: "🗺️" }, { id: "regler", label: "Poeng", icon: "📊" }, { id: "intro", label: "Ny her?", icon: "👋" }].map(t => (
               <button key={t.id} onClick={() => setTab(t.id)} style={{ flex: 1, padding: "10px 6px", border: "none", borderRadius: 10, background: tab === t.id ? "#ffffff" : "transparent", color: tab === t.id ? "#4a8a10" : "#6b7a58", fontWeight: tab === t.id ? 700 : 500, fontSize: 12, cursor: "pointer", transition: "all 0.2s", boxShadow: tab === t.id ? "0 1px 4px rgba(0,0,0,0.1)" : "none" }}>
                 <div style={{ fontSize: 14, marginBottom: 2 }}>{t.icon}</div>{t.label}
               </button>
@@ -256,8 +295,24 @@ export default function DiscGolfLeague() {
 
         {tab === "runder" && (
           <div>
-            <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 12 }}>Siste runder</div>
-            {RECENT_ROUNDS.map((r, i) => (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+              <div style={{ fontSize: 16, fontWeight: 800 }}>Siste runder</div>
+              {realRounds.length > 0 && <div style={{ fontSize: 11, color: "#4a8a10", fontWeight: 600 }}>● Live</div>}
+            </div>
+            {(realRounds.length > 0 ? realRounds.map((r, i) => (
+              <div key={r.id} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "14px 16px", display: "grid", gridTemplateColumns: "1fr auto", gap: 12, alignItems: "center", marginBottom: 8, animation: `fadeSlideUp 0.4s ease ${i * 0.06}s both`, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 2 }}>{r.profiles?.full_name ?? "Ukjent spiller"}</div>
+                  <div style={{ fontSize: 11, color: "#6b7a58", marginBottom: 4 }}>{r.course_name}</div>
+                  <div style={{ display: "flex", gap: 8, fontSize: 11, color: "#8a9a70" }}>
+                    <span>{new Date(r.date).toLocaleDateString("nb-NO", { day: "numeric", month: "long" })}</span>
+                  </div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: r.score <= 0 ? "#4a8a10" : "#ef4444", lineHeight: 1 }}>{r.score > 0 ? "+" : ""}{r.score}</div>
+                </div>
+              </div>
+            )) : RECENT_ROUNDS.map((r, i) => (
               <div key={r.id} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "14px 16px", display: "grid", gridTemplateColumns: "1fr auto", gap: 12, alignItems: "center", marginBottom: 8, animation: `fadeSlideUp 0.4s ease ${i * 0.06}s both`, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 2 }}>{r.player}</div>
@@ -269,7 +324,7 @@ export default function DiscGolfLeague() {
                   <div style={{ fontSize: 11, color: "#4a8a10", fontWeight: 700, background: "rgba(101,163,13,0.12)", padding: "2px 8px", borderRadius: 10, marginTop: 4, display: "inline-block" }}>+{r.pts} pts</div>
                 </div>
               </div>
-            ))}
+            )))}
           </div>
         )}
 
@@ -330,6 +385,84 @@ export default function DiscGolfLeague() {
               <div style={{ fontWeight: 700, color: "#4a8a10", marginBottom: 4 }}>💡 Slik fungerer det</div>
               Hver runde du spiller i ligaen gir poeng basert på din plassering blant alle som spilte den runden. Ved likt resultat deles poengene. Sesongen har 12 planlagte runder, men kun dine 8 beste teller — så du kan misse noen runder uten å tape for mye!
             </div>
+          </div>
+        )}
+
+        {tab === "intro" && (
+          <div style={{ animation: "fadeSlideUp 0.4s ease" }}>
+            {/* Hero */}
+            <div style={{ background: "linear-gradient(135deg, rgba(101,163,13,0.12), rgba(101,163,13,0.04))", border: "1px solid rgba(101,163,13,0.2)", borderRadius: 18, padding: 24, marginBottom: 16, textAlign: "center" }}>
+              <div style={{ fontSize: 48, marginBottom: 12 }}>🥏</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "#1c2b12", marginBottom: 8 }}>Velkommen til discgolf!</div>
+              <div style={{ fontSize: 14, color: "#4a5a38", lineHeight: 1.7 }}>Ny i sporten? Ingen stress. Her er alt du trenger å vite for å komme i gang med Gudbrandsdalen Discgolf Liga.</div>
+            </div>
+
+            {/* Hva er discgolf */}
+            <div style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20, marginBottom: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "#1c2b12", marginBottom: 10 }}>🌲 Hva er discgolf?</div>
+              <div style={{ fontSize: 13, color: "#4a5a38", lineHeight: 1.8 }}>
+                Discgolf er akkurat som vanlig golf — men i stedet for køller og baller bruker du <strong>frisbeeskiver</strong>, og i stedet for hull har du <strong>metallkurver</strong> du skal treffe.<br /><br />
+                Du starter ved en tee-pad, kaster mot kurven, og fortsetter å kaste fra der disken landet. Målet er å nå kurven på <strong>færrest mulig kast</strong>.<br /><br />
+                Hver bane har en <strong>par</strong>-verdi — det antall kast en god spiller forventes å bruke. Klarer du det på færre kast er du <em>under par</em>, og det er bra!
+              </div>
+            </div>
+
+            {/* Score-forklaring */}
+            <div style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20, marginBottom: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "#1c2b12", marginBottom: 10 }}>📊 Hva betyr scoren?</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {[
+                  { score: "-5", label: "5 under par", desc: "Veldig bra runde!", color: "#4a8a10", bg: "rgba(101,163,13,0.1)" },
+                  { score: "-1", label: "1 under par", desc: "Bra spilt!", color: "#4a8a10", bg: "rgba(101,163,13,0.07)" },
+                  { score: "E", label: "Even — på par", desc: "Akkurat som forventet", color: "#5a7040", bg: "rgba(0,0,0,0.04)" },
+                  { score: "+3", label: "3 over par", desc: "Helt vanlig for nybegynnere", color: "#b07a00", bg: "rgba(251,191,36,0.1)" },
+                ].map(s => (
+                  <div key={s.score} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 10, background: s.bg }}>
+                    <div style={{ fontSize: 18, fontWeight: 900, color: s.color, minWidth: 36, textAlign: "center" }}>{s.score}</div>
+                    <div><div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12" }}>{s.label}</div><div style={{ fontSize: 11, color: "#6b7a58" }}>{s.desc}</div></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Ligaen forklart */}
+            <div style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20, marginBottom: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "#1c2b12", marginBottom: 10 }}>🏆 Slik fungerer ligaen</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {[
+                  { num: "1", title: "Spill en runde", text: "Dra til en av de 12 banene i Gudbrandsdalen og spill en runde. Du velger selv når og hvor!" },
+                  { num: "2", title: "Registrer scoren din", text: "Åpne appen og trykk «Registrer runde». Skriv inn scoren din (mot par) og hvilken bane du spilte." },
+                  { num: "3", title: "Få ligapoeng", text: "Du får poeng basert på hvor godt du gjør det sammenlignet med andre. 1. plass = 14 poeng, 2. plass = 12 poeng, osv." },
+                  { num: "4", title: "Sesongen", text: "Ligaen har 12 runder totalt. Kun dine 8 beste runder teller — så du kan ta det med ro noen uker!" },
+                ].map(s => (
+                  <div key={s.num} style={{ display: "flex", gap: 12 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: "50%", background: "linear-gradient(135deg, #A3E635, #65A30D)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800, color: "#0a0f0a", flexShrink: 0 }}>{s.num}</div>
+                    <div><div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12", marginBottom: 2 }}>{s.title}</div><div style={{ fontSize: 12, color: "#4a5a38", lineHeight: 1.6 }}>{s.text}</div></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Divisjoner */}
+            <div style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20, marginBottom: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "#1c2b12", marginBottom: 10 }}>👥 To divisjoner</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div style={{ padding: 14, borderRadius: 12, background: "rgba(101,163,13,0.08)", border: "1px solid rgba(101,163,13,0.2)" }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: "#4a8a10", marginBottom: 4 }}>🎯 Åpen</div>
+                  <div style={{ fontSize: 11, color: "#4a5a38", lineHeight: 1.6 }}>For erfarne spillere som vil konkurrere seriøst</div>
+                </div>
+                <div style={{ padding: 14, borderRadius: 12, background: "rgba(101,163,13,0.05)", border: "1px solid rgba(0,0,0,0.08)" }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: "#5a7040", marginBottom: 4 }}>😊 Rekreasjons</div>
+                  <div style={{ fontSize: 11, color: "#4a5a38", lineHeight: 1.6 }}>For nybegynnere og de som spiller for moro skyld</div>
+                </div>
+              </div>
+              <div style={{ marginTop: 10, fontSize: 12, color: "#6b7a58", fontStyle: "italic" }}>Du velger divisjon i profilen din etter innlogging.</div>
+            </div>
+
+            {/* CTA */}
+            <button onClick={() => user ? setTab("tabell") : (setShowAuth(true), setAuthMode("signup"))} style={{ width: "100%", padding: 16, border: "none", borderRadius: 14, background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 24px rgba(101,163,13,0.25)" }}>
+              {user ? "🏆 Gå til ligatabellen" : "🥏 Registrer deg og bli med!"}
+            </button>
           </div>
         )}
       </div>
@@ -401,7 +534,25 @@ export default function DiscGolfLeague() {
                     </div>
                     <input lang="nb-NO" type="date" value={regForm.date} onChange={e => setRegForm({ ...regForm, date: e.target.value })} style={{ width: "100%", padding: "12px 14px", borderRadius: 12, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
                   </div>
-                  <button onClick={(e) => { e.preventDefault(); setRegSuccess(true); setTimeout(() => { setRegSuccess(false); setShowRegister(false); setRegForm({ course: "", score: "", date: "" }); }, 2000); }} style={{ width: "100%", padding: 14, border: "none", borderRadius: 14, background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 24px rgba(101,163,13,0.25)", marginTop: 4 }}>Registrer 🥏</button>
+                  <button onClick={async (e) => {
+                    e.preventDefault();
+                    if (!regForm.course || regForm.score === "" || !regForm.date) return;
+                    if (user) {
+                      setRoundsLoading(true);
+                      const course = COURSES.find(c => c.id === regForm.course);
+                      await supabase.from("rounds").insert({
+                        user_id: user.id,
+                        course_id: regForm.course,
+                        course_name: course?.name ?? regForm.course,
+                        score: parseInt(regForm.score),
+                        date: regForm.date,
+                      });
+                      await loadRounds();
+                      setRoundsLoading(false);
+                    }
+                    setRegSuccess(true);
+                    setTimeout(() => { setRegSuccess(false); setShowRegister(false); setRegForm({ course: "", score: "", date: "" }); }, 2000);
+                  }} style={{ width: "100%", padding: 14, border: "none", borderRadius: 14, background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 24px rgba(101,163,13,0.25)", marginTop: 4 }}>Registrer 🥏</button>
                   <button onClick={() => setShowRegister(false)} style={{ width: "100%", padding: 12, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#6b7a58", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Avbryt</button>
                 </div>
               </>
@@ -409,6 +560,42 @@ export default function DiscGolfLeague() {
           </div>
         </div>
       )}
+
+      {showAuth && (
+  <div onClick={() => setShowAuth(false)} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
+    <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, background: "linear-gradient(180deg, #ffffff, #f0f9e8)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 24, animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
+      <div style={{ fontSize: 20, fontWeight: 800, color: "#1c2b12", marginBottom: 4 }}>{authMode === "login" ? "Logg inn" : "Opprett konto"}</div>
+      <div style={{ fontSize: 12, color: "#6b7a58", marginBottom: 20 }}>{authMode === "login" ? "Velkommen tilbake!" : "Bli med i ligaen 🥏"}</div>
+
+      {/* Google */}
+      <button onClick={signInWithGoogle} style={{ width: "100%", padding: "12px", borderRadius: 12, border: "1px solid rgba(0,0,0,0.15)", background: "#fff", color: "#1c2b12", fontWeight: 700, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}>
+        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        Fortsett med Google
+      </button>
+
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+        <div style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.1)" }} />
+        <span style={{ fontSize: 11, color: "#8a9a70", fontWeight: 600 }}>eller med e-post</span>
+        <div style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.1)" }} />
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {authMode === "signup" && (
+          <input placeholder="Fullt navn" value={authForm.name} onChange={e => setAuthForm({ ...authForm, name: e.target.value })} style={{ width: "100%", padding: "12px 14px", borderRadius: 12, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+        )}
+        <input type="email" placeholder="E-post" value={authForm.email} onChange={e => setAuthForm({ ...authForm, email: e.target.value })} style={{ width: "100%", padding: "12px 14px", borderRadius: 12, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+        <input type="password" placeholder="Passord" value={authForm.password} onChange={e => setAuthForm({ ...authForm, password: e.target.value })} onKeyDown={e => e.key === "Enter" && (authMode === "login" ? signInWithEmail() : signUpWithEmail())} style={{ width: "100%", padding: "12px 14px", borderRadius: 12, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+        {authError && <div style={{ fontSize: 12, color: "#dc2626", background: "rgba(239,68,68,0.08)", padding: "8px 12px", borderRadius: 8, border: "1px solid rgba(239,68,68,0.2)" }}>{authError}</div>}
+        <button onClick={authMode === "login" ? signInWithEmail : signUpWithEmail} disabled={authLoading} style={{ width: "100%", padding: 13, border: "none", borderRadius: 12, background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 800, fontSize: 14, cursor: "pointer", opacity: authLoading ? 0.7 : 1 }}>
+          {authLoading ? "Vennligst vent..." : authMode === "login" ? "Logg inn" : "Opprett konto"}
+        </button>
+        <button onClick={() => { setAuthMode(authMode === "login" ? "signup" : "login"); setAuthError(""); }} style={{ background: "none", border: "none", color: "#4a8a10", fontWeight: 600, fontSize: 13, cursor: "pointer", padding: 4 }}>
+          {authMode === "login" ? "Ny bruker? Registrer deg →" : "← Har du konto? Logg inn"}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
       {showProfile && user && (
         <div onClick={() => setShowProfile(false)} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
