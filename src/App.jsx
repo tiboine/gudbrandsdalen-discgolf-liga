@@ -1,14 +1,18 @@
 import { useState, useEffect } from "react";
 
 const COURSES = [
-  { id: "skogen", name: "Skogen Diskgolfbane", location: "Lillehammer", holes: 22, par: 63, rating: 4.2, ratings: 1496, difficulty: "Moderat / Veldig vanskelig", length: "3.4 km", time: "~2 timer", udisc: "https://udisc.com/courses/skogen-diskgolfbane-exZE", desc: "Teknisk krevende skogsbane med mye variasjon. To layouts: Hvit (viderekomne) og Gul (nybegynnervennlig). Driftet av Lillehammer Frisbee.", free: true },
-  { id: "jorstadmoen", name: "Jørstadmoen", location: "Lillehammer", holes: 18, par: 54, rating: 3.9, ratings: 2851, difficulty: "Lett", length: "2.4 km", time: "~1 time", udisc: "https://udisc.com/courses/jorstadmoen-12Ee", desc: "Populær og nybegynnervennlig bane. Barnevogn- og hundevennlig. Gode teepads på hvert hull.", free: true },
-  { id: "sandbumoen", name: "Sandbumoen Discgolfbane", location: "Sør-Fron / Otta", holes: 18, par: 55, rating: 3.9, ratings: 102, difficulty: "Moderat", length: "2.0 km", time: "~1.5 timer", udisc: "https://udisc.com/courses/sandbumoen-discgolfbane-LGPU", desc: "Flott bane i naturskjønt skogsterreng. Spillbar for alle nivåer. Etablert 2025. OBS: Partier med glatt underlag.", free: true },
-  { id: "kvam", name: "Kvam Idrettspark", location: "Kvam, Nord-Fron", holes: 9, par: 27, rating: 3.8, ratings: 232, difficulty: "Lett", length: "1.2 km", time: "~35 min", udisc: "https://udisc.com/courses/kvam-idrettspark-eRuW", desc: "Etablert av Kvam Idrettslag i 2023. Fin trenings- og putbane. Startkit kan lånes ved klubbhuset.", free: true },
-  { id: "ringebu", name: "Ringebu Ungdomskole Discgolfbane", location: "Ringebu", holes: 9, par: 27, rating: 2.5, ratings: 107, difficulty: "Moderat", length: "1.7 km", time: "~1 time", udisc: "https://udisc.com/courses/ringebu-ungdomskole-discgolfbane-druU", desc: "9-hulls bane ved ungdomsskolen. Noen hull kan være overgrodd — sjekk forholdene på UDisc.", free: true },
-  { id: "vinstra", name: "Vinstra Ungdomsskole", location: "Vinstra, Nord-Fron", holes: 6, par: 18, rating: 2.7, ratings: 81, difficulty: "Lett", length: "0.5 km", time: "~16 min", udisc: "https://udisc.com/courses/vinstra-ungdomsskole-Y0eH", desc: "Kort skolebane med DiscGolfPark-kurver. Perfekt for nybegynnere og raske runder.", free: true },
-  { id: "otta", name: "Otta Disc Golf", location: "Otta, Sel", holes: 6, par: 18, rating: 2.2, ratings: 40, difficulty: "Lett", length: "Kort", time: "~20 min", udisc: "https://udisc.com/courses/otta-disc-golf-0vmE", desc: "Veldig korte hull, perfekt for nybegynnere. Mangler hull-kart men lett å finne.", free: true },
-  { id: "oyer", name: "Øyer Ungdomsskole", location: "Øyer", holes: 9, par: 27, rating: 3.2, ratings: 50, difficulty: "Lett", length: "Kort", time: "~30 min", udisc: "https://udisc.com/courses?placeId=lillehammer-norway", desc: "Nybegynnervennlig bane. Hullengde varierer fra 30m til 70m.", free: true },
+  { id: "skogen", name: "Skogen Diskgolfbane", location: "Lillehammer", holes: 22, par: 63, rating: 4.2, ratings: 1496, difficulty: "Moderat / Veldig vanskelig", length: "3.4 km", time: "~2 timer", udisc: "https://udisc.com/courses/skogen-diskgolfbane-exZE", desc: "Teknisk krevende skogsbane med mye variasjon. To layouts: Hvit (viderekomne) og Gul (nybegynnervennlig). Driftet av Lillehammer Frisbee.", free: true, lat: 61.155, lng: 10.477 },
+  { id: "jorstadmoen", name: "Jørstadmoen", location: "Lillehammer", holes: 18, par: 54, rating: 3.9, ratings: 2851, difficulty: "Lett", length: "2.4 km", time: "~1 time", udisc: "https://udisc.com/courses/jorstadmoen-12Ee", desc: "Populær og nybegynnervennlig bane. Barnevogn- og hundevennlig. Gode teepads på hvert hull.", free: true, lat: 61.151, lng: 10.383 },
+  { id: "oyer", name: "Øyer Ungdomsskole", location: "Øyer", holes: 9, par: 27, rating: 3.2, ratings: 428, difficulty: "Lett", length: "1.1 km", time: "~1 time", udisc: "https://udisc.com/courses/oyer-ungdomsskole-vwjL", desc: "Nybegynnervennlig bane. Hullengde varierer fra 30m til 70m.", free: true, lat: 61.235, lng: 10.443 },
+  { id: "ringebu-u", name: "Ringebu Ungdomskole Discgolfbane", location: "Ringebu", holes: 9, par: 27, rating: 2.5, ratings: 107, difficulty: "Moderat", length: "1.7 km", time: "~1 time", udisc: "https://udisc.com/courses/ringebu-ungdomskole-discgolfbane-druU", desc: "9-hulls bane ved ungdomsskolen. Noen hull kan være overgrodd — sjekk forholdene på UDisc.", free: true, lat: 61.531, lng: 10.155 },
+  { id: "ringebu-b", name: "Ringebu Barneskole Discgolfpark", location: "Ringebu", holes: 9, par: 27, rating: 1.1, ratings: 27, difficulty: "Lett", length: "1.3 km", time: "~45 min", udisc: "https://udisc.com/courses/ringebu-barneskole-discgolfpark-lxFz", desc: "9-hulls bane ved barneskolen. Etablert 2019. OBS: Mye vegetasjon og noe overgrodd. Anbefales å sjekke forhold på UDisc.", free: true, lat: 61.530, lng: 10.140 },
+  { id: "lundesetra", name: "Lundesetra Frisbeegolfbane", location: "Venabygd, Ringebu", holes: 18, par: 61, rating: 3.7, ratings: 105, difficulty: "Vanskelig", length: "2.2 km", time: "~1.5-2 timer", udisc: "https://udisc.com/courses/lundesetra-frisbeegolfbane-uNnB", desc: "Flott fjellbane på 950 moh med panoramautsikt over Venabygdsfjellet. Etablert 2025. Familievennlig 9-hulls layout + krevende 18-hulls layout. Sesongbane.", free: true, lat: 61.856, lng: 10.183 },
+  { id: "sandbumoen", name: "Sandbumoen Discgolfbane", location: "Sør-Fron", holes: 18, par: 55, rating: 3.9, ratings: 102, difficulty: "Moderat", length: "2.0 km", time: "~1.5 timer", udisc: "https://udisc.com/courses/sandbumoen-discgolfbane-LGPU", desc: "Flott bane i naturskjønt skogsterreng. Spillbar for alle nivåer. Etablert 2025. OBS: Partier med glatt underlag.", free: true, lat: 61.553, lng: 9.988 },
+  { id: "gaala", name: "Gålå", location: "Gålå, Sør-Fron", holes: 18, par: 59, rating: 3.6, ratings: 412, difficulty: "Lett / Moderat", length: "2.4 km", time: "~1.5 timer", udisc: "https://udisc.com/courses/gala-3Ekm", desc: "Variert 18-hulls bane med store høydeforskjeller i alpint terreng. Fire layoutvalg: Pro, Amateur og to front-9-varianter. Sesongbane — stengt når skianlegget er åpent.", free: true, lat: 61.498, lng: 9.766 },
+  { id: "kvam", name: "Kvam Idrettspark", location: "Kvam, Nord-Fron", holes: 9, par: 27, rating: 3.8, ratings: 232, difficulty: "Lett", length: "1.2 km", time: "~35 min", udisc: "https://udisc.com/courses/kvam-idrettspark-eRuW", desc: "Etablert av Kvam Idrettslag i 2023. Fin trenings- og putbane. Startkit kan lånes ved klubbhuset.", free: true, lat: 61.667, lng: 9.687 },
+  { id: "vinstra", name: "Vinstra Ungdomsskole", location: "Vinstra, Nord-Fron", holes: 6, par: 18, rating: 2.7, ratings: 81, difficulty: "Lett", length: "0.5 km", time: "~16 min", udisc: "https://udisc.com/courses/vinstra-ungdomsskole-Y0eH", desc: "Kort skolebane med DiscGolfPark-kurver. Perfekt for nybegynnere og raske runder.", free: true, lat: 61.575, lng: 9.742 },
+  { id: "lalm", name: "Lalm Discgolfbane", location: "Lalm, Sel", holes: 12, par: 36, rating: 4.2, ratings: 511, difficulty: "Moderat", length: "1.7 km", time: "~1 time", udisc: "https://udisc.com/courses/lalm-discgolfbane-nYVD", desc: "En av de beste banene i Innlandet med 4.2-rating. Varierte hull og flott skogsterreng. Anbefales på det sterkeste!", free: true, lat: 61.812, lng: 9.287 },
+  { id: "otta", name: "Otta Disc Golf", location: "Otta, Sel", holes: 6, par: 18, rating: 2.2, ratings: 40, difficulty: "Lett", length: "0.5 km", time: "~20 min", udisc: "https://udisc.com/courses/otta-disc-golf-0vmE", desc: "Veldig korte hull, perfekt for nybegynnere. Mangler hull-kart men lett å finne.", free: true, lat: 61.772, lng: 9.537 },
 ];
 
 const generatePlayers = () => [
@@ -38,6 +42,14 @@ const STABLEFORD_INFO = [
   { place: "4.", pts: 8 }, { place: "5.", pts: 6 }, { place: "6.", pts: 5 },
   { place: "7.", pts: 4 }, { place: "8.", pts: 3 }, { place: "9-10.", pts: 2 },
 ];
+
+function getDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+}
 
 function Sparkline({ data, color = "#A3E635" }) {
   const max = Math.max(...data), min = Math.min(...data), range = max - min || 1;
@@ -80,6 +92,29 @@ export default function DiscGolfLeague() {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [regForm, setRegForm] = useState({ course: "", score: "", date: "" });
   const [regSuccess, setRegSuccess] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
+  const [locationStatus, setLocationStatus] = useState("idle"); // idle | loading | done | denied
+
+  useEffect(() => {
+    if (!showRegister || locationStatus !== "idle") return;
+    setLocationStatus("loading");
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setUserLocation(loc);
+        setLocationStatus("done");
+        const nearest = [...COURSES].sort((a, b) => getDistance(loc.lat, loc.lng, a.lat, a.lng) - getDistance(loc.lat, loc.lng, b.lat, b.lng))[0];
+        setRegForm(f => ({ ...f, course: f.course || nearest.id }));
+      },
+      () => setLocationStatus("denied")
+    );
+  }, [showRegister]);
+
+  const today = new Date().toISOString().split("T")[0];
+
+  const sortedCourses = userLocation
+    ? [...COURSES].sort((a, b) => getDistance(userLocation.lat, userLocation.lng, a.lat, a.lng) - getDistance(userLocation.lat, userLocation.lng, b.lat, b.lng))
+    : COURSES;
 
   const players = generatePlayers();
   const filtered = division === "Alle" ? players : players.filter(p => p.division === division);
@@ -107,7 +142,7 @@ export default function DiscGolfLeague() {
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, margin: "16px 0" }}>
-            {[{ label: "Spillere", value: 10, icon: "👥" }, { label: "Runder spilt", value: 97, icon: "🥏" }, { label: "Baner", value: 8, icon: "🗺️" }].map(s => (
+            {[{ label: "Spillere", value: 10, icon: "👥" }, { label: "Runder spilt", value: 97, icon: "🥏" }, { label: "Baner", value: 12, icon: "🗺️" }].map(s => (
               <div key={s.label} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "12px 10px", textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
                 <div style={{ fontSize: 13, marginBottom: 2 }}>{s.icon}</div>
                 <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.1 }}><AnimNum value={s.value} /></div>
@@ -286,7 +321,7 @@ export default function DiscGolfLeague() {
       )}
 
       {showRegister && (
-        <div onClick={() => { setShowRegister(false); setRegSuccess(false); }} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
+        <div onClick={() => { setShowRegister(false); setRegSuccess(false); setLocationStatus("idle"); setUserLocation(null); }} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
           <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, background: "linear-gradient(180deg, #ffffff, #f0f9e8)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 24, animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
             {regSuccess ? (
               <div style={{ textAlign: "center", padding: "30px 0" }}>
@@ -300,10 +335,20 @@ export default function DiscGolfLeague() {
                 <div style={{ fontSize: 12, color: "#6b7a58", marginBottom: 20 }}>Legg inn scoren din for å få ligapoeng</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                   <div>
-                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#5a7040", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.1em" }}>Bane</label>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                      <label style={{ fontSize: 11, fontWeight: 700, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em" }}>Bane</label>
+                      <span style={{ fontSize: 10, color: locationStatus === "loading" ? "#b07a00" : locationStatus === "done" ? "#4a8a10" : locationStatus === "denied" ? "#6b7a58" : "#6b7a58" }}>
+                        {locationStatus === "loading" && "📍 Finner posisjon…"}
+                        {locationStatus === "done" && "📍 Sortert etter avstand"}
+                        {locationStatus === "denied" && "GPS ikke tilgjengelig"}
+                      </span>
+                    </div>
                     <select value={regForm.course} onChange={e => setRegForm({ ...regForm, course: e.target.value })} style={{ width: "100%", padding: "12px 14px", borderRadius: 12, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 14, outline: "none", appearance: "none", boxSizing: "border-box" }}>
                       <option value="">Velg bane...</option>
-                      {COURSES.map(c => <option key={c.id} value={c.id}>{c.name} ({c.holes}h, par {c.par}) ★{c.rating}</option>)}
+                      {sortedCourses.map(c => {
+                        const dist = userLocation ? ` · ${getDistance(userLocation.lat, userLocation.lng, c.lat, c.lng)} km` : "";
+                        return <option key={c.id} value={c.id}>{c.name} ({c.holes}h, par {c.par}){dist}</option>;
+                      })}
                     </select>
                   </div>
                   <div>
@@ -311,8 +356,11 @@ export default function DiscGolfLeague() {
                     <input type="number" placeholder="f.eks. -3" value={regForm.score} onChange={e => setRegForm({ ...regForm, score: e.target.value })} style={{ width: "100%", padding: "12px 14px", borderRadius: 12, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
                   </div>
                   <div>
-                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#5a7040", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.1em" }}>Dato</label>
-                    <input type="date" value={regForm.date} onChange={e => setRegForm({ ...regForm, date: e.target.value })} style={{ width: "100%", padding: "12px 14px", borderRadius: 12, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                      <label style={{ fontSize: 11, fontWeight: 700, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em" }}>Dato</label>
+                      <button onClick={() => setRegForm({ ...regForm, date: today })} style={{ fontSize: 11, fontWeight: 700, color: regForm.date === today ? "#4a8a10" : "#6b7a58", background: regForm.date === today ? "rgba(101,163,13,0.12)" : "rgba(0,0,0,0.05)", border: "1px solid", borderColor: regForm.date === today ? "rgba(101,163,13,0.3)" : "rgba(0,0,0,0.1)", borderRadius: 8, padding: "3px 10px", cursor: "pointer" }}>I dag</button>
+                    </div>
+                    <input lang="nb-NO" type="date" value={regForm.date} onChange={e => setRegForm({ ...regForm, date: e.target.value })} style={{ width: "100%", padding: "12px 14px", borderRadius: 12, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
                   </div>
                   <button onClick={(e) => { e.preventDefault(); setRegSuccess(true); setTimeout(() => { setRegSuccess(false); setShowRegister(false); setRegForm({ course: "", score: "", date: "" }); }, 2000); }} style={{ width: "100%", padding: 14, border: "none", borderRadius: 14, background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 24px rgba(101,163,13,0.25)", marginTop: 4 }}>Registrer 🥏</button>
                   <button onClick={() => setShowRegister(false)} style={{ width: "100%", padding: 12, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#6b7a58", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Avbryt</button>
