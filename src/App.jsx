@@ -98,6 +98,8 @@ export default function DiscGolfLeague() {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [regForm, setRegForm] = useState({ course: "", score: "", date: "" });
   const [regSuccess, setRegSuccess] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+  const [userDivision, setUserDivision] = useState("Åpen");
   const [userLocation, setUserLocation] = useState(null);
   const [locationStatus, setLocationStatus] = useState("idle"); // idle | loading | done | denied
   const [user, setUser] = useState(null);
@@ -165,10 +167,13 @@ export default function DiscGolfLeague() {
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{ fontSize: 11, color: "#4a7a10", background: "rgba(101,163,13,0.1)", padding: "4px 10px", borderRadius: 20, border: "1px solid rgba(101,163,13,0.2)", fontWeight: 600 }}>Sesong: Vår 2026</div>
               {user ? (
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  {user.user_metadata?.avatar_url && <img src={user.user_metadata.avatar_url} alt="" style={{ width: 28, height: 28, borderRadius: "50%", border: "2px solid rgba(101,163,13,0.4)" }} />}
-                  <button onClick={signOut} style={{ fontSize: 11, color: "#4a7a10", background: "rgba(101,163,13,0.1)", padding: "4px 10px", borderRadius: 20, border: "1px solid rgba(101,163,13,0.2)", cursor: "pointer", fontWeight: 600 }}>Logg ut</button>
-                </div>
+                <button onClick={() => setShowProfile(true)} style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(101,163,13,0.1)", border: "1px solid rgba(101,163,13,0.25)", borderRadius: 20, padding: "4px 10px 4px 4px", cursor: "pointer" }}>
+                  {user.user_metadata?.avatar_url
+                    ? <img src={user.user_metadata.avatar_url} alt="" style={{ width: 24, height: 24, borderRadius: "50%", border: "1px solid rgba(101,163,13,0.4)" }} />
+                    : <div style={{ width: 24, height: 24, borderRadius: "50%", background: "linear-gradient(135deg, #A3E635, #65A30D)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: "#0a0f0a", fontWeight: 800 }}>{user.user_metadata?.full_name?.[0] ?? "?"}</div>
+                  }
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "#4a7a10" }}>{user.user_metadata?.full_name?.split(" ")[0] ?? "Profil"}</span>
+                </button>
               ) : (
                 <button onClick={signInWithGoogle} style={{ fontSize: 11, color: "#fff", background: "linear-gradient(135deg, #65A30D, #4a7a0a)", padding: "5px 12px", borderRadius: 20, border: "none", cursor: "pointer", fontWeight: 700 }}>Logg inn</button>
               )}
@@ -401,6 +406,57 @@ export default function DiscGolfLeague() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {showProfile && user && (
+        <div onClick={() => setShowProfile(false)} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, background: "linear-gradient(180deg, #ffffff, #f0f9e8)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 24, animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
+
+            {/* Header */}
+            <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
+              {user.user_metadata?.avatar_url
+                ? <img src={user.user_metadata.avatar_url} alt="" style={{ width: 60, height: 60, borderRadius: "50%", border: "3px solid rgba(101,163,13,0.4)", boxShadow: "0 4px 16px rgba(101,163,13,0.2)" }} />
+                : <div style={{ width: 60, height: 60, borderRadius: "50%", background: "linear-gradient(135deg, #A3E635, #65A30D)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, color: "#0a0f0a", fontWeight: 800 }}>{user.user_metadata?.full_name?.[0] ?? "?"}</div>
+              }
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "#1c2b12" }}>{user.user_metadata?.full_name ?? "Ukjent"}</div>
+                <div style={{ fontSize: 12, color: "#6b7a58", marginTop: 2 }}>{user.email}</div>
+                <div style={{ fontSize: 11, color: "#4a8a10", fontWeight: 700, marginTop: 4, background: "rgba(101,163,13,0.1)", display: "inline-block", padding: "2px 10px", borderRadius: 10, border: "1px solid rgba(101,163,13,0.2)" }}>🏅 {userDivision} divisjon</div>
+              </div>
+            </div>
+
+            {/* Divisjonsvalg */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Divisjon</div>
+              <div style={{ display: "flex", gap: 8 }}>
+                {["Åpen", "Rekreasjons"].map(d => (
+                  <button key={d} onClick={() => setUserDivision(d)} style={{ flex: 1, padding: "10px 0", borderRadius: 12, border: "1px solid", borderColor: userDivision === d ? "rgba(101,163,13,0.4)" : "rgba(0,0,0,0.1)", background: userDivision === d ? "rgba(101,163,13,0.12)" : "rgba(0,0,0,0.03)", color: userDivision === d ? "#4a8a10" : "#6b7a58", fontWeight: userDivision === d ? 700 : 500, fontSize: 13, cursor: "pointer", transition: "all 0.2s" }}>{d}</button>
+                ))}
+              </div>
+            </div>
+
+            {/* Sesong-stats placeholder */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Min sesong · Vår 2026</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                {[{ label: "Runder", value: "—", icon: "🥏" }, { label: "Beste score", value: "—", icon: "🎯" }, { label: "Ligapoeng", value: "—", icon: "🏆" }].map(s => (
+                  <div key={s.label} style={{ background: "rgba(101,163,13,0.07)", border: "1px solid rgba(101,163,13,0.12)", borderRadius: 12, padding: "12px 8px", textAlign: "center" }}>
+                    <div style={{ fontSize: 16, marginBottom: 4 }}>{s.icon}</div>
+                    <div style={{ fontSize: 20, fontWeight: 900, color: "#4a8a10" }}>{s.value}</div>
+                    <div style={{ fontSize: 9, color: "#6b7a58", textTransform: "uppercase", letterSpacing: "0.1em" }}>{s.label}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop: 10, fontSize: 11, color: "#8a9a70", textAlign: "center", fontStyle: "italic" }}>Statistikk vises når du registrerer runder 🚀</div>
+            </div>
+
+            {/* Handlinger */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <button onClick={() => { setShowProfile(false); }} style={{ width: "100%", padding: 13, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#4a5a38", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Lukk</button>
+              <button onClick={() => { signOut(); setShowProfile(false); }} style={{ width: "100%", padding: 13, border: "1px solid rgba(239,68,68,0.2)", borderRadius: 12, background: "rgba(239,68,68,0.05)", color: "#dc2626", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Logg ut</button>
+            </div>
           </div>
         </div>
       )}
