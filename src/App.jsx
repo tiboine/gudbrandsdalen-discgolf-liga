@@ -395,14 +395,18 @@ export default function DiscGolfLeague() {
                     </div>
                   </div>
                   <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: 22, fontWeight: 900, color: r.score <= 0 ? "#4a8a10" : "#ef4444", lineHeight: 1 }}>{r.score > 0 ? "+" : ""}{r.score}</div>
+                    <div style={{ fontSize: 22, fontWeight: 900, color: r.score <= 0 ? "#4a8a10" : "#ef4444", lineHeight: 1 }}>
+                      {r.total_score ?? (r.score + (COURSES.find(c => c.id === r.course_id)?.par ?? 0))}
+                    </div>
+                    <div style={{ fontSize: 11, color: "#6b7a58", marginTop: 2 }}>({r.score === 0 ? "E" : r.score > 0 ? `+${r.score}` : r.score})</div>
                   </div>
                 </div>
                 {user && r.user_id === user.id && (
                   <div style={{ display: "flex", gap: 6, marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(0,0,0,0.06)" }}>
                     <button onClick={() => {
                       setEditRound(r);
-                      setRegForm({ course: r.course_id, score: String(r.score), date: r.date });
+                      const coursePar = COURSES.find(c => c.id === r.course_id)?.par ?? 0;
+                      setRegForm({ course: r.course_id, score: r.total_score ? String(r.total_score) : String(r.score + coursePar), date: r.date });
                       setShowRegister(true);
                     }} style={{ flex: 1, padding: "6px 0", borderRadius: 8, border: "1px solid rgba(0,0,0,0.1)", background: "rgba(0,0,0,0.03)", color: "#4a5a38", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>✏️ Rediger</button>
                     <button onClick={async () => {
@@ -617,7 +621,9 @@ export default function DiscGolfLeague() {
         <div onClick={() => setSelectedPlayer(null)} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
           <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, maxHeight: "80vh", background: "linear-gradient(180deg, #ffffff, #f0f9e8)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 24, overflowY: "auto", animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
-              <div style={{ width: 54, height: 54, borderRadius: "50%", background: "linear-gradient(135deg, rgba(101,163,13,0.2), rgba(101,163,13,0.06))", border: "2px solid rgba(101,163,13,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26 }}>{selectedPlayer.avatar}</div>
+              <div style={{ width: 54, height: 54, borderRadius: "50%", overflow: "hidden", background: "linear-gradient(135deg, rgba(101,163,13,0.2), rgba(101,163,13,0.06))", border: "2px solid rgba(101,163,13,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26 }}>
+                {selectedPlayer.avatar?.startsWith("http") ? <img src={selectedPlayer.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (selectedPlayer.name?.[0] ?? "?")}
+              </div>
               <div><div style={{ fontSize: 20, fontWeight: 800, color: "#1c2b12" }}>{selectedPlayer.name}</div><div style={{ fontSize: 12, color: "#6b7a58" }}>{selectedPlayer.division} divisjon</div></div>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginBottom: 20 }}>
@@ -670,8 +676,16 @@ export default function DiscGolfLeague() {
                     </select>
                   </div>
                   <div>
-                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#5a7040", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.1em" }}>Score (mot par)</label>
-                    <input type="number" placeholder="f.eks. -3" value={regForm.score} onChange={e => setRegForm({ ...regForm, score: e.target.value })} style={{ width: "100%", padding: "12px 14px", borderRadius: 12, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                      <label style={{ fontSize: 11, fontWeight: 700, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em" }}>Total score (kast)</label>
+                      {regForm.course && <span style={{ fontSize: 11, color: "#6b7a58" }}>Par: {COURSES.find(c => c.id === regForm.course)?.par ?? "?"}</span>}
+                    </div>
+                    <input type="number" placeholder={regForm.course ? `f.eks. ${(COURSES.find(c => c.id === regForm.course)?.par ?? 54) - 3}` : "Velg bane først"} value={regForm.score} onChange={e => setRegForm({ ...regForm, score: e.target.value })} style={{ width: "100%", padding: "12px 14px", borderRadius: 12, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+                    {regForm.course && regForm.score !== "" && (() => {
+                      const par = COURSES.find(c => c.id === regForm.course)?.par;
+                      const diff = parseInt(regForm.score) - par;
+                      return par ? <div style={{ fontSize: 12, color: diff <= 0 ? "#4a8a10" : "#ef4444", marginTop: 4, fontWeight: 600 }}>{diff === 0 ? "Even par (E)" : diff > 0 ? `+${diff} over par` : `${diff} under par`}</div> : null;
+                    })()}
                   </div>
                   <div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
@@ -683,29 +697,33 @@ export default function DiscGolfLeague() {
                   {regError && <div style={{ fontSize: 12, color: "#dc2626", background: "rgba(239,68,68,0.08)", padding: "8px 12px", borderRadius: 8, border: "1px solid rgba(239,68,68,0.2)" }}>{regError}</div>}
                   <button onClick={async (e) => {
                     e.preventDefault();
-                    const scoreNum = parseInt(regForm.score);
+                    const totalScore = parseInt(regForm.score);
+                    const course = COURSES.find(c => c.id === regForm.course);
                     if (!regForm.course || regForm.score === "" || !regForm.date) return;
-                    if (isNaN(scoreNum) || scoreNum < -15 || scoreNum > 30) {
-                      setRegError("Score må være mellom -15 og +30");
+                    if (!course) { setRegError("Velg en gyldig bane"); return; }
+                    const vsPar = totalScore - course.par;
+                    if (isNaN(totalScore) || totalScore < 1 || vsPar < -15 || vsPar > 30) {
+                      setRegError(`Ugyldig score. For ${course.name} (par ${course.par}) bør total være mellom ${course.par - 15} og ${course.par + 30}`);
                       return;
                     }
                     setRegError("");
                     if (user) {
                       setRoundsLoading(true);
-                      const course = COURSES.find(c => c.id === regForm.course);
                       if (editRound) {
                         await supabase.from("rounds").update({
                           course_id: regForm.course,
-                          course_name: course?.name ?? regForm.course,
-                          score: parseInt(regForm.score),
+                          course_name: course.name,
+                          score: vsPar,
+                          total_score: totalScore,
                           date: regForm.date,
                         }).eq("id", editRound.id);
                       } else {
                         await supabase.from("rounds").insert({
                           user_id: user.id,
                           course_id: regForm.course,
-                          course_name: course?.name ?? regForm.course,
-                          score: parseInt(regForm.score),
+                          course_name: course.name,
+                          score: vsPar,
+                          total_score: totalScore,
                           date: regForm.date,
                         });
                       }
