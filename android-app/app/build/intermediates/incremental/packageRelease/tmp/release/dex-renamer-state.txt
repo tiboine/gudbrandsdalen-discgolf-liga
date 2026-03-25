@@ -1,0 +1,4 @@
+#Wed Mar 25 21:54:13 CET 2026
+base.0=F\:\\Claude code\\Gudbrandsdalsliga\\android-app\\app\\build\\intermediates\\dex\\release\\minifyReleaseWithR8\\classes.dex
+renamed.0=classes.dex
+path.0=classes.dex

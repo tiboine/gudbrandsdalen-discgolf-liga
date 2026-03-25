@@ -18,9 +18,13 @@ export default defineConfig({
         orientation: 'portrait',
         start_url: '/',
         lang: 'nb-NO',
+        id: '/',
         icons: [
-          { src: '/icon-192.svg', sizes: '192x192', type: 'image/svg+xml' },
-          { src: '/icon-512.svg', sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' },
+          { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
+        ],
+        screenshots: [
+          { src: '/icon-512.png', sizes: '512x512', type: 'image/png', form_factor: 'narrow', label: 'Gudbrandsdalen Discgolf Liga' },
         ],
       },
       workbox: {

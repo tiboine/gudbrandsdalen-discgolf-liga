@@ -1,0 +1,51 @@
+{
+  "packageId": "app.vercel.gudbrandsdalen_discgolf_liga.twa",
+  "host": "gudbrandsdalen-discgolf-liga.vercel.app",
+  "name": "Gudbrandsdalen Discgolf Liga",
+  "launcherName": "GDG liga",
+  "display": "standalone",
+  "themeColor": "#65A30D",
+  "themeColorDark": "#000000",
+  "navigationColor": "#000000",
+  "navigationColorDark": "#000000",
+  "navigationDividerColor": "#000000",
+  "navigationDividerColorDark": "#000000",
+  "backgroundColor": "#F0F9E8",
+  "enableNotifications": true,
+  "startUrl": "/",
+  "iconUrl": "https://gudbrandsdalen-discgolf-liga.vercel.app/icon-512.svg",
+  "maskableIconUrl": "https://gudbrandsdalen-discgolf-liga.vercel.app/icon-512.svg",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "F:\\Claude code\\Gudbrandsdalsliga\\android-app\\android.keystore",
+    "alias": "android"
+  },
+  "appVersionName": "2",
+  "appVersionCode": 2,
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://gudbrandsdalen-discgolf-liga.vercel.app/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {
+    "locationDelegation": {
+      "enabled": true
+    }
+  },
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://gudbrandsdalen-discgolf-liga.vercel.app/",
+  "minSdkVersion": 21,
+  "orientation": "portrait",
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "protocolHandlers": [],
+  "fileHandlers": [],
+  "launchHandlerClientMode": "",
+  "displayOverride": [],
+  "appVersion": "2"
+}
