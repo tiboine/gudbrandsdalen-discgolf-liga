@@ -66,8 +66,8 @@ function Stars({ rating }) {
   const full = Math.floor(rating), half = rating - full >= 0.3;
   return (
     <span style={{ display: "inline-flex", gap: 1, fontSize: 11 }}>
-      {[...Array(5)].map((_, i) => <span key={i} style={{ color: i < full || (i === full && half) ? "#facc15" : "#3a3a2a", opacity: i < full || (i === full && half) ? 1 : 0.3 }}>★</span>)}
-      <span style={{ fontSize: 11, color: "#8a9a70", marginLeft: 4, fontWeight: 700 }}>{rating}</span>
+      {[...Array(5)].map((_, i) => <span key={i} style={{ color: i < full || (i === full && half) ? "#d4a017" : "#c8d4b0" }}>★</span>)}
+      <span style={{ fontSize: 11, color: "#5a7040", marginLeft: 4, fontWeight: 700 }}>{rating}</span>
     </span>
   );
 }
@@ -85,9 +85,9 @@ export default function DiscGolfLeague() {
   const filtered = division === "Alle" ? players : players.filter(p => p.division === division);
 
   return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(175deg, #0a0f0a 0%, #111a11 40%, #1a2618 100%)", color: "#e8e8e0", fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif", position: "relative", overflow: "hidden" }}>
-      <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none", opacity: 0.04, backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")` }} />
-      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 0, pointerEvents: "none", opacity: 0.06 }}>
+    <div style={{ minHeight: "100vh", background: "linear-gradient(175deg, #f0f9e8 0%, #e6f4d4 40%, #f5faf0 100%)", color: "#1c2b12", fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif", position: "relative", overflow: "hidden" }}>
+      <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none", opacity: 0.025, backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")` }} />
+      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 0, pointerEvents: "none", opacity: 0.12 }}>
         <svg viewBox="0 0 1200 200" preserveAspectRatio="none" style={{ width: "100%", height: "200px" }}>
           <path d="M0,200 L0,140 L100,80 L200,120 L300,40 L400,90 L500,20 L600,70 L700,30 L800,80 L900,50 L1000,100 L1100,60 L1200,90 L1200,200 Z" fill="#A3E635" />
         </svg>
@@ -99,19 +99,19 @@ export default function DiscGolfLeague() {
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{ width: 38, height: 38, borderRadius: "50%", background: "linear-gradient(135deg, #A3E635, #65A30D)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, color: "#0a0f0a", boxShadow: "0 0 20px rgba(163,230,53,0.3)" }}>🥏</div>
               <div>
-                <div style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: "#A3E635", fontWeight: 700 }}>Gudbrandsdalen</div>
+                <div style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: "#5a9e0f", fontWeight: 700 }}>Gudbrandsdalen</div>
                 <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.02em", lineHeight: 1.1 }}>Discgolf Liga</div>
               </div>
             </div>
-            <div style={{ fontSize: 11, color: "#8a9a70", background: "rgba(163,230,53,0.08)", padding: "4px 10px", borderRadius: 20, border: "1px solid rgba(163,230,53,0.15)", fontWeight: 600 }}>Sesong: Vår 2026</div>
+            <div style={{ fontSize: 11, color: "#4a7a10", background: "rgba(101,163,13,0.1)", padding: "4px 10px", borderRadius: 20, border: "1px solid rgba(101,163,13,0.2)", fontWeight: 600 }}>Sesong: Vår 2026</div>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, margin: "16px 0" }}>
             {[{ label: "Spillere", value: 10, icon: "👥" }, { label: "Runder spilt", value: 97, icon: "🥏" }, { label: "Baner", value: 8, icon: "🗺️" }].map(s => (
-              <div key={s.label} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "12px 10px", textAlign: "center" }}>
+              <div key={s.label} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "12px 10px", textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
                 <div style={{ fontSize: 13, marginBottom: 2 }}>{s.icon}</div>
                 <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.1 }}><AnimNum value={s.value} /></div>
-                <div style={{ fontSize: 10, color: "#6b7a58", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>{s.label}</div>
+                <div style={{ fontSize: 10, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>{s.label}</div>
               </div>
             ))}
           </div>
@@ -121,9 +121,9 @@ export default function DiscGolfLeague() {
             onMouseUp={e => e.currentTarget.style.transform = "scale(1)"}
           >+ Registrer runde</button>
 
-          <div style={{ display: "flex", gap: 4, background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: 4 }}>
+          <div style={{ display: "flex", gap: 4, background: "rgba(0,0,0,0.06)", borderRadius: 12, padding: 4 }}>
             {[{ id: "tabell", label: "Ligatabell", icon: "🏆" }, { id: "runder", label: "Runder", icon: "📋" }, { id: "baner", label: "Baner", icon: "🗺️" }, { id: "regler", label: "Poeng", icon: "📊" }].map(t => (
-              <button key={t.id} onClick={() => setTab(t.id)} style={{ flex: 1, padding: "10px 6px", border: "none", borderRadius: 10, background: tab === t.id ? "rgba(163,230,53,0.15)" : "transparent", color: tab === t.id ? "#A3E635" : "#6b7a58", fontWeight: tab === t.id ? 700 : 500, fontSize: 12, cursor: "pointer", transition: "all 0.2s" }}>
+              <button key={t.id} onClick={() => setTab(t.id)} style={{ flex: 1, padding: "10px 6px", border: "none", borderRadius: 10, background: tab === t.id ? "#ffffff" : "transparent", color: tab === t.id ? "#4a8a10" : "#6b7a58", fontWeight: tab === t.id ? 700 : 500, fontSize: 12, cursor: "pointer", transition: "all 0.2s", boxShadow: tab === t.id ? "0 1px 4px rgba(0,0,0,0.1)" : "none" }}>
                 <div style={{ fontSize: 14, marginBottom: 2 }}>{t.icon}</div>{t.label}
               </button>
             ))}
@@ -137,7 +137,7 @@ export default function DiscGolfLeague() {
           <div>
             <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
               {["Alle", "Åpen", "Rekreasjons"].map(d => (
-                <button key={d} onClick={() => setDivision(d)} style={{ padding: "6px 14px", border: "1px solid", borderColor: division === d ? "#A3E635" : "rgba(255,255,255,0.08)", borderRadius: 20, background: division === d ? "rgba(163,230,53,0.12)" : "transparent", color: division === d ? "#A3E635" : "#6b7a58", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>{d}</button>
+                <button key={d} onClick={() => setDivision(d)} style={{ padding: "6px 14px", border: "1px solid", borderColor: division === d ? "#65A30D" : "rgba(0,0,0,0.1)", borderRadius: 20, background: division === d ? "rgba(101,163,13,0.12)" : "rgba(255,255,255,0.6)", color: division === d ? "#4a8a10" : "#6b7a58", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>{d}</button>
               ))}
             </div>
             {division !== "Rekreasjons" && (
@@ -146,11 +146,11 @@ export default function DiscGolfLeague() {
                   const h = [100, 130, 80], m = ["🥈", "🥇", "🥉"], sz = [44, 56, 40];
                   return (
                     <div key={p.id} onClick={() => setSelectedPlayer(p)} style={{ textAlign: "center", cursor: "pointer", flex: 1, animation: `fadeSlideUp 0.5s ease ${i * 0.1}s both` }}>
-                      <div style={{ width: sz[i], height: sz[i], borderRadius: "50%", margin: "0 auto 6px", background: i === 1 ? "linear-gradient(135deg, #A3E635, #65A30D)" : "rgba(255,255,255,0.06)", border: i === 1 ? "2px solid #A3E635" : "2px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: sz[i] * 0.45, boxShadow: i === 1 ? "0 0 30px rgba(163,230,53,0.3)" : "none" }}>{p.avatar}</div>
+                      <div style={{ width: sz[i], height: sz[i], borderRadius: "50%", margin: "0 auto 6px", background: i === 1 ? "linear-gradient(135deg, #A3E635, #65A30D)" : "rgba(255,255,255,0.8)", border: i === 1 ? "2px solid #65A30D" : "2px solid rgba(0,0,0,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: sz[i] * 0.45, boxShadow: i === 1 ? "0 4px 20px rgba(101,163,13,0.3)" : "0 2px 8px rgba(0,0,0,0.1)" }}>{p.avatar}</div>
                       <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 2 }}>{p.name.split(" ")[0]}</div>
-                      <div style={{ height: h[i], borderRadius: "12px 12px 0 0", background: i === 1 ? "linear-gradient(180deg, rgba(163,230,53,0.25), rgba(163,230,53,0.05))" : "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderBottom: "none", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                      <div style={{ height: h[i], borderRadius: "12px 12px 0 0", background: i === 1 ? "linear-gradient(180deg, rgba(101,163,13,0.15), rgba(101,163,13,0.04))" : "rgba(255,255,255,0.6)", border: i === 1 ? "1px solid rgba(101,163,13,0.2)" : "1px solid rgba(0,0,0,0.08)", borderBottom: "none", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
                         <div style={{ fontSize: 20 }}>{m[i]}</div>
-                        <div style={{ fontSize: 22, fontWeight: 900, color: i === 1 ? "#A3E635" : "#e8e8e0" }}>{p.pts}</div>
+                        <div style={{ fontSize: 22, fontWeight: 900, color: i === 1 ? "#4a8a10" : "#2a3a1a" }}>{p.pts}</div>
                         <div style={{ fontSize: 9, color: "#6b7a58", textTransform: "uppercase", letterSpacing: "0.1em" }}>poeng</div>
                       </div>
                     </div>
@@ -158,22 +158,22 @@ export default function DiscGolfLeague() {
                 })}
               </div>
             )}
-            <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, overflow: "hidden" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "32px 1fr 60px 50px 80px", padding: "10px 14px", fontSize: 10, color: "#6b7a58", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700, borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+            <div style={{ background: "rgba(255,255,255,0.7)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "32px 1fr 60px 50px 80px", padding: "10px 14px", fontSize: 10, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700, borderBottom: "1px solid rgba(0,0,0,0.06)", background: "rgba(255,255,255,0.5)" }}>
                 <div>#</div><div>Spiller</div><div style={{ textAlign: "right" }}>Snitt</div><div style={{ textAlign: "right" }}>Pts</div><div style={{ textAlign: "right" }}>Trend</div>
               </div>
               {filtered.map((p, i) => (
-                <div key={p.id} onClick={() => setSelectedPlayer(p)} style={{ display: "grid", gridTemplateColumns: "32px 1fr 60px 50px 80px", padding: "12px 14px", alignItems: "center", cursor: "pointer", borderBottom: "1px solid rgba(255,255,255,0.03)", background: i === 0 ? "rgba(163,230,53,0.04)" : "transparent", transition: "background 0.2s" }}
-                  onMouseEnter={e => e.currentTarget.style.background = "rgba(163,230,53,0.06)"}
-                  onMouseLeave={e => e.currentTarget.style.background = i === 0 ? "rgba(163,230,53,0.04)" : "transparent"}>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: i < 3 ? "#A3E635" : "#6b7a58" }}>{i + 1}</div>
+                <div key={p.id} onClick={() => setSelectedPlayer(p)} style={{ display: "grid", gridTemplateColumns: "32px 1fr 60px 50px 80px", padding: "12px 14px", alignItems: "center", cursor: "pointer", borderBottom: "1px solid rgba(0,0,0,0.04)", background: i === 0 ? "rgba(101,163,13,0.06)" : "transparent", transition: "background 0.2s" }}
+                  onMouseEnter={e => e.currentTarget.style.background = "rgba(101,163,13,0.08)"}
+                  onMouseLeave={e => e.currentTarget.style.background = i === 0 ? "rgba(101,163,13,0.06)" : "transparent"}>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: i < 3 ? "#4a8a10" : "#8a9a80" }}>{i + 1}</div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, border: "1px solid rgba(255,255,255,0.08)" }}>{p.avatar}</div>
+                    <div style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(0,0,0,0.05)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, border: "1px solid rgba(0,0,0,0.08)" }}>{p.avatar}</div>
                     <div><div style={{ fontSize: 13, fontWeight: 700 }}>{p.name}</div><div style={{ fontSize: 10, color: "#6b7a58" }}>{p.rounds} runder · {p.division}</div></div>
                   </div>
-                  <div style={{ textAlign: "right", fontSize: 13, fontWeight: 600, color: p.avg <= 0 ? "#A3E635" : "#ef4444" }}>{p.avg > 0 ? "+" : ""}{p.avg}</div>
+                  <div style={{ textAlign: "right", fontSize: 13, fontWeight: 600, color: p.avg <= 0 ? "#4a8a10" : "#ef4444" }}>{p.avg > 0 ? "+" : ""}{p.avg}</div>
                   <div style={{ textAlign: "right", fontSize: 15, fontWeight: 900 }}>{p.pts}</div>
-                  <div style={{ display: "flex", justifyContent: "flex-end" }}><Sparkline data={p.trend} color={i < 3 ? "#A3E635" : "#6b7a58"} /></div>
+                  <div style={{ display: "flex", justifyContent: "flex-end" }}><Sparkline data={p.trend} color={i < 3 ? "#65A30D" : "#8a9a70"} /></div>
                 </div>
               ))}
             </div>
@@ -184,15 +184,15 @@ export default function DiscGolfLeague() {
           <div>
             <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 12 }}>Siste runder</div>
             {RECENT_ROUNDS.map((r, i) => (
-              <div key={r.id} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 16px", display: "grid", gridTemplateColumns: "1fr auto", gap: 12, alignItems: "center", marginBottom: 8, animation: `fadeSlideUp 0.4s ease ${i * 0.06}s both` }}>
+              <div key={r.id} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "14px 16px", display: "grid", gridTemplateColumns: "1fr auto", gap: 12, alignItems: "center", marginBottom: 8, animation: `fadeSlideUp 0.4s ease ${i * 0.06}s both`, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 2 }}>{r.player}</div>
                   <div style={{ fontSize: 11, color: "#6b7a58", marginBottom: 4 }}>{r.course}</div>
                   <div style={{ display: "flex", gap: 8, fontSize: 11, color: "#8a9a70" }}><span>{r.date}</span><span>·</span><span>{r.holes}</span></div>
                 </div>
                 <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 22, fontWeight: 900, color: r.score <= 0 ? "#A3E635" : "#ef4444", lineHeight: 1 }}>{r.score > 0 ? "+" : ""}{r.score}</div>
-                  <div style={{ fontSize: 11, color: "#A3E635", fontWeight: 700, background: "rgba(163,230,53,0.1)", padding: "2px 8px", borderRadius: 10, marginTop: 4, display: "inline-block" }}>+{r.pts} pts</div>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: r.score <= 0 ? "#4a8a10" : "#ef4444", lineHeight: 1 }}>{r.score > 0 ? "+" : ""}{r.score}</div>
+                  <div style={{ fontSize: 11, color: "#4a8a10", fontWeight: 700, background: "rgba(101,163,13,0.12)", padding: "2px 8px", borderRadius: 10, marginTop: 4, display: "inline-block" }}>+{r.pts} pts</div>
                 </div>
               </div>
             ))}
@@ -203,31 +203,31 @@ export default function DiscGolfLeague() {
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
               <div style={{ fontSize: 16, fontWeight: 800 }}>Baner i ligaen</div>
-              <div style={{ fontSize: 11, color: "#6b7a58" }}>Data fra <span style={{ color: "#A3E635", fontWeight: 700 }}>UDisc</span></div>
+              <div style={{ fontSize: 11, color: "#6b7a58" }}>Data fra <span style={{ color: "#4a8a10", fontWeight: 700 }}>UDisc</span></div>
             </div>
             {COURSES.map((c, i) => (
-              <div key={c.id} onClick={() => setSelectedCourse(selectedCourse?.id === c.id ? null : c)} style={{ background: selectedCourse?.id === c.id ? "rgba(163,230,53,0.04)" : "rgba(255,255,255,0.02)", border: selectedCourse?.id === c.id ? "1px solid rgba(163,230,53,0.2)" : "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "16px", cursor: "pointer", transition: "all 0.2s", marginBottom: 10, animation: `fadeSlideUp 0.4s ease ${i * 0.05}s both` }}>
+              <div key={c.id} onClick={() => setSelectedCourse(selectedCourse?.id === c.id ? null : c)} style={{ background: selectedCourse?.id === c.id ? "rgba(101,163,13,0.08)" : "rgba(255,255,255,0.75)", border: selectedCourse?.id === c.id ? "1px solid rgba(101,163,13,0.25)" : "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "16px", cursor: "pointer", transition: "all 0.2s", marginBottom: 10, animation: `fadeSlideUp 0.4s ease ${i * 0.05}s both`, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
                   <div>
                     <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 2 }}>{c.name}</div>
-                    <div style={{ fontSize: 11, color: "#8a9a70", marginBottom: 6 }}>{c.location}</div>
+                    <div style={{ fontSize: 11, color: "#6b7a58", marginBottom: 6 }}>{c.location}</div>
                     <Stars rating={c.rating} />
                     {c.ratings && <span style={{ fontSize: 10, color: "#6b7a58", marginLeft: 4 }}>({c.ratings})</span>}
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
-                    <div style={{ padding: "4px 10px", borderRadius: 10, background: "rgba(163,230,53,0.08)", border: "1px solid rgba(163,230,53,0.15)", fontSize: 11, fontWeight: 700, color: "#A3E635" }}>{c.holes} hull</div>
+                    <div style={{ padding: "4px 10px", borderRadius: 10, background: "rgba(101,163,13,0.1)", border: "1px solid rgba(101,163,13,0.2)", fontSize: 11, fontWeight: 700, color: "#4a8a10" }}>{c.holes} hull</div>
                     <div style={{ fontSize: 10, color: "#6b7a58" }}>Par {c.par}</div>
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                  {[{ label: c.difficulty, color: c.difficulty.includes("Vanskelig") ? "#f97316" : c.difficulty === "Moderat" ? "#facc15" : "#A3E635" }, { label: c.time }, { label: c.length }, { label: "Gratis", color: "#A3E635" }].map((tag, j) => (
-                    <span key={j} style={{ fontSize: 10, padding: "3px 8px", borderRadius: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", color: tag.color || "#8a9a70", fontWeight: 600 }}>{tag.label}</span>
+                  {[{ label: c.difficulty, color: c.difficulty.includes("Vanskelig") ? "#e05000" : c.difficulty === "Moderat" ? "#b07a00" : "#4a8a10" }, { label: c.time }, { label: c.length }, { label: "Gratis", color: "#4a8a10" }].map((tag, j) => (
+                    <span key={j} style={{ fontSize: 10, padding: "3px 8px", borderRadius: 8, background: "rgba(0,0,0,0.05)", border: "1px solid rgba(0,0,0,0.08)", color: tag.color || "#6b7a58", fontWeight: 600 }}>{tag.label}</span>
                   ))}
                 </div>
                 {selectedCourse?.id === c.id && (
-                  <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,0.06)", animation: "fadeSlideUp 0.3s ease" }}>
-                    <div style={{ fontSize: 12, color: "#a0a890", lineHeight: 1.6, marginBottom: 12 }}>{c.desc}</div>
-                    <a href={c.udisc} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 10, background: "rgba(163,230,53,0.12)", border: "1px solid rgba(163,230,53,0.25)", color: "#A3E635", fontWeight: 700, fontSize: 12, textDecoration: "none" }}>
+                  <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid rgba(0,0,0,0.08)", animation: "fadeSlideUp 0.3s ease" }}>
+                    <div style={{ fontSize: 12, color: "#4a5a38", lineHeight: 1.6, marginBottom: 12 }}>{c.desc}</div>
+                    <a href={c.udisc} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 10, background: "rgba(101,163,13,0.12)", border: "1px solid rgba(101,163,13,0.25)", color: "#4a8a10", fontWeight: 700, fontSize: 12, textDecoration: "none" }}>
                       🔗 Se på UDisc
                     </a>
                   </div>
@@ -241,19 +241,19 @@ export default function DiscGolfLeague() {
           <div>
             <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 4 }}>Stableford-poeng</div>
             <div style={{ fontSize: 12, color: "#6b7a58", marginBottom: 16, lineHeight: 1.5 }}>Poeng deles ut basert på plassering i hver runde. Beste 8 av 12 runder teller.</div>
-            <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, overflow: "hidden" }}>
+            <div style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
               {STABLEFORD_INFO.map((s, i) => (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.03)", background: i === 0 ? "rgba(163,230,53,0.04)" : "transparent" }}>
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", borderBottom: "1px solid rgba(0,0,0,0.05)", background: i === 0 ? "rgba(101,163,13,0.07)" : "transparent" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: "50%", background: i < 3 ? `rgba(163,230,53,${0.2 - i * 0.05})` : "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800, color: i < 3 ? "#A3E635" : "#6b7a58" }}>{s.place}</div>
+                    <div style={{ width: 28, height: 28, borderRadius: "50%", background: i < 3 ? `rgba(101,163,13,${0.2 - i * 0.05})` : "rgba(0,0,0,0.05)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800, color: i < 3 ? "#4a8a10" : "#6b7a58" }}>{s.place}</div>
                     <span style={{ fontSize: 13, fontWeight: 600 }}>Plass {s.place}</span>
                   </div>
-                  <div style={{ fontSize: 16, fontWeight: 900, color: i < 3 ? "#A3E635" : "#e8e8e0" }}>{s.pts} <span style={{ fontSize: 10, fontWeight: 600, color: "#6b7a58" }}>pts</span></div>
+                  <div style={{ fontSize: 16, fontWeight: 900, color: i < 3 ? "#4a8a10" : "#1c2b12" }}>{s.pts} <span style={{ fontSize: 10, fontWeight: 600, color: "#6b7a58" }}>pts</span></div>
                 </div>
               ))}
             </div>
-            <div style={{ marginTop: 16, padding: 16, borderRadius: 14, background: "rgba(163,230,53,0.05)", border: "1px solid rgba(163,230,53,0.1)", fontSize: 12, color: "#8a9a70", lineHeight: 1.6 }}>
-              <div style={{ fontWeight: 700, color: "#A3E635", marginBottom: 4 }}>💡 Slik fungerer det</div>
+            <div style={{ marginTop: 16, padding: 16, borderRadius: 14, background: "rgba(101,163,13,0.07)", border: "1px solid rgba(101,163,13,0.15)", fontSize: 12, color: "#4a5a38", lineHeight: 1.6 }}>
+              <div style={{ fontWeight: 700, color: "#4a8a10", marginBottom: 4 }}>💡 Slik fungerer det</div>
               Hver runde du spiller i ligaen gir poeng basert på din plassering blant alle som spilte den runden. Ved likt resultat deles poengene. Sesongen har 12 planlagte runder, men kun dine 8 beste teller — så du kan misse noen runder uten å tape for mye!
             </div>
           </div>
@@ -261,33 +261,33 @@ export default function DiscGolfLeague() {
       </div>
 
       {selectedPlayer && (
-        <div onClick={() => setSelectedPlayer(null)} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, maxHeight: "80vh", background: "linear-gradient(180deg, #1a2618, #111a11)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: 24, overflowY: "auto", animation: "slideUp 0.3s ease" }}>
+        <div onClick={() => setSelectedPlayer(null)} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, maxHeight: "80vh", background: "linear-gradient(180deg, #ffffff, #f0f9e8)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 24, overflowY: "auto", animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
-              <div style={{ width: 54, height: 54, borderRadius: "50%", background: "linear-gradient(135deg, rgba(163,230,53,0.2), rgba(163,230,53,0.05))", border: "2px solid rgba(163,230,53,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26 }}>{selectedPlayer.avatar}</div>
-              <div><div style={{ fontSize: 20, fontWeight: 800 }}>{selectedPlayer.name}</div><div style={{ fontSize: 12, color: "#6b7a58" }}>{selectedPlayer.division} divisjon</div></div>
+              <div style={{ width: 54, height: 54, borderRadius: "50%", background: "linear-gradient(135deg, rgba(101,163,13,0.2), rgba(101,163,13,0.06))", border: "2px solid rgba(101,163,13,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26 }}>{selectedPlayer.avatar}</div>
+              <div><div style={{ fontSize: 20, fontWeight: 800, color: "#1c2b12" }}>{selectedPlayer.name}</div><div style={{ fontSize: 12, color: "#6b7a58" }}>{selectedPlayer.division} divisjon</div></div>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginBottom: 20 }}>
               {[{ l: "Runder", v: selectedPlayer.rounds }, { l: "Beste", v: selectedPlayer.best }, { l: "Snitt", v: selectedPlayer.avg > 0 ? `+${selectedPlayer.avg}` : selectedPlayer.avg }, { l: "Poeng", v: selectedPlayer.pts }].map(s => (
-                <div key={s.l} style={{ background: "rgba(255,255,255,0.03)", borderRadius: 12, padding: "12px 8px", textAlign: "center", border: "1px solid rgba(255,255,255,0.05)" }}>
-                  <div style={{ fontSize: 18, fontWeight: 900, color: "#A3E635" }}>{s.v}</div>
+                <div key={s.l} style={{ background: "rgba(101,163,13,0.07)", borderRadius: 12, padding: "12px 8px", textAlign: "center", border: "1px solid rgba(101,163,13,0.12)" }}>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: "#4a8a10" }}>{s.v}</div>
                   <div style={{ fontSize: 9, color: "#6b7a58", textTransform: "uppercase", letterSpacing: "0.1em" }}>{s.l}</div>
                 </div>
               ))}
             </div>
-            <div style={{ marginBottom: 12, fontSize: 13, fontWeight: 700 }}>Poengutvikling</div>
-            <div style={{ background: "rgba(255,255,255,0.02)", borderRadius: 12, padding: 16, border: "1px solid rgba(255,255,255,0.05)" }}>
-              <Sparkline data={selectedPlayer.trend} color="#A3E635" />
+            <div style={{ marginBottom: 12, fontSize: 13, fontWeight: 700, color: "#1c2b12" }}>Poengutvikling</div>
+            <div style={{ background: "rgba(0,0,0,0.03)", borderRadius: 12, padding: 16, border: "1px solid rgba(0,0,0,0.06)" }}>
+              <Sparkline data={selectedPlayer.trend} color="#65A30D" />
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 10, color: "#6b7a58" }}><span>Runde 1</span><span>Runde {selectedPlayer.trend.length}</span></div>
             </div>
-            <button onClick={() => setSelectedPlayer(null)} style={{ width: "100%", padding: 14, border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, background: "transparent", color: "#e8e8e0", fontWeight: 700, fontSize: 14, cursor: "pointer", marginTop: 16 }}>Lukk</button>
+            <button onClick={() => setSelectedPlayer(null)} style={{ width: "100%", padding: 14, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#4a5a38", fontWeight: 700, fontSize: 14, cursor: "pointer", marginTop: 16 }}>Lukk</button>
           </div>
         </div>
       )}
 
       {showRegister && (
-        <div onClick={() => { setShowRegister(false); setRegSuccess(false); }} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, background: "linear-gradient(180deg, #1a2618, #111a11)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: 24, animation: "slideUp 0.3s ease" }}>
+        <div onClick={() => { setShowRegister(false); setRegSuccess(false); }} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, background: "linear-gradient(180deg, #ffffff, #f0f9e8)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 24, animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
             {regSuccess ? (
               <div style={{ textAlign: "center", padding: "30px 0" }}>
                 <div style={{ fontSize: 48, marginBottom: 12 }}>🎉</div>
@@ -296,26 +296,26 @@ export default function DiscGolfLeague() {
               </div>
             ) : (
               <>
-                <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 4 }}>Registrer runde</div>
+                <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 4, color: "#1c2b12" }}>Registrer runde</div>
                 <div style={{ fontSize: 12, color: "#6b7a58", marginBottom: 20 }}>Legg inn scoren din for å få ligapoeng</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                   <div>
-                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#8a9a70", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.1em" }}>Bane</label>
-                    <select value={regForm.course} onChange={e => setRegForm({ ...regForm, course: e.target.value })} style={{ width: "100%", padding: "12px 14px", borderRadius: 12, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#e8e8e0", fontSize: 14, outline: "none", appearance: "none", boxSizing: "border-box" }}>
+                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#5a7040", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.1em" }}>Bane</label>
+                    <select value={regForm.course} onChange={e => setRegForm({ ...regForm, course: e.target.value })} style={{ width: "100%", padding: "12px 14px", borderRadius: 12, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 14, outline: "none", appearance: "none", boxSizing: "border-box" }}>
                       <option value="">Velg bane...</option>
                       {COURSES.map(c => <option key={c.id} value={c.id}>{c.name} ({c.holes}h, par {c.par}) ★{c.rating}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#8a9a70", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.1em" }}>Score (mot par)</label>
-                    <input type="number" placeholder="f.eks. -3" value={regForm.score} onChange={e => setRegForm({ ...regForm, score: e.target.value })} style={{ width: "100%", padding: "12px 14px", borderRadius: 12, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#e8e8e0", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#5a7040", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.1em" }}>Score (mot par)</label>
+                    <input type="number" placeholder="f.eks. -3" value={regForm.score} onChange={e => setRegForm({ ...regForm, score: e.target.value })} style={{ width: "100%", padding: "12px 14px", borderRadius: 12, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
                   </div>
                   <div>
-                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#8a9a70", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.1em" }}>Dato</label>
-                    <input type="date" value={regForm.date} onChange={e => setRegForm({ ...regForm, date: e.target.value })} style={{ width: "100%", padding: "12px 14px", borderRadius: 12, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#e8e8e0", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#5a7040", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.1em" }}>Dato</label>
+                    <input type="date" value={regForm.date} onChange={e => setRegForm({ ...regForm, date: e.target.value })} style={{ width: "100%", padding: "12px 14px", borderRadius: 12, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
                   </div>
-                  <button onClick={(e) => { e.preventDefault(); setRegSuccess(true); setTimeout(() => { setRegSuccess(false); setShowRegister(false); setRegForm({ course: "", score: "", date: "" }); }, 2000); }} style={{ width: "100%", padding: 14, border: "none", borderRadius: 14, background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 24px rgba(163,230,53,0.25)", marginTop: 4 }}>Registrer 🥏</button>
-                  <button onClick={() => setShowRegister(false)} style={{ width: "100%", padding: 12, border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, background: "transparent", color: "#6b7a58", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Avbryt</button>
+                  <button onClick={(e) => { e.preventDefault(); setRegSuccess(true); setTimeout(() => { setRegSuccess(false); setShowRegister(false); setRegForm({ course: "", score: "", date: "" }); }, 2000); }} style={{ width: "100%", padding: 14, border: "none", borderRadius: 14, background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 24px rgba(101,163,13,0.25)", marginTop: 4 }}>Registrer 🥏</button>
+                  <button onClick={() => setShowRegister(false)} style={{ width: "100%", padding: 12, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#6b7a58", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Avbryt</button>
                 </div>
               </>
             )}
@@ -329,8 +329,8 @@ export default function DiscGolfLeague() {
         @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        select option { background: #1a2618; color: #e8e8e0; }
-        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); }
+        select option { background: #f0f9e8; color: #1c2b12; }
+        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.3); }
       `}</style>
     </div>
   );
