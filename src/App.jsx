@@ -1,4 +1,10 @@
 import { useState, useEffect } from "react";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
 
 const COURSES = [
   { id: "skogen", name: "Skogen Diskgolfbane", location: "Lillehammer", holes: 22, par: 63, rating: 4.2, ratings: 1496, difficulty: "Moderat / Veldig vanskelig", length: "3.4 km", time: "~2 timer", udisc: "https://udisc.com/courses/skogen-diskgolfbane-exZE", desc: "Teknisk krevende skogsbane med mye variasjon. To layouts: Hvit (viderekomne) og Gul (nybegynnervennlig). Driftet av Lillehammer Frisbee.", free: true, lat: 61.155, lng: 10.477 },
@@ -94,6 +100,7 @@ export default function DiscGolfLeague() {
   const [regSuccess, setRegSuccess] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   const [locationStatus, setLocationStatus] = useState("idle"); // idle | loading | done | denied
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     if (!showRegister || locationStatus !== "idle") return;
@@ -109,6 +116,23 @@ export default function DiscGolfLeague() {
       () => setLocationStatus("denied")
     );
   }, [showRegister]);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const signInWithGoogle = () => supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: "https://gudbrandsdalen-discgolf-liga.vercel.app" }
+  });
+
+  const signOut = () => supabase.auth.signOut();
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -138,7 +162,17 @@ export default function DiscGolfLeague() {
                 <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.02em", lineHeight: 1.1 }}>Discgolf Liga</div>
               </div>
             </div>
-            <div style={{ fontSize: 11, color: "#4a7a10", background: "rgba(101,163,13,0.1)", padding: "4px 10px", borderRadius: 20, border: "1px solid rgba(101,163,13,0.2)", fontWeight: 600 }}>Sesong: Vår 2026</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ fontSize: 11, color: "#4a7a10", background: "rgba(101,163,13,0.1)", padding: "4px 10px", borderRadius: 20, border: "1px solid rgba(101,163,13,0.2)", fontWeight: 600 }}>Sesong: Vår 2026</div>
+              {user ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  {user.user_metadata?.avatar_url && <img src={user.user_metadata.avatar_url} alt="" style={{ width: 28, height: 28, borderRadius: "50%", border: "2px solid rgba(101,163,13,0.4)" }} />}
+                  <button onClick={signOut} style={{ fontSize: 11, color: "#4a7a10", background: "rgba(101,163,13,0.1)", padding: "4px 10px", borderRadius: 20, border: "1px solid rgba(101,163,13,0.2)", cursor: "pointer", fontWeight: 600 }}>Logg ut</button>
+                </div>
+              ) : (
+                <button onClick={signInWithGoogle} style={{ fontSize: 11, color: "#fff", background: "linear-gradient(135deg, #65A30D, #4a7a0a)", padding: "5px 12px", borderRadius: 20, border: "none", cursor: "pointer", fontWeight: 700 }}>Logg inn</button>
+              )}
+            </div>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, margin: "16px 0" }}>
