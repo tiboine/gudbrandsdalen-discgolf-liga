@@ -93,6 +93,9 @@ export default function DiscGolfLeague() {
   const [players, setPlayers] = useState([]);
   const [regError, setRegError] = useState("");
   const [signupEmailSent, setSignupEmailSent] = useState(false);
+  const [courseSort, setCourseSort] = useState("avstand"); // avstand | populær | stjerner
+  const [roundFilter, setRoundFilter] = useState("alle"); // "alle" or course_id
+  const [regNote, setRegNote] = useState("");
 
   useEffect(() => {
     if (!showRegister || locationStatus !== "idle") return;
@@ -331,7 +334,7 @@ export default function DiscGolfLeague() {
                   const h = [100, 130, 80], m = ["🥈", "🥇", "🥉"], sz = [44, 56, 40];
                   return (
                     <div key={p.id} onClick={() => setSelectedPlayer(p)} style={{ textAlign: "center", cursor: "pointer", flex: 1, animation: `fadeSlideUp 0.5s ease ${i * 0.1}s both` }}>
-                      <div style={{ width: sz[i], height: sz[i], borderRadius: "50%", margin: "0 auto 6px", overflow: "hidden", background: i === 1 ? "linear-gradient(135deg, #A3E635, #65A30D)" : "rgba(255,255,255,0.8)", border: i === 1 ? "2px solid #65A30D" : "2px solid rgba(0,0,0,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: sz[i] * 0.45, boxShadow: i === 1 ? "0 4px 20px rgba(101,163,13,0.3)" : "0 2px 8px rgba(0,0,0,0.1)" }}>
+                      <div style={{ width: sz[i], height: sz[i], minWidth: sz[i], minHeight: sz[i], borderRadius: "50%", margin: "0 auto 6px", overflow: "hidden", background: i === 1 ? "linear-gradient(135deg, #A3E635, #65A30D)" : "rgba(255,255,255,0.8)", border: i === 1 ? "2px solid #65A30D" : "2px solid rgba(0,0,0,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: sz[i] * 0.45, boxShadow: i === 1 ? "0 4px 20px rgba(101,163,13,0.3)" : "0 2px 8px rgba(0,0,0,0.1)" }}>
                         {p.avatar?.startsWith("http") ? <img src={p.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (p.name?.[0] ?? "?")}
                       </div>
                       <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 2 }}>{p.name.split(" ")[0]}</div>
@@ -356,10 +359,10 @@ export default function DiscGolfLeague() {
                   onMouseLeave={e => e.currentTarget.style.background = i === 0 ? "rgba(101,163,13,0.06)" : "transparent"}>
                   <div style={{ fontSize: 13, fontWeight: 800, color: i < 3 ? "#4a8a10" : "#8a9a80" }}>{i + 1}</div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ width: 30, height: 30, borderRadius: "50%", overflow: "hidden", background: "rgba(101,163,13,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, border: "1px solid rgba(0,0,0,0.08)" }}>
+                    <div style={{ width: 30, height: 30, minWidth: 30, minHeight: 30, borderRadius: "50%", overflow: "hidden", background: "rgba(101,163,13,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, border: "1px solid rgba(0,0,0,0.08)", flexShrink: 0 }}>
                       {p.avatar?.startsWith("http") ? <img src={p.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (p.name?.[0] ?? "?")}
                     </div>
-                    <div><div style={{ fontSize: 13, fontWeight: 700 }}>{p.name}</div><div style={{ fontSize: 10, color: "#6b7a58" }}>{p.rounds} runder · {p.division}</div></div>
+                    <div style={{ minWidth: 0 }}><div style={{ fontSize: 13, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div><div style={{ fontSize: 10, color: "#6b7a58" }}>{p.rounds} runder · {p.division}</div></div>
                   </div>
                   <div style={{ textAlign: "right", fontSize: 13, fontWeight: 600, color: p.avg <= 0 ? "#4a8a10" : "#ef4444" }}>{p.avg > 0 ? "+" : ""}{p.avg}</div>
                   <div style={{ textAlign: "right", fontSize: 15, fontWeight: 900 }}>{p.pts}</div>
@@ -377,6 +380,15 @@ export default function DiscGolfLeague() {
               <div style={{ fontSize: 16, fontWeight: 800 }}>Siste runder</div>
               {realRounds.length > 0 && <div style={{ fontSize: 11, color: "#4a8a10", fontWeight: 600 }}>● Live</div>}
             </div>
+            {realRounds.length > 0 && (
+              <div style={{ display: "flex", gap: 6, marginBottom: 12, overflowX: "auto", paddingBottom: 4 }}>
+                <button onClick={() => setRoundFilter("alle")} style={{ padding: "5px 12px", border: "1px solid", borderColor: roundFilter === "alle" ? "#65A30D" : "rgba(0,0,0,0.1)", borderRadius: 20, background: roundFilter === "alle" ? "rgba(101,163,13,0.12)" : "rgba(255,255,255,0.6)", color: roundFilter === "alle" ? "#4a8a10" : "#6b7a58", fontSize: 11, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>Alle</button>
+                {[...new Set(realRounds.map(r => r.course_id))].map(cid => {
+                  const name = COURSES.find(c => c.id === cid)?.name || cid;
+                  return <button key={cid} onClick={() => setRoundFilter(cid)} style={{ padding: "5px 12px", border: "1px solid", borderColor: roundFilter === cid ? "#65A30D" : "rgba(0,0,0,0.1)", borderRadius: 20, background: roundFilter === cid ? "rgba(101,163,13,0.12)" : "rgba(255,255,255,0.6)", color: roundFilter === cid ? "#4a8a10" : "#6b7a58", fontSize: 11, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>{name.split(" ")[0]}</button>;
+                })}
+              </div>
+            )}
             {realRounds.length === 0 && (
               <div style={{ textAlign: "center", padding: "48px 20px", background: "rgba(255,255,255,0.6)", borderRadius: 16, border: "1px solid rgba(0,0,0,0.08)" }}>
                 <div style={{ fontSize: 40, marginBottom: 12 }}>📋</div>
@@ -384,7 +396,7 @@ export default function DiscGolfLeague() {
                 <div style={{ fontSize: 13, color: "#6b7a58" }}>Vær den første til å registrere en runde!</div>
               </div>
             )}
-            {realRounds.map((r, i) => (
+            {realRounds.filter(r => roundFilter === "alle" || r.course_id === roundFilter).map((r, i) => (
               <div key={r.id} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "14px 16px", marginBottom: 8, animation: `fadeSlideUp 0.4s ease ${i * 0.06}s both`, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 12, alignItems: "center" }}>
                   <div>
@@ -393,6 +405,7 @@ export default function DiscGolfLeague() {
                     <div style={{ fontSize: 11, color: "#8a9a70" }}>
                       {new Date(r.date + "T12:00:00").toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", year: "numeric" })}
                     </div>
+                    {r.note && <div style={{ fontSize: 11, color: "#5a7040", marginTop: 4, fontStyle: "italic", background: "rgba(101,163,13,0.06)", padding: "3px 8px", borderRadius: 6, display: "inline-block" }}>💬 {r.note}</div>}
                   </div>
                   <div style={{ textAlign: "right" }}>
                     <div style={{ fontSize: 22, fontWeight: 900, color: r.score <= 0 ? "#4a8a10" : "#ef4444", lineHeight: 1 }}>
@@ -407,6 +420,7 @@ export default function DiscGolfLeague() {
                       setEditRound(r);
                       const coursePar = COURSES.find(c => c.id === r.course_id)?.par ?? 0;
                       setRegForm({ course: r.course_id, score: r.total_score ? String(r.total_score) : String(r.score + coursePar), date: r.date });
+                      setRegNote(r.note || "");
                       setShowRegister(true);
                     }} style={{ flex: 1, padding: "6px 0", borderRadius: 8, border: "1px solid rgba(0,0,0,0.1)", background: "rgba(0,0,0,0.03)", color: "#4a5a38", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>✏️ Rediger</button>
                     <button onClick={async () => {
@@ -428,8 +442,25 @@ export default function DiscGolfLeague() {
               <div style={{ fontSize: 16, fontWeight: 800 }}>Baner i ligaen</div>
               <div style={{ fontSize: 11, color: "#6b7a58" }}>Data fra <span style={{ color: "#4a8a10", fontWeight: 700 }}>UDisc</span></div>
             </div>
-            {userLocation && <div style={{ fontSize: 11, color: "#4a8a10", marginBottom: 10, fontWeight: 600 }}>📍 Sortert etter avstand fra deg</div>}
-            {sortedCourses.map((c, i) => {
+            <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
+              {[
+                { id: "avstand", label: "📍 Avstand", disabled: !userLocation },
+                { id: "populær", label: "🔥 Populær" },
+                { id: "stjerner", label: "⭐ Rating" },
+              ].map(s => (
+                <button key={s.id} onClick={() => !s.disabled && setCourseSort(s.id)} style={{ padding: "6px 12px", border: "1px solid", borderColor: courseSort === s.id ? "#65A30D" : "rgba(0,0,0,0.1)", borderRadius: 20, background: courseSort === s.id ? "rgba(101,163,13,0.12)" : "rgba(255,255,255,0.6)", color: s.disabled ? "#b0b8a0" : courseSort === s.id ? "#4a8a10" : "#6b7a58", fontSize: 12, fontWeight: 600, cursor: s.disabled ? "default" : "pointer", opacity: s.disabled ? 0.5 : 1 }}>{s.label}</button>
+              ))}
+            </div>
+            {(() => {
+              const roundCounts = {};
+              realRounds.forEach(r => { roundCounts[r.course_id] = (roundCounts[r.course_id] || 0) + 1; });
+              let sorted;
+              if (courseSort === "populær") sorted = [...COURSES].sort((a, b) => (roundCounts[b.id] || 0) - (roundCounts[a.id] || 0));
+              else if (courseSort === "stjerner") sorted = [...COURSES].sort((a, b) => b.rating - a.rating);
+              else sorted = userLocation ? [...COURSES].sort((a, b) => getDistance(userLocation.lat, userLocation.lng, a.lat, a.lng) - getDistance(userLocation.lat, userLocation.lng, b.lat, b.lng)) : COURSES;
+              return sorted;
+            })().map((c, i) => {
+              const roundCount = realRounds.filter(r => r.course_id === c.id).length;
               const dist = userLocation ? getDistance(userLocation.lat, userLocation.lng, c.lat, c.lng) : null;
               return (
               <div key={c.id} onClick={() => setSelectedCourse(selectedCourse?.id === c.id ? null : c)} style={{ background: selectedCourse?.id === c.id ? "rgba(101,163,13,0.08)" : "rgba(255,255,255,0.75)", border: selectedCourse?.id === c.id ? "1px solid rgba(101,163,13,0.25)" : "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "16px", cursor: "pointer", transition: "all 0.2s", marginBottom: 10, animation: `fadeSlideUp 0.4s ease ${i * 0.05}s both`, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
@@ -443,6 +474,7 @@ export default function DiscGolfLeague() {
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
                     <div style={{ padding: "4px 10px", borderRadius: 10, background: "rgba(101,163,13,0.1)", border: "1px solid rgba(101,163,13,0.2)", fontSize: 11, fontWeight: 700, color: "#4a8a10" }}>{c.holes} hull</div>
                     <div style={{ fontSize: 10, color: "#6b7a58" }}>Par {c.par}</div>
+                    {roundCount > 0 && <div style={{ fontSize: 10, color: "#4a8a10", fontWeight: 700 }}>🥏 {roundCount} runder</div>}
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -692,7 +724,39 @@ export default function DiscGolfLeague() {
                       <label style={{ fontSize: 11, fontWeight: 700, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em" }}>Dato</label>
                       <button onClick={() => setRegForm({ ...regForm, date: today })} style={{ fontSize: 11, fontWeight: 700, color: regForm.date === today ? "#4a8a10" : "#6b7a58", background: regForm.date === today ? "rgba(101,163,13,0.12)" : "rgba(0,0,0,0.05)", border: "1px solid", borderColor: regForm.date === today ? "rgba(101,163,13,0.3)" : "rgba(0,0,0,0.1)", borderRadius: 8, padding: "3px 10px", cursor: "pointer" }}>I dag</button>
                     </div>
-                    <input lang="nb-NO" type="date" value={regForm.date} onChange={e => setRegForm({ ...regForm, date: e.target.value })} style={{ width: "100%", padding: "12px 14px", borderRadius: 12, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+                    {(() => {
+                      const [y, m, d] = (regForm.date || "----").split("-");
+                      const setDatePart = (part, val) => {
+                        const parts = { y: y || "", m: m || "", d: d || "" };
+                        parts[part] = val;
+                        if (parts.y && parts.m && parts.d) setRegForm({ ...regForm, date: `${parts.y}-${parts.m}-${parts.d}` });
+                        else setRegForm({ ...regForm, date: `${parts.y || "----"}-${parts.m || "--"}-${parts.d || "--"}` });
+                      };
+                      const months = ["Januar","Februar","Mars","April","Mai","Juni","Juli","August","September","Oktober","November","Desember"];
+                      const daysInMonth = (parts_m, parts_y) => new Date(parseInt(parts_y) || 2026, parseInt(parts_m) || 1, 0).getDate();
+                      const maxD = daysInMonth(m, y);
+                      const selStyle = { padding: "10px 8px", borderRadius: 10, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 14, outline: "none", appearance: "none", cursor: "pointer" };
+                      return (
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr 1.2fr", gap: 8 }}>
+                          <select value={d || ""} onChange={e => setDatePart("d", e.target.value)} style={selStyle}>
+                            <option value="">Dag</option>
+                            {Array.from({ length: maxD }, (_, i) => i + 1).map(v => <option key={v} value={String(v).padStart(2, "0")}>{v}.</option>)}
+                          </select>
+                          <select value={m || ""} onChange={e => setDatePart("m", e.target.value)} style={selStyle}>
+                            <option value="">Måned</option>
+                            {months.map((name, i) => <option key={i} value={String(i + 1).padStart(2, "0")}>{name}</option>)}
+                          </select>
+                          <select value={y || ""} onChange={e => setDatePart("y", e.target.value)} style={selStyle}>
+                            <option value="">År</option>
+                            {[2026, 2025].map(v => <option key={v} value={String(v)}>{v}</option>)}
+                          </select>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#5a7040", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.1em" }}>Notat <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(valgfritt)</span></label>
+                    <input type="text" placeholder="f.eks. Vind, vått, ny personlig rekord!" value={regNote} onChange={e => setRegNote(e.target.value)} maxLength={100} style={{ width: "100%", padding: "10px 14px", borderRadius: 12, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
                   </div>
                   {regError && <div style={{ fontSize: 12, color: "#dc2626", background: "rgba(239,68,68,0.08)", padding: "8px 12px", borderRadius: 8, border: "1px solid rgba(239,68,68,0.2)" }}>{regError}</div>}
                   <button onClick={async (e) => {
@@ -716,6 +780,7 @@ export default function DiscGolfLeague() {
                           score: vsPar,
                           total_score: totalScore,
                           date: regForm.date,
+                          note: regNote || null,
                         }).eq("id", editRound.id);
                       } else {
                         await supabase.from("rounds").insert({
@@ -725,6 +790,7 @@ export default function DiscGolfLeague() {
                           score: vsPar,
                           total_score: totalScore,
                           date: regForm.date,
+                          note: regNote || null,
                         });
                       }
                       await loadRounds();
@@ -733,7 +799,7 @@ export default function DiscGolfLeague() {
                     }
                     setEditRound(null);
                     setRegSuccess(true);
-                    setTimeout(() => { setRegSuccess(false); setShowRegister(false); setRegForm({ course: "", score: "", date: "" }); setEditRound(null); setRegError(""); }, 2000);
+                    setTimeout(() => { setRegSuccess(false); setShowRegister(false); setRegForm({ course: "", score: "", date: "" }); setEditRound(null); setRegError(""); setRegNote(""); }, 2000);
                   }} style={{ width: "100%", padding: 14, border: "none", borderRadius: 14, background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 24px rgba(101,163,13,0.25)", marginTop: 4 }}>{editRound ? "Lagre endring ✓" : "Registrer 🥏"}</button>
                   <button onClick={() => { setShowRegister(false); setEditRound(null); setRegError(""); }} style={{ width: "100%", padding: 12, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#6b7a58", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Avbryt</button>
                 </div>
@@ -843,7 +909,23 @@ export default function DiscGolfLeague() {
                       </div>
                     ))}
                   </div>
-                  {myRounds.length === 0 && <div style={{ marginTop: 10, fontSize: 11, color: "#8a9a70", textAlign: "center", fontStyle: "italic" }}>Registrer din første runde for å se statistikk 🚀</div>}
+                  {/* Sesongframgang */}
+                  <div style={{ marginTop: 12 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: "#5a7040" }}>Sesongframgang</div>
+                      <div style={{ fontSize: 11, color: "#6b7a58" }}>{Math.min(myRounds.length, 8)}/8 tellende runder</div>
+                    </div>
+                    <div style={{ height: 8, borderRadius: 4, background: "rgba(0,0,0,0.06)", overflow: "hidden" }}>
+                      <div style={{ height: "100%", borderRadius: 4, background: "linear-gradient(90deg, #A3E635, #65A30D)", width: `${Math.min(myRounds.length / 8, 1) * 100}%`, transition: "width 0.5s ease" }} />
+                    </div>
+                    <div style={{ fontSize: 10, color: "#8a9a70", marginTop: 4 }}>
+                      {myRounds.length === 0 ? "Spill din første runde! 🚀" :
+                       myRounds.length < 8 ? `${8 - myRounds.length} runder igjen for å fullføre sesongen` :
+                       myRounds.length < 12 ? `✅ Minimum oppnådd! ${12 - myRounds.length} runder igjen av sesongen` :
+                       "🏆 Alle 12 runder spilt!"}
+                    </div>
+                  </div>
+              {myRounds.length === 0 && <div style={{ marginTop: 10, fontSize: 11, color: "#8a9a70", textAlign: "center", fontStyle: "italic" }}>Registrer din første runde for å se statistikk 🚀</div>}
                 </div>
               );
             })()}
