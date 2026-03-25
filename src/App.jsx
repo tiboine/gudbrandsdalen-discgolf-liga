@@ -105,6 +105,11 @@ export default function DiscGolfLeague() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [pendingInvites, setPendingInvites] = useState([]);
   const [coPlayerSearch, setCoPlayerSearch] = useState("");
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [showInstallTip, setShowInstallTip] = useState(false);
+  const [onboardingDismissed, setOnboardingDismissed] = useState(() => {
+    try { return localStorage.getItem("onboardingDismissed") === "true"; } catch { return false; }
+  });
 
   useEffect(() => {
     if (!showRegister || locationStatus !== "idle") return;
@@ -268,6 +273,13 @@ export default function DiscGolfLeague() {
       pos => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
       () => {}
     );
+    // PWA install prompt
+    const handler = (e) => { e.preventDefault(); setDeferredPrompt(e); };
+    window.addEventListener("beforeinstallprompt", handler);
+    // Show install tip after 5 seconds if not already installed
+    const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
+    if (!isStandalone) setTimeout(() => setShowInstallTip(true), 5000);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
   }, []);
 
   const signOut = () => supabase.auth.signOut();
@@ -299,28 +311,27 @@ export default function DiscGolfLeague() {
               <div>
                 <div style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: "#5a9e0f", fontWeight: 700 }}>Gudbrandsdalen</div>
                 <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.02em", lineHeight: 1.1 }}>Discgolf Liga</div>
+                <div style={{ fontSize: 10, color: "#6b7a58", fontWeight: 600, marginTop: 2 }}>Sesong: Vår 2026</div>
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ fontSize: 11, color: "#4a7a10", background: "rgba(101,163,13,0.1)", padding: "4px 10px", borderRadius: 20, border: "1px solid rgba(101,163,13,0.2)", fontWeight: 600 }}>Sesong: Vår 2026</div>
               {user ? (
                 <>
-                <button onClick={() => { setShowNotifications(true); loadNotifications(); loadPendingInvites(); }} style={{ position: "relative", background: "rgba(101,163,13,0.1)", border: "1px solid rgba(101,163,13,0.25)", borderRadius: "50%", width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16 }}>
+                <button onClick={() => { setShowNotifications(true); loadNotifications(); loadPendingInvites(); }} style={{ position: "relative", background: "rgba(101,163,13,0.1)", border: "1px solid rgba(101,163,13,0.25)", borderRadius: "50%", width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16 }}>
                   🔔
                   {(notifications.filter(n => !n.read).length + pendingInvites.length) > 0 && (
                     <div style={{ position: "absolute", top: -2, right: -2, width: 16, height: 16, borderRadius: "50%", background: "#ef4444", color: "#fff", fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{notifications.filter(n => !n.read).length + pendingInvites.length}</div>
                   )}
                 </button>
-                <button onClick={() => setShowProfile(true)} style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(101,163,13,0.1)", border: "1px solid rgba(101,163,13,0.25)", borderRadius: 20, padding: "4px 10px 4px 4px", cursor: "pointer" }}>
+                <button onClick={() => setShowProfile(true)} style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(101,163,13,0.1)", border: "1px solid rgba(101,163,13,0.25)", borderRadius: "50%", width: 34, height: 34, cursor: "pointer", overflow: "hidden", padding: 0 }}>
                   {user.user_metadata?.avatar_url
-                    ? <img src={user.user_metadata.avatar_url} alt="" style={{ width: 24, height: 24, borderRadius: "50%", border: "1px solid rgba(101,163,13,0.4)" }} />
-                    : <div style={{ width: 24, height: 24, borderRadius: "50%", background: "linear-gradient(135deg, #A3E635, #65A30D)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: "#0a0f0a", fontWeight: 800 }}>{user.user_metadata?.full_name?.[0] ?? "?"}</div>
+                    ? <img src={user.user_metadata.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    : <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #A3E635, #65A30D)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "#0a0f0a", fontWeight: 800 }}>{user.user_metadata?.full_name?.[0] ?? "?"}</div>
                   }
-                  <span style={{ fontSize: 11, fontWeight: 700, color: "#4a7a10" }}>{user.user_metadata?.full_name?.split(" ")[0] ?? "Profil"}</span>
                 </button>
                 </>
               ) : (
-                <button onClick={() => { setShowAuth(true); setAuthMode("login"); }} style={{ fontSize: 11, color: "#fff", background: "linear-gradient(135deg, #65A30D, #4a7a0a)", padding: "5px 12px", borderRadius: 20, border: "none", cursor: "pointer", fontWeight: 700 }}>Logg inn</button>
+                <button onClick={() => { setShowAuth(true); setAuthMode("login"); }} style={{ fontSize: 12, color: "#fff", background: "linear-gradient(135deg, #65A30D, #4a7a0a)", padding: "8px 16px", borderRadius: 20, border: "none", cursor: "pointer", fontWeight: 700 }}>Logg inn</button>
               )}
             </div>
           </div>
@@ -1035,6 +1046,12 @@ export default function DiscGolfLeague() {
               );
             })()}
 
+            {/* Tip */}
+            <div style={{ background: "rgba(0,0,0,0.03)", borderRadius: 10, padding: "10px 12px", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 14 }}>💡</span>
+              <span style={{ fontSize: 11, color: "#6b7a58", lineHeight: 1.5 }}>Trykk på profilbildet ditt øverst til høyre for å komme hit igjen</span>
+            </div>
+
             {/* Handlinger */}
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               <button onClick={() => { setShowProfile(false); }} style={{ width: "100%", padding: 13, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#4a5a38", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Lukk</button>
@@ -1105,6 +1122,42 @@ export default function DiscGolfLeague() {
               }
             }} style={{ width: "100%", padding: 10, border: "none", borderRadius: 10, background: "rgba(0,0,0,0.04)", color: "#6b7a58", fontWeight: 600, fontSize: 12, cursor: "pointer", marginTop: 8 }}>Merk alle som lest</button>
             <button onClick={() => setShowNotifications(false)} style={{ width: "100%", padding: 13, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#4a5a38", fontWeight: 700, fontSize: 14, cursor: "pointer", marginTop: 8 }}>Lukk</button>
+          </div>
+        </div>
+      )}
+
+      {/* Floating onboarding bar for logged-out users */}
+      {!user && !onboardingDismissed && (
+        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 90, padding: "0 12px 12px", animation: "slideUp 0.4s ease 1s both" }}>
+          <div style={{ maxWidth: 500, margin: "0 auto", background: "linear-gradient(135deg, #1c3a0a, #2a4a16)", borderRadius: 16, padding: "14px 16px", boxShadow: "0 -4px 30px rgba(0,0,0,0.3)", display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ fontSize: 28, flexShrink: 0 }}>🥏</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#e8e8e0", marginBottom: 2 }}>Bli med i ligaen!</div>
+              <div style={{ fontSize: 11, color: "#a0b090", lineHeight: 1.4 }}>Opprett konto for å registrere runder og klatre på tabellen</div>
+            </div>
+            <button onClick={() => { setShowAuth(true); setAuthMode("signup"); }} style={{ padding: "8px 16px", borderRadius: 12, border: "none", background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 800, fontSize: 12, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>Registrer deg</button>
+            <button onClick={() => { setOnboardingDismissed(true); localStorage.setItem("onboardingDismissed", "true"); }} style={{ background: "none", border: "none", color: "#6b7a58", fontSize: 18, cursor: "pointer", padding: "0 4px", flexShrink: 0, lineHeight: 1 }}>×</button>
+          </div>
+        </div>
+      )}
+
+      {/* PWA install tooltip */}
+      {showInstallTip && !window.matchMedia("(display-mode: standalone)").matches && (
+        <div style={{ position: "fixed", bottom: !user && !onboardingDismissed ? 80 : 16, right: 16, zIndex: 85, animation: "slideUp 0.3s ease", maxWidth: 280 }}>
+          <div style={{ background: "#fff", borderRadius: 14, padding: "12px 14px", boxShadow: "0 4px 24px rgba(0,0,0,0.15)", border: "1px solid rgba(0,0,0,0.08)" }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+              <div style={{ fontSize: 22, flexShrink: 0 }}>📲</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#1c2b12", marginBottom: 4 }}>Installer som app!</div>
+                <div style={{ fontSize: 11, color: "#4a5a38", lineHeight: 1.5 }}>
+                  {deferredPrompt ? "Trykk \"Installer\" for rask tilgang fra hjemskjermen." : /iPhone|iPad/.test(navigator.userAgent) ? "Trykk Del-ikon → «Legg til på Hjem-skjerm»" : "Trykk ⋮ i nettleseren → «Installer app» eller «Legg til på startskjermen»"}
+                </div>
+              </div>
+              <button onClick={() => setShowInstallTip(false)} style={{ background: "none", border: "none", color: "#8a9a70", fontSize: 16, cursor: "pointer", padding: 0, lineHeight: 1 }}>×</button>
+            </div>
+            {deferredPrompt && (
+              <button onClick={async () => { deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; if (outcome === "accepted") setDeferredPrompt(null); setShowInstallTip(false); }} style={{ width: "100%", padding: "8px 0", marginTop: 10, borderRadius: 10, border: "none", background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>Installer</button>
+            )}
           </div>
         </div>
       )}
