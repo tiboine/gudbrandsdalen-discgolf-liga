@@ -150,6 +150,10 @@ export default function DiscGolfLeague() {
   const [onboardingDismissed, setOnboardingDismissed] = useState(() => {
     try { return localStorage.getItem("onboardingDismissed") === "true"; } catch { return false; }
   });
+  const [cookieConsent, setCookieConsent] = useState(() => {
+    try { return localStorage.getItem("cookieConsent"); } catch { return null; }
+  });
+  const [showPrivacy, setShowPrivacy] = useState(false);
 
   useEffect(() => {
     if (!showRegister || locationStatus !== "idle") return;
@@ -1262,6 +1266,55 @@ export default function DiscGolfLeague() {
             {deferredPrompt && (
               <button onClick={async () => { deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; if (outcome === "accepted") setDeferredPrompt(null); setShowInstallTip(false); }} style={{ width: "100%", padding: "8px 0", marginTop: 10, borderRadius: 10, border: "none", background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>Installer</button>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Personvernerklæring */}
+      {showPrivacy && (
+        <div onClick={() => setShowPrivacy(false)} style={{ position: "fixed", inset: 0, zIndex: 210, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, maxHeight: "80vh", background: "#fff", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 24, overflowY: "auto", animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: "#1c2b12", marginBottom: 16 }}>🔒 Personvernerklæring</div>
+            {[
+              { title: "Hvem er vi?", text: "Gudbrandsdalen Discgolf Liga er en uavhengig ligaapp for lokale discgolfspillere i Gudbrandsdalen. Appen driftes på frivillig basis." },
+              { title: "Hvilke data samler vi?", text: "Ved registrering lagrer vi: navn, e-postadresse og eventuelt profilbilde (fra Google). Ved bruk lagrer vi: runder du registrerer (bane, score, dato) og divisjonsvalg." },
+              { title: "Hvorfor samler vi data?", text: "For å kunne vise ligatabell, statistikk og poengberegning. Dataene brukes kun til å drifte ligaen." },
+              { title: "Informasjonskapsler", text: "Vi bruker kun nødvendige informasjonskapsler for innlogging (Supabase auth-token) og brukerpreferanser (f.eks. cookie-samtykke). Vi bruker ingen sporings- eller analysecookies." },
+              { title: "Deling med tredjeparter", text: "Vi deler ikke dine data med noen tredjeparter. Autentisering håndteres av Supabase (EU-basert) og Google (ved Google-innlogging)." },
+              { title: "Dine rettigheter", text: "Du kan når som helst: se dine data i profilen, slette dine runder, eller be om sletting av hele kontoen ved å kontakte oss." },
+              { title: "Lagring", text: "Data lagres i Supabase (PostgreSQL) på servere i EU. Data slettes ved forespørsel." },
+            ].map((s, i) => (
+              <div key={i} style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12", marginBottom: 2 }}>{s.title}</div>
+                <div style={{ fontSize: 12, color: "#4a5a38", lineHeight: 1.6 }}>{s.text}</div>
+              </div>
+            ))}
+            <div style={{ fontSize: 10, color: "#8a9a70", marginBottom: 16 }}>Sist oppdatert: 25. mars 2026</div>
+            <button onClick={() => setShowPrivacy(false)} style={{ width: "100%", padding: 13, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#4a5a38", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Lukk</button>
+          </div>
+        </div>
+      )}
+
+      {/* GDPR Cookie Banner */}
+      {!cookieConsent && (
+        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 200, animation: "slideUp 0.4s ease 0.5s both" }}>
+          <div style={{ maxWidth: 500, margin: "0 auto 12px", borderRadius: 16, background: "#fff", border: "1px solid rgba(0,0,0,0.1)", padding: "16px 18px", boxShadow: "0 -4px 30px rgba(0,0,0,0.15)", marginLeft: 12, marginRight: 12 }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>
+              <div style={{ fontSize: 22, flexShrink: 0, marginTop: 2 }}>🍪</div>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#1c2b12", marginBottom: 4 }}>Vi bruker informasjonskapsler</div>
+                <div style={{ fontSize: 12, color: "#4a5a38", lineHeight: 1.6 }}>
+                  Vi bruker nødvendige informasjonskapsler for innlogging og app-funksjonalitet. Vi lagrer ingen sporingsdata eller deler informasjon med tredjeparter.
+                </div>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => { setCookieConsent("accepted"); localStorage.setItem("cookieConsent", "accepted"); }} style={{ flex: 1, padding: "10px 0", borderRadius: 12, border: "none", background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>Godta</button>
+              <button onClick={() => { setCookieConsent("necessary"); localStorage.setItem("cookieConsent", "necessary"); }} style={{ flex: 1, padding: "10px 0", borderRadius: 12, border: "1px solid rgba(0,0,0,0.1)", background: "rgba(0,0,0,0.03)", color: "#4a5a38", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Kun nødvendige</button>
+            </div>
+            <div style={{ fontSize: 10, color: "#8a9a70", marginTop: 8, textAlign: "center", lineHeight: 1.5 }}>
+              Les mer i vår <button onClick={() => setShowPrivacy(true)} style={{ background: "none", border: "none", color: "#4a8a10", fontWeight: 700, cursor: "pointer", fontSize: 10, textDecoration: "underline", padding: 0 }}>personvernerklæring</button>
+            </div>
           </div>
         </div>
       )}
