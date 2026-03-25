@@ -89,6 +89,7 @@ export default function DiscGolfLeague() {
   const [authLoading, setAuthLoading] = useState(false);
   const [realRounds, setRealRounds] = useState([]);
   const [roundsLoading, setRoundsLoading] = useState(false);
+  const [editRound, setEditRound] = useState(null); // null or round object being edited
   const [players, setPlayers] = useState([]);
 
   useEffect(() => {
@@ -115,6 +116,12 @@ export default function DiscGolfLeague() {
     });
     return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("profiles").select("division").eq("id", user.id).single()
+      .then(({ data }) => { if (data?.division) setUserDivision(data.division); });
+  }, [user]);
 
   const signInWithGoogle = () => supabase.auth.signInWithOAuth({
     provider: "google",
@@ -230,7 +237,7 @@ export default function DiscGolfLeague() {
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, margin: "16px 0" }}>
-            {[{ label: "Spillere", value: 10, icon: "👥" }, { label: "Runder spilt", value: 97, icon: "🥏" }, { label: "Baner", value: 12, icon: "🗺️" }].map(s => (
+            {[{ label: "Spillere", value: players.length, icon: "👥" }, { label: "Runder spilt", value: realRounds.length, icon: "🥏" }, { label: "Baner", value: COURSES.length, icon: "🗺️" }].map(s => (
               <div key={s.label} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "12px 10px", textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
                 <div style={{ fontSize: 13, marginBottom: 2 }}>{s.icon}</div>
                 <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.1 }}><AnimNum value={s.value} /></div>
@@ -330,17 +337,34 @@ export default function DiscGolfLeague() {
               </div>
             )}
             {realRounds.map((r, i) => (
-              <div key={r.id} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "14px 16px", display: "grid", gridTemplateColumns: "1fr auto", gap: 12, alignItems: "center", marginBottom: 8, animation: `fadeSlideUp 0.4s ease ${i * 0.06}s both`, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 2 }}>{r.profiles?.full_name ?? "Ukjent spiller"}</div>
-                  <div style={{ fontSize: 11, color: "#6b7a58", marginBottom: 4 }}>{r.course_name}</div>
-                  <div style={{ fontSize: 11, color: "#8a9a70" }}>
-                    {new Date(r.date + "T12:00:00").toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", year: "numeric" })}
+              <div key={r.id} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "14px 16px", marginBottom: 8, animation: `fadeSlideUp 0.4s ease ${i * 0.06}s both`, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 12, alignItems: "center" }}>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 2 }}>{r.profiles?.full_name ?? "Ukjent spiller"}</div>
+                    <div style={{ fontSize: 11, color: "#6b7a58", marginBottom: 4 }}>{r.course_name}</div>
+                    <div style={{ fontSize: 11, color: "#8a9a70" }}>
+                      {new Date(r.date + "T12:00:00").toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontSize: 22, fontWeight: 900, color: r.score <= 0 ? "#4a8a10" : "#ef4444", lineHeight: 1 }}>{r.score > 0 ? "+" : ""}{r.score}</div>
                   </div>
                 </div>
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 22, fontWeight: 900, color: r.score <= 0 ? "#4a8a10" : "#ef4444", lineHeight: 1 }}>{r.score > 0 ? "+" : ""}{r.score}</div>
-                </div>
+                {user && r.user_id === user.id && (
+                  <div style={{ display: "flex", gap: 6, marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(0,0,0,0.06)" }}>
+                    <button onClick={() => {
+                      setEditRound(r);
+                      setRegForm({ course: r.course_id, score: String(r.score), date: r.date });
+                      setShowRegister(true);
+                    }} style={{ flex: 1, padding: "6px 0", borderRadius: 8, border: "1px solid rgba(0,0,0,0.1)", background: "rgba(0,0,0,0.03)", color: "#4a5a38", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>✏️ Rediger</button>
+                    <button onClick={async () => {
+                      if (!confirm("Sikker på at du vil slette denne runden?")) return;
+                      await supabase.from("rounds").delete().eq("id", r.id);
+                      await loadRounds();
+                      await loadPlayers();
+                    }} style={{ flex: 1, padding: "6px 0", borderRadius: 8, border: "1px solid rgba(239,68,68,0.2)", background: "rgba(239,68,68,0.05)", color: "#dc2626", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>🗑️ Slett</button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -515,7 +539,7 @@ export default function DiscGolfLeague() {
       )}
 
       {showRegister && (
-        <div onClick={() => { setShowRegister(false); setRegSuccess(false); setLocationStatus("idle"); setUserLocation(null); }} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
+        <div onClick={() => { setShowRegister(false); setRegSuccess(false); setLocationStatus("idle"); setUserLocation(null); setEditRound(null); }} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
           <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, background: "linear-gradient(180deg, #ffffff, #f0f9e8)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 24, animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
             {regSuccess ? (
               <div style={{ textAlign: "center", padding: "30px 0" }}>
@@ -525,8 +549,8 @@ export default function DiscGolfLeague() {
               </div>
             ) : (
               <>
-                <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 4, color: "#1c2b12" }}>Registrer runde</div>
-                <div style={{ fontSize: 12, color: "#6b7a58", marginBottom: 20 }}>Legg inn scoren din for å få ligapoeng</div>
+                <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 4, color: "#1c2b12" }}>{editRound ? "Rediger runde" : "Registrer runde"}</div>
+                <div style={{ fontSize: 12, color: "#6b7a58", marginBottom: 20 }}>{editRound ? "Korriger scoren din" : "Legg inn scoren din for å få ligapoeng"}</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                   <div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
@@ -562,20 +586,31 @@ export default function DiscGolfLeague() {
                     if (user) {
                       setRoundsLoading(true);
                       const course = COURSES.find(c => c.id === regForm.course);
-                      await supabase.from("rounds").insert({
-                        user_id: user.id,
-                        course_id: regForm.course,
-                        course_name: course?.name ?? regForm.course,
-                        score: parseInt(regForm.score),
-                        date: regForm.date,
-                      });
+                      if (editRound) {
+                        await supabase.from("rounds").update({
+                          course_id: regForm.course,
+                          course_name: course?.name ?? regForm.course,
+                          score: parseInt(regForm.score),
+                          date: regForm.date,
+                        }).eq("id", editRound.id);
+                      } else {
+                        await supabase.from("rounds").insert({
+                          user_id: user.id,
+                          course_id: regForm.course,
+                          course_name: course?.name ?? regForm.course,
+                          score: parseInt(regForm.score),
+                          date: regForm.date,
+                        });
+                      }
                       await loadRounds();
+                      await loadPlayers();
                       setRoundsLoading(false);
                     }
+                    setEditRound(null);
                     setRegSuccess(true);
-                    setTimeout(() => { setRegSuccess(false); setShowRegister(false); setRegForm({ course: "", score: "", date: "" }); }, 2000);
-                  }} style={{ width: "100%", padding: 14, border: "none", borderRadius: 14, background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 24px rgba(101,163,13,0.25)", marginTop: 4 }}>Registrer 🥏</button>
-                  <button onClick={() => setShowRegister(false)} style={{ width: "100%", padding: 12, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#6b7a58", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Avbryt</button>
+                    setTimeout(() => { setRegSuccess(false); setShowRegister(false); setRegForm({ course: "", score: "", date: "" }); setEditRound(null); }, 2000);
+                  }} style={{ width: "100%", padding: 14, border: "none", borderRadius: 14, background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 24px rgba(101,163,13,0.25)", marginTop: 4 }}>{editRound ? "Lagre endring ✓" : "Registrer 🥏"}</button>
+                  <button onClick={() => { setShowRegister(false); setEditRound(null); }} style={{ width: "100%", padding: 12, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#6b7a58", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Avbryt</button>
                 </div>
               </>
             )}
@@ -641,25 +676,41 @@ export default function DiscGolfLeague() {
               <div style={{ fontSize: 11, fontWeight: 700, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Divisjon</div>
               <div style={{ display: "flex", gap: 8 }}>
                 {["Åpen", "Rekreasjons"].map(d => (
-                  <button key={d} onClick={() => setUserDivision(d)} style={{ flex: 1, padding: "10px 0", borderRadius: 12, border: "1px solid", borderColor: userDivision === d ? "rgba(101,163,13,0.4)" : "rgba(0,0,0,0.1)", background: userDivision === d ? "rgba(101,163,13,0.12)" : "rgba(0,0,0,0.03)", color: userDivision === d ? "#4a8a10" : "#6b7a58", fontWeight: userDivision === d ? 700 : 500, fontSize: 13, cursor: "pointer", transition: "all 0.2s" }}>{d}</button>
+                  <button key={d} onClick={async () => {
+                    setUserDivision(d);
+                    await supabase.from("profiles").update({ division: d }).eq("id", user.id);
+                    loadPlayers();
+                  }} style={{ flex: 1, padding: "10px 0", borderRadius: 12, border: "1px solid", borderColor: userDivision === d ? "rgba(101,163,13,0.4)" : "rgba(0,0,0,0.1)", background: userDivision === d ? "rgba(101,163,13,0.12)" : "rgba(0,0,0,0.03)", color: userDivision === d ? "#4a8a10" : "#6b7a58", fontWeight: userDivision === d ? 700 : 500, fontSize: 13, cursor: "pointer", transition: "all 0.2s" }}>{d}</button>
                 ))}
               </div>
             </div>
 
-            {/* Sesong-stats placeholder */}
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Min sesong · Vår 2026</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-                {[{ label: "Runder", value: "—", icon: "🥏" }, { label: "Beste score", value: "—", icon: "🎯" }, { label: "Ligapoeng", value: "—", icon: "🏆" }].map(s => (
-                  <div key={s.label} style={{ background: "rgba(101,163,13,0.07)", border: "1px solid rgba(101,163,13,0.12)", borderRadius: 12, padding: "12px 8px", textAlign: "center" }}>
-                    <div style={{ fontSize: 16, marginBottom: 4 }}>{s.icon}</div>
-                    <div style={{ fontSize: 20, fontWeight: 900, color: "#4a8a10" }}>{s.value}</div>
-                    <div style={{ fontSize: 9, color: "#6b7a58", textTransform: "uppercase", letterSpacing: "0.1em" }}>{s.label}</div>
+            {/* Sesong-stats — real data */}
+            {(() => {
+              const myRounds = realRounds.filter(r => r.user_id === user.id);
+              const myScores = myRounds.map(r => r.score);
+              const myPlayer = players.find(p => p.id === user.id);
+              const bestScore = myScores.length ? Math.min(...myScores) : null;
+              return (
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Min sesong · Vår 2026</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                    {[
+                      { label: "Runder", value: myRounds.length || "—", icon: "🥏" },
+                      { label: "Beste score", value: bestScore !== null ? (bestScore > 0 ? `+${bestScore}` : bestScore) : "—", icon: "🎯" },
+                      { label: "Ligapoeng", value: myPlayer?.pts ?? "—", icon: "🏆" },
+                    ].map(s => (
+                      <div key={s.label} style={{ background: "rgba(101,163,13,0.07)", border: "1px solid rgba(101,163,13,0.12)", borderRadius: 12, padding: "12px 8px", textAlign: "center" }}>
+                        <div style={{ fontSize: 16, marginBottom: 4 }}>{s.icon}</div>
+                        <div style={{ fontSize: 20, fontWeight: 900, color: "#4a8a10" }}>{s.value}</div>
+                        <div style={{ fontSize: 9, color: "#6b7a58", textTransform: "uppercase", letterSpacing: "0.1em" }}>{s.label}</div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-              <div style={{ marginTop: 10, fontSize: 11, color: "#8a9a70", textAlign: "center", fontStyle: "italic" }}>Statistikk vises når du registrerer runder 🚀</div>
-            </div>
+                  {myRounds.length === 0 && <div style={{ marginTop: 10, fontSize: 11, color: "#8a9a70", textAlign: "center", fontStyle: "italic" }}>Registrer din første runde for å se statistikk 🚀</div>}
+                </div>
+              );
+            })()}
 
             {/* Handlinger */}
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
