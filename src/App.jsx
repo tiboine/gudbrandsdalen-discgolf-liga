@@ -91,6 +91,8 @@ export default function DiscGolfLeague() {
   const [roundsLoading, setRoundsLoading] = useState(false);
   const [editRound, setEditRound] = useState(null); // null or round object being edited
   const [players, setPlayers] = useState([]);
+  const [regError, setRegError] = useState("");
+  const [signupEmailSent, setSignupEmailSent] = useState(false);
 
   useEffect(() => {
     if (!showRegister || locationStatus !== "idle") return;
@@ -145,8 +147,8 @@ export default function DiscGolfLeague() {
     });
     setAuthLoading(false);
     if (error) { setAuthError(error.message); return; }
-    setAuthError(""); setShowAuth(false);
-    setAuthForm({ email: "", password: "", name: "" });
+    setAuthError("");
+    setSignupEmailSent(true);
   };
 
   const loadRounds = async () => {
@@ -160,25 +162,52 @@ export default function DiscGolfLeague() {
 
   const loadPlayers = async () => {
     const { data: profiles } = await supabase.from("profiles").select("*");
-    const { data: rounds } = await supabase.from("rounds").select("user_id, score, date");
+    const { data: rounds } = await supabase.from("rounds").select("*");
     if (!profiles) return;
+
+    // Group rounds into events by course+date
+    const STABLEFORD = [14, 12, 10, 8, 6, 5, 4, 3, 2, 2];
+    const roundPts = {};
+    const events = {};
+    (rounds || []).forEach(r => {
+      const key = `${r.course_id}_${r.date}`;
+      if (!events[key]) events[key] = [];
+      events[key].push(r);
+    });
+
+    // Assign pts per round with tie-sharing
+    Object.values(events).forEach(ev => {
+      const sorted = [...ev].sort((a, b) => a.score - b.score);
+      let i = 0;
+      while (i < sorted.length) {
+        let j = i;
+        while (j < sorted.length - 1 && sorted[j].score === sorted[j + 1].score) j++;
+        const slice = STABLEFORD.slice(i, j + 1);
+        const avg = Math.round(slice.reduce((a, b) => a + b, 0) / slice.length);
+        for (let k = i; k <= j; k++) roundPts[sorted[k].id] = avg;
+        i = j + 1;
+      }
+    });
+
     const result = profiles.map(p => {
       const pr = (rounds || []).filter(r => r.user_id === p.id);
+      const withPts = pr.map(r => ({ ...r, sp: roundPts[r.id] ?? 0 }));
+      const best8 = [...withPts].sort((a, b) => b.sp - a.sp).slice(0, 8);
+      const totalPts = best8.reduce((sum, r) => sum + r.sp, 0);
       const scores = pr.map(r => r.score).sort((a, b) => a - b);
-      const best8 = scores.slice(0, 8);
-      const pts = best8.reduce((sum, s) => sum + Math.max(0, 10 - s), 0);
       return {
         id: p.id,
         name: p.full_name || "Ukjent",
         avatar: p.avatar_url,
         rounds: pr.length,
         best: scores.length ? scores[0] : null,
-        avg: scores.length ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10 : null,
-        pts,
+        avg: scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length * 10) / 10 : null,
+        pts: totalPts,
         division: p.division || "Rekreasjons",
-        trend: pr.slice(-10).map(r => Math.max(0, 10 - r.score)),
+        trend: withPts.slice(-10).map(r => r.sp),
       };
     }).filter(p => p.rounds > 0).sort((a, b) => b.pts - a.pts);
+
     setPlayers(result);
   };
 
@@ -192,6 +221,8 @@ export default function DiscGolfLeague() {
   }, []);
 
   const signOut = () => supabase.auth.signOut();
+
+  const isAdmin = user?.email === import.meta.env.VITE_ADMIN_EMAIL;
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -252,7 +283,7 @@ export default function DiscGolfLeague() {
           >+ Registrer runde</button>
 
           <div style={{ display: "flex", gap: 4, background: "rgba(0,0,0,0.06)", borderRadius: 12, padding: 4 }}>
-            {[{ id: "tabell", label: "Ligatabell", icon: "🏆" }, { id: "runder", label: "Runder", icon: "📋" }, { id: "baner", label: "Baner", icon: "🗺️" }, { id: "regler", label: "Poeng", icon: "📊" }, { id: "intro", label: "Ny her?", icon: "👋" }].map(t => (
+            {[{ id: "tabell", label: "Ligatabell", icon: "🏆" }, { id: "runder", label: "Runder", icon: "📋" }, { id: "baner", label: "Baner", icon: "🗺️" }, { id: "regler", label: "Poeng", icon: "📊" }, { id: "intro", label: "Ny her?", icon: "👋" }, ...(isAdmin ? [{ id: "admin", label: "Admin", icon: "🔧" }] : [])].map(t => (
               <button key={t.id} onClick={() => setTab(t.id)} style={{ flex: 1, padding: "10px 6px", border: "none", borderRadius: 10, background: tab === t.id ? "#ffffff" : "transparent", color: tab === t.id ? "#4a8a10" : "#6b7a58", fontWeight: tab === t.id ? 700 : 500, fontSize: 12, cursor: "pointer", transition: "all 0.2s", boxShadow: tab === t.id ? "0 1px 4px rgba(0,0,0,0.1)" : "none" }}>
                 <div style={{ fontSize: 14, marginBottom: 2 }}>{t.icon}</div>{t.label}
               </button>
@@ -511,6 +542,58 @@ export default function DiscGolfLeague() {
             </button>
           </div>
         )}
+
+        {tab === "admin" && isAdmin && (
+          <div style={{ animation: "fadeSlideUp 0.4s ease" }}>
+            <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 4 }}>🔧 Adminpanel</div>
+            <div style={{ fontSize: 12, color: "#6b7a58", marginBottom: 16 }}>Kun synlig for deg</div>
+
+            {/* Stats */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 16 }}>
+              {[{ label: "Brukere", value: players.length + (realRounds.length === 0 ? 0 : 0), icon: "👥" }, { label: "Runder totalt", value: realRounds.length, icon: "🥏" }, { label: "Baner brukt", value: [...new Set(realRounds.map(r => r.course_id))].length, icon: "🗺️" }].map(s => (
+                <div key={s.label} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "12px 8px", textAlign: "center" }}>
+                  <div style={{ fontSize: 16, marginBottom: 2 }}>{s.icon}</div>
+                  <div style={{ fontSize: 22, fontWeight: 800 }}>{s.value}</div>
+                  <div style={{ fontSize: 10, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* All rounds */}
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12", marginBottom: 8 }}>Alle registrerte runder</div>
+            {realRounds.length === 0 && <div style={{ fontSize: 13, color: "#6b7a58", textAlign: "center", padding: 20 }}>Ingen runder ennå</div>}
+            {realRounds.map((r, i) => (
+              <div key={r.id} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "12px 14px", marginBottom: 8, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700 }}>{r.profiles?.full_name ?? "Ukjent"}</div>
+                  <div style={{ fontSize: 11, color: "#6b7a58" }}>{r.course_name} · {new Date(r.date + "T12:00:00").toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", year: "numeric" })}</div>
+                </div>
+                <div style={{ fontSize: 16, fontWeight: 900, color: r.score <= 0 ? "#4a8a10" : "#ef4444", minWidth: 36, textAlign: "right" }}>{r.score > 0 ? "+" : ""}{r.score}</div>
+                <button onClick={async () => {
+                  if (!confirm(`Slett runde av ${r.profiles?.full_name}?`)) return;
+                  await supabase.from("rounds").delete().eq("id", r.id);
+                  await loadRounds();
+                  await loadPlayers();
+                }} style={{ padding: "5px 10px", borderRadius: 8, border: "1px solid rgba(239,68,68,0.25)", background: "rgba(239,68,68,0.07)", color: "#dc2626", fontSize: 12, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}>Slett</button>
+              </div>
+            ))}
+
+            {/* All users */}
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12", marginBottom: 8, marginTop: 20 }}>Alle brukere</div>
+            {players.length === 0 && <div style={{ fontSize: 13, color: "#6b7a58", textAlign: "center", padding: 20 }}>Ingen registrerte spillere ennå</div>}
+            {players.map((p, i) => (
+              <div key={p.id} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "12px 14px", marginBottom: 8, display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 32, height: 32, borderRadius: "50%", overflow: "hidden", background: "rgba(101,163,13,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, border: "1px solid rgba(0,0,0,0.08)", flexShrink: 0 }}>
+                  {p.avatar?.startsWith("http") ? <img src={p.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (p.name?.[0] ?? "?")}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700 }}>{p.name}</div>
+                  <div style={{ fontSize: 11, color: "#6b7a58" }}>{p.division} · {p.rounds} runder · {p.pts} pts</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {selectedPlayer && (
@@ -539,7 +622,7 @@ export default function DiscGolfLeague() {
       )}
 
       {showRegister && (
-        <div onClick={() => { setShowRegister(false); setRegSuccess(false); setLocationStatus("idle"); setUserLocation(null); setEditRound(null); }} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
+        <div onClick={() => { setShowRegister(false); setRegSuccess(false); setLocationStatus("idle"); setUserLocation(null); setEditRound(null); setRegError(""); }} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
           <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, background: "linear-gradient(180deg, #ffffff, #f0f9e8)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 24, animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
             {regSuccess ? (
               <div style={{ textAlign: "center", padding: "30px 0" }}>
@@ -580,9 +663,16 @@ export default function DiscGolfLeague() {
                     </div>
                     <input lang="nb-NO" type="date" value={regForm.date} onChange={e => setRegForm({ ...regForm, date: e.target.value })} style={{ width: "100%", padding: "12px 14px", borderRadius: 12, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
                   </div>
+                  {regError && <div style={{ fontSize: 12, color: "#dc2626", background: "rgba(239,68,68,0.08)", padding: "8px 12px", borderRadius: 8, border: "1px solid rgba(239,68,68,0.2)" }}>{regError}</div>}
                   <button onClick={async (e) => {
                     e.preventDefault();
+                    const scoreNum = parseInt(regForm.score);
                     if (!regForm.course || regForm.score === "" || !regForm.date) return;
+                    if (isNaN(scoreNum) || scoreNum < -15 || scoreNum > 30) {
+                      setRegError("Score må være mellom -15 og +30");
+                      return;
+                    }
+                    setRegError("");
                     if (user) {
                       setRoundsLoading(true);
                       const course = COURSES.find(c => c.id === regForm.course);
@@ -608,9 +698,9 @@ export default function DiscGolfLeague() {
                     }
                     setEditRound(null);
                     setRegSuccess(true);
-                    setTimeout(() => { setRegSuccess(false); setShowRegister(false); setRegForm({ course: "", score: "", date: "" }); setEditRound(null); }, 2000);
+                    setTimeout(() => { setRegSuccess(false); setShowRegister(false); setRegForm({ course: "", score: "", date: "" }); setEditRound(null); setRegError(""); }, 2000);
                   }} style={{ width: "100%", padding: 14, border: "none", borderRadius: 14, background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 24px rgba(101,163,13,0.25)", marginTop: 4 }}>{editRound ? "Lagre endring ✓" : "Registrer 🥏"}</button>
-                  <button onClick={() => { setShowRegister(false); setEditRound(null); }} style={{ width: "100%", padding: 12, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#6b7a58", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Avbryt</button>
+                  <button onClick={() => { setShowRegister(false); setEditRound(null); setRegError(""); }} style={{ width: "100%", padding: 12, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#6b7a58", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Avbryt</button>
                 </div>
               </>
             )}
@@ -619,8 +709,17 @@ export default function DiscGolfLeague() {
       )}
 
       {showAuth && (
-  <div onClick={() => setShowAuth(false)} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
+  <div onClick={() => { setShowAuth(false); setSignupEmailSent(false); }} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
     <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, background: "linear-gradient(180deg, #ffffff, #f0f9e8)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 24, animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
+      {signupEmailSent ? (
+        <div style={{ textAlign: "center", padding: "20px 0" }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>📬</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "#1c2b12", marginBottom: 8 }}>Sjekk e-posten din!</div>
+          <div style={{ fontSize: 13, color: "#4a5a38", lineHeight: 1.7, marginBottom: 20 }}>Vi har sendt en bekreftelseslenke til <strong>{authForm.email}</strong>. Klikk lenken for å aktivere kontoen din.</div>
+          <button onClick={() => { setShowAuth(false); setSignupEmailSent(false); setAuthForm({ email: "", password: "", name: "" }); }} style={{ width: "100%", padding: 13, border: "none", borderRadius: 12, background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>Lukk</button>
+        </div>
+      ) : (
+        <>
       <div style={{ fontSize: 20, fontWeight: 800, color: "#1c2b12", marginBottom: 4 }}>{authMode === "login" ? "Logg inn" : "Opprett konto"}</div>
       <div style={{ fontSize: 12, color: "#6b7a58", marginBottom: 20 }}>{authMode === "login" ? "Velkommen tilbake!" : "Bli med i ligaen 🥏"}</div>
 
@@ -650,6 +749,8 @@ export default function DiscGolfLeague() {
           {authMode === "login" ? "Ny bruker? Registrer deg →" : "← Har du konto? Logg inn"}
         </button>
       </div>
+        </>
+      )}
     </div>
   </div>
 )}
