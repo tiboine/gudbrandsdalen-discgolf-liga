@@ -96,6 +96,14 @@ export default function DiscGolfLeague() {
   const [courseSort, setCourseSort] = useState("avstand"); // avstand | populær | stjerner
   const [roundFilter, setRoundFilter] = useState("alle"); // "alle" or course_id
   const [regNote, setRegNote] = useState("");
+  const [allProfiles, setAllProfiles] = useState([]);
+  const [selectedCoPlayers, setSelectedCoPlayers] = useState([]); // array of profile ids
+  const [recentCoPlayers, setRecentCoPlayers] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("recentCoPlayers") || "[]"); } catch { return []; }
+  });
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [pendingInvites, setPendingInvites] = useState([]);
 
   useEffect(() => {
     if (!showRegister || locationStatus !== "idle") return;
@@ -141,6 +149,9 @@ export default function DiscGolfLeague() {
       // Reload data after ensuring profile
       loadRounds();
       loadPlayers();
+      loadAllProfiles();
+      loadNotifications();
+      loadPendingInvites();
     };
     ensureProfile();
   }, [user]);
@@ -231,9 +242,27 @@ export default function DiscGolfLeague() {
     setPlayers(result);
   };
 
+  const loadAllProfiles = async () => {
+    const { data } = await supabase.from("profiles").select("id, full_name, avatar_url");
+    if (data) setAllProfiles(data);
+  };
+
+  const loadNotifications = async () => {
+    if (!user) return;
+    const { data } = await supabase.from("notifications").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20);
+    if (data) setNotifications(data);
+  };
+
+  const loadPendingInvites = async () => {
+    if (!user) return;
+    const { data } = await supabase.from("round_invites").select("*, rounds(course_id, course_name, date, score), profiles!round_invites_inviter_id_fkey(full_name)").eq("invitee_id", user.id).eq("status", "pending");
+    if (data) setPendingInvites(data);
+  };
+
   useEffect(() => {
     loadRounds();
     loadPlayers();
+    loadAllProfiles();
     navigator.geolocation.getCurrentPosition(
       pos => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
       () => {}
@@ -274,6 +303,13 @@ export default function DiscGolfLeague() {
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{ fontSize: 11, color: "#4a7a10", background: "rgba(101,163,13,0.1)", padding: "4px 10px", borderRadius: 20, border: "1px solid rgba(101,163,13,0.2)", fontWeight: 600 }}>Sesong: Vår 2026</div>
               {user ? (
+                <>
+                <button onClick={() => { setShowNotifications(true); loadNotifications(); loadPendingInvites(); }} style={{ position: "relative", background: "rgba(101,163,13,0.1)", border: "1px solid rgba(101,163,13,0.25)", borderRadius: "50%", width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16 }}>
+                  🔔
+                  {(notifications.filter(n => !n.read).length + pendingInvites.length) > 0 && (
+                    <div style={{ position: "absolute", top: -2, right: -2, width: 16, height: 16, borderRadius: "50%", background: "#ef4444", color: "#fff", fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{notifications.filter(n => !n.read).length + pendingInvites.length}</div>
+                  )}
+                </button>
                 <button onClick={() => setShowProfile(true)} style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(101,163,13,0.1)", border: "1px solid rgba(101,163,13,0.25)", borderRadius: 20, padding: "4px 10px 4px 4px", cursor: "pointer" }}>
                   {user.user_metadata?.avatar_url
                     ? <img src={user.user_metadata.avatar_url} alt="" style={{ width: 24, height: 24, borderRadius: "50%", border: "1px solid rgba(101,163,13,0.4)" }} />
@@ -281,6 +317,7 @@ export default function DiscGolfLeague() {
                   }
                   <span style={{ fontSize: 11, fontWeight: 700, color: "#4a7a10" }}>{user.user_metadata?.full_name?.split(" ")[0] ?? "Profil"}</span>
                 </button>
+                </>
               ) : (
                 <button onClick={() => { setShowAuth(true); setAuthMode("login"); }} style={{ fontSize: 11, color: "#fff", background: "linear-gradient(135deg, #65A30D, #4a7a0a)", padding: "5px 12px", borderRadius: 20, border: "none", cursor: "pointer", fontWeight: 700 }}>Logg inn</button>
               )}
@@ -758,6 +795,48 @@ export default function DiscGolfLeague() {
                     <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#5a7040", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.1em" }}>Notat <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(valgfritt)</span></label>
                     <input type="text" placeholder="f.eks. Vind, vått, ny personlig rekord!" value={regNote} onChange={e => setRegNote(e.target.value)} maxLength={100} style={{ width: "100%", padding: "10px 14px", borderRadius: 12, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
                   </div>
+                  {!editRound && allProfiles.length > 1 && (
+                    <div>
+                      <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#5a7040", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.1em" }}>Medspillere <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(valgfritt)</span></label>
+                      {selectedCoPlayers.length > 0 && (
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+                          {selectedCoPlayers.map(pid => {
+                            const p = allProfiles.find(pr => pr.id === pid);
+                            return p ? (
+                              <div key={pid} style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 8px 4px 4px", borderRadius: 20, background: "rgba(101,163,13,0.1)", border: "1px solid rgba(101,163,13,0.25)", fontSize: 12, fontWeight: 600, color: "#4a8a10" }}>
+                                <div style={{ width: 20, height: 20, minWidth: 20, borderRadius: "50%", overflow: "hidden", background: "rgba(101,163,13,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10 }}>
+                                  {p.avatar_url?.startsWith("http") ? <img src={p.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (p.full_name?.[0] ?? "?")}
+                                </div>
+                                {p.full_name?.split(" ")[0]}
+                                <span onClick={() => setSelectedCoPlayers(prev => prev.filter(id => id !== pid))} style={{ cursor: "pointer", marginLeft: 2, fontSize: 14, lineHeight: 1 }}>×</span>
+                              </div>
+                            ) : null;
+                          })}
+                        </div>
+                      )}
+                      <div style={{ maxHeight: 140, overflowY: "auto", borderRadius: 12, background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.08)", padding: 4 }}>
+                        {(() => {
+                          const others = allProfiles.filter(p => p.id !== user?.id && !selectedCoPlayers.includes(p.id));
+                          const recent = others.filter(p => recentCoPlayers.includes(p.id));
+                          const rest = others.filter(p => !recentCoPlayers.includes(p.id));
+                          const sorted = [...recent.sort((a, b) => recentCoPlayers.indexOf(a.id) - recentCoPlayers.indexOf(b.id)), ...rest];
+                          return sorted.length === 0 ? (
+                            <div style={{ padding: 12, fontSize: 12, color: "#8a9a70", textAlign: "center" }}>Ingen andre spillere registrert ennå</div>
+                          ) : sorted.map(p => (
+                            <div key={p.id} onClick={() => setSelectedCoPlayers(prev => [...prev, p.id])} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 8, cursor: "pointer", transition: "background 0.15s" }}
+                              onMouseEnter={e => e.currentTarget.style.background = "rgba(101,163,13,0.08)"}
+                              onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                              <div style={{ width: 24, height: 24, minWidth: 24, borderRadius: "50%", overflow: "hidden", background: "rgba(101,163,13,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, border: "1px solid rgba(0,0,0,0.06)", flexShrink: 0 }}>
+                                {p.avatar_url?.startsWith("http") ? <img src={p.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (p.full_name?.[0] ?? "?")}
+                              </div>
+                              <span style={{ fontSize: 13, fontWeight: 600, color: "#1c2b12" }}>{p.full_name}</span>
+                              {recentCoPlayers.includes(p.id) && <span style={{ fontSize: 9, color: "#8a9a70", marginLeft: "auto" }}>Nylig</span>}
+                            </div>
+                          ));
+                        })()}
+                      </div>
+                    </div>
+                  )}
                   {regError && <div style={{ fontSize: 12, color: "#dc2626", background: "rgba(239,68,68,0.08)", padding: "8px 12px", borderRadius: 8, border: "1px solid rgba(239,68,68,0.2)" }}>{regError}</div>}
                   <button onClick={async (e) => {
                     e.preventDefault();
@@ -783,7 +862,7 @@ export default function DiscGolfLeague() {
                           note: regNote || null,
                         }).eq("id", editRound.id);
                       } else {
-                        await supabase.from("rounds").insert({
+                        const { data: newRound } = await supabase.from("rounds").insert({
                           user_id: user.id,
                           course_id: regForm.course,
                           course_name: course.name,
@@ -791,13 +870,35 @@ export default function DiscGolfLeague() {
                           total_score: totalScore,
                           date: regForm.date,
                           note: regNote || null,
-                        });
+                        }).select().single();
+
+                        // Send invites to co-players
+                        if (newRound && selectedCoPlayers.length > 0) {
+                          const inviterName = user.user_metadata?.full_name || "Noen";
+                          await supabase.from("round_invites").insert(
+                            selectedCoPlayers.map(pid => ({ round_id: newRound.id, inviter_id: user.id, invitee_id: pid }))
+                          );
+                          await supabase.from("notifications").insert(
+                            selectedCoPlayers.map(pid => ({
+                              user_id: pid,
+                              type: "round_invite",
+                              title: "Ny runde-invitasjon!",
+                              body: `${inviterName} spilte ${course.name} og tagget deg som medspiller. Registrer din score!`,
+                              data: { round_id: newRound.id, course_id: regForm.course, date: regForm.date },
+                            }))
+                          );
+                          // Save recent co-players
+                          const updated = [...new Set([...selectedCoPlayers, ...recentCoPlayers])].slice(0, 10);
+                          setRecentCoPlayers(updated);
+                          localStorage.setItem("recentCoPlayers", JSON.stringify(updated));
+                        }
                       }
                       await loadRounds();
                       await loadPlayers();
                       setRoundsLoading(false);
                     }
                     setEditRound(null);
+                    setSelectedCoPlayers([]);
                     setRegSuccess(true);
                     setTimeout(() => { setRegSuccess(false); setShowRegister(false); setRegForm({ course: "", score: "", date: "" }); setEditRound(null); setRegError(""); setRegNote(""); }, 2000);
                   }} style={{ width: "100%", padding: 14, border: "none", borderRadius: 14, background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 24px rgba(101,163,13,0.25)", marginTop: 4 }}>{editRound ? "Lagre endring ✓" : "Registrer 🥏"}</button>
@@ -935,6 +1036,72 @@ export default function DiscGolfLeague() {
               <button onClick={() => { setShowProfile(false); }} style={{ width: "100%", padding: 13, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#4a5a38", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Lukk</button>
               <button onClick={() => { signOut(); setShowProfile(false); }} style={{ width: "100%", padding: 13, border: "1px solid rgba(239,68,68,0.2)", borderRadius: 12, background: "rgba(239,68,68,0.05)", color: "#dc2626", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Logg ut</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showNotifications && user && (
+        <div onClick={() => setShowNotifications(false)} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, maxHeight: "80vh", background: "linear-gradient(180deg, #ffffff, #f0f9e8)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 24, overflowY: "auto", animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: "#1c2b12", marginBottom: 4 }}>🔔 Varsler</div>
+            <div style={{ fontSize: 12, color: "#6b7a58", marginBottom: 16 }}>Invitasjoner og oppdateringer</div>
+
+            {/* Pending invites */}
+            {pendingInvites.length > 0 && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#4a8a10", marginBottom: 8 }}>Venter på din bekreftelse</div>
+                {pendingInvites.map(inv => (
+                  <div key={inv.id} style={{ background: "rgba(101,163,13,0.07)", border: "1px solid rgba(101,163,13,0.2)", borderRadius: 12, padding: "12px 14px", marginBottom: 8 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>🥏 {inv.profiles?.full_name ?? "Noen"} tagget deg</div>
+                    <div style={{ fontSize: 12, color: "#4a5a38", marginBottom: 8 }}>{inv.rounds?.course_name} · {inv.rounds?.date ? new Date(inv.rounds.date + "T12:00:00").toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", year: "numeric" }) : ""}</div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button onClick={async () => {
+                        await supabase.from("round_invites").update({ status: "confirmed" }).eq("id", inv.id);
+                        // Pre-fill register form with same course and date
+                        setRegForm({ course: inv.rounds?.course_id ?? "", score: "", date: inv.rounds?.date ?? "" });
+                        setShowNotifications(false);
+                        setShowRegister(true);
+                        loadPendingInvites();
+                      }} style={{ flex: 1, padding: "8px 0", borderRadius: 10, border: "none", background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>✅ Registrer min score</button>
+                      <button onClick={async () => {
+                        await supabase.from("round_invites").update({ status: "declined" }).eq("id", inv.id);
+                        loadPendingInvites();
+                      }} style={{ padding: "8px 14px", borderRadius: 10, border: "1px solid rgba(0,0,0,0.1)", background: "rgba(0,0,0,0.04)", color: "#6b7a58", fontWeight: 600, fontSize: 12, cursor: "pointer" }}>Avslå</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* General notifications */}
+            {notifications.length === 0 && pendingInvites.length === 0 && (
+              <div style={{ textAlign: "center", padding: "30px 0" }}>
+                <div style={{ fontSize: 32, marginBottom: 8 }}>🔕</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#6b7a58" }}>Ingen varsler ennå</div>
+              </div>
+            )}
+            {notifications.map(n => (
+              <div key={n.id} onClick={async () => {
+                if (!n.read) await supabase.from("notifications").update({ read: true }).eq("id", n.id);
+                setNotifications(prev => prev.map(nn => nn.id === n.id ? { ...nn, read: true } : nn));
+              }} style={{ background: n.read ? "rgba(0,0,0,0.02)" : "rgba(101,163,13,0.06)", border: `1px solid ${n.read ? "rgba(0,0,0,0.06)" : "rgba(101,163,13,0.15)"}`, borderRadius: 12, padding: "12px 14px", marginBottom: 6, cursor: "pointer" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <div style={{ fontSize: 13, fontWeight: n.read ? 500 : 700, color: "#1c2b12" }}>{n.title}</div>
+                  {!n.read && <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#4a8a10", flexShrink: 0, marginTop: 4 }} />}
+                </div>
+                {n.body && <div style={{ fontSize: 12, color: "#4a5a38", marginTop: 4, lineHeight: 1.5 }}>{n.body}</div>}
+                <div style={{ fontSize: 10, color: "#8a9a70", marginTop: 6 }}>{new Date(n.created_at).toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</div>
+              </div>
+            ))}
+
+            <button onClick={async () => {
+              const unread = notifications.filter(n => !n.read).map(n => n.id);
+              if (unread.length > 0) {
+                await supabase.from("notifications").update({ read: true }).in("id", unread);
+                setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+              }
+            }} style={{ width: "100%", padding: 10, border: "none", borderRadius: 10, background: "rgba(0,0,0,0.04)", color: "#6b7a58", fontWeight: 600, fontSize: 12, cursor: "pointer", marginTop: 8 }}>Merk alle som lest</button>
+            <button onClick={() => setShowNotifications(false)} style={{ width: "100%", padding: 13, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#4a5a38", fontWeight: 700, fontSize: 14, cursor: "pointer", marginTop: 8 }}>Lukk</button>
           </div>
         </div>
       )}
