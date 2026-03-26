@@ -163,7 +163,7 @@ export default function DiscGolfLeague() {
   const [selectedPlayerRounds, setSelectedPlayerRounds] = useState([]);
   const [userHometown, setUserHometown] = useState("");
   const [showHometownSuggestions, setShowHometownSuggestions] = useState(false);
-  const [showMyRounds, setShowMyRounds] = useState(false);
+  const [roundsView, setRoundsView] = useState("alle"); // "alle", "mine", "venner"
   const [selectedRound, setSelectedRound] = useState(null);
   const [showAvatarMenu, setShowAvatarMenu] = useState(false);
 
@@ -479,7 +479,7 @@ export default function DiscGolfLeague() {
         <div style={{ maxWidth: 600, margin: "0 auto" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 38, height: 38, borderRadius: "50%", background: "linear-gradient(135deg, #A3E635, #65A30D)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 0 20px rgba(163,230,53,0.3)" }}><LogoIcon size={22} color="#0a0f0a" /></div>
+              <div style={{ width: 38, height: 38, borderRadius: "50%", background: "linear-gradient(135deg, #A3E635, #65A30D)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, color: "#0a0f0a", boxShadow: "0 0 20px rgba(163,230,53,0.3)" }}>🥏</div>
               <div>
                 <div style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: "#5a9e0f", fontWeight: 700 }}>Gudbrandsdalen</div>
                 <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.02em", lineHeight: 1.1 }}>Discgolf Liga</div>
@@ -651,9 +651,10 @@ export default function DiscGolfLeague() {
               {realRounds.length > 0 && <div style={{ fontSize: 11, color: "#4a8a10", fontWeight: 600 }}>● Live</div>}
             </div>
             {user && (
-              <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-                <button onClick={() => setShowMyRounds(false)} style={{ flex: 1, padding: "10px 16px", border: "1px solid", borderColor: !showMyRounds ? "#65A30D" : "rgba(0,0,0,0.1)", borderRadius: 14, background: !showMyRounds ? "rgba(101,163,13,0.15)" : "rgba(255,255,255,0.6)", color: !showMyRounds ? "#4a8a10" : "#6b7a58", fontSize: 14, fontWeight: 700, cursor: "pointer", transition: "all 0.2s" }}>Alle runder</button>
-                <button onClick={() => setShowMyRounds(true)} style={{ flex: 1, padding: "10px 16px", border: "1px solid", borderColor: showMyRounds ? "#65A30D" : "rgba(0,0,0,0.1)", borderRadius: 14, background: showMyRounds ? "rgba(101,163,13,0.15)" : "rgba(255,255,255,0.6)", color: showMyRounds ? "#4a8a10" : "#6b7a58", fontSize: 14, fontWeight: 700, cursor: "pointer", transition: "all 0.2s" }}>Mine runder</button>
+              <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+                {[{ id: "alle", label: "Alle runder" }, { id: "mine", label: "Mine runder" }, ...(friends.length > 0 ? [{ id: "venner", label: "Venner" }] : [])].map(v => (
+                  <button key={v.id} onClick={() => setRoundsView(v.id)} style={{ flex: 1, padding: "10px 12px", border: "1px solid", borderColor: roundsView === v.id ? "#65A30D" : "rgba(0,0,0,0.1)", borderRadius: 14, background: roundsView === v.id ? "rgba(101,163,13,0.15)" : "rgba(255,255,255,0.6)", color: roundsView === v.id ? "#4a8a10" : "#6b7a58", fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.2s" }}>{v.label}</button>
+                ))}
               </div>
             )}
             {realRounds.length > 0 && (
@@ -672,7 +673,12 @@ export default function DiscGolfLeague() {
                 <div style={{ fontSize: 13, color: "#6b7a58" }}>Vær den første til å registrere en runde!</div>
               </div>
             )}
-            {realRounds.filter(r => (roundFilter === "alle" || r.course_id === roundFilter) && (!showMyRounds || r.user_id === user?.id)).map((r, i) => (
+            {realRounds.filter(r => {
+              const courseOk = roundFilter === "alle" || r.course_id === roundFilter;
+              const friendIds = friends.map(f => f.id);
+              const viewOk = roundsView === "alle" ? true : roundsView === "mine" ? r.user_id === user?.id : friendIds.includes(r.user_id);
+              return courseOk && viewOk;
+            }).map((r, i) => (
               <div key={r.id} onClick={() => setSelectedRound(r)} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "14px 16px", marginBottom: 8, animation: `fadeSlideUp 0.4s ease ${i * 0.06}s both`, boxShadow: "0 2px 8px rgba(0,0,0,0.05)", cursor: "pointer", transition: "background 0.2s" }}
                 onMouseEnter={e => e.currentTarget.style.background = "rgba(101,163,13,0.06)"}
                 onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.75)"}>
@@ -1112,9 +1118,20 @@ export default function DiscGolfLeague() {
             {/* Legg til venn button */}
             {user && selectedPlayer.id !== user.id && (() => {
               const isFriend = friends.some(f => f.friend_id === selectedPlayer.id);
-              const hasPendingOutgoing = false; // We'd need to check, but for simplicity show button
+              const pendingFromThem = pendingFriendRequests.find(r => r.user_id === selectedPlayer.id);
               if (isFriend) {
                 return <div style={{ marginBottom: 16, padding: "8px 14px", borderRadius: 10, background: "rgba(101,163,13,0.07)", border: "1px solid rgba(101,163,13,0.15)", fontSize: 12, color: "#4a8a10", fontWeight: 600, textAlign: "center" }}>✓ Dere er venner</div>;
+              }
+              if (pendingFromThem) {
+                return (
+                  <div style={{ marginBottom: 16, padding: "12px 14px", borderRadius: 12, background: "rgba(107,52,163,0.06)", border: "1px solid rgba(107,52,163,0.15)" }}>
+                    <div style={{ fontSize: 12, color: "#6b34a3", fontWeight: 700, marginBottom: 8 }}>📩 Vil bli din venn</div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button onClick={async () => { await acceptFriendRequest(pendingFromThem); }} style={{ flex: 1, padding: "8px 0", borderRadius: 10, border: "none", background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>✓ Godkjenn</button>
+                      <button onClick={async () => { await declineFriendRequest(pendingFromThem); }} style={{ flex: 1, padding: "8px 0", borderRadius: 10, border: "1px solid rgba(239,68,68,0.25)", background: "rgba(239,68,68,0.05)", color: "#dc2626", fontWeight: 600, fontSize: 12, cursor: "pointer" }}>✕ Avslå</button>
+                    </div>
+                  </div>
+                );
               }
               return (
                 <button onClick={async () => { await sendFriendRequest(selectedPlayer.id); }} style={{ width: "100%", padding: "10px 0", borderRadius: 12, border: "1px solid rgba(101,163,13,0.3)", background: "rgba(101,163,13,0.08)", color: "#4a8a10", fontWeight: 700, fontSize: 13, cursor: "pointer", marginBottom: 16, transition: "all 0.2s" }}>👥 Legg til som venn</button>
@@ -1906,7 +1923,14 @@ export default function DiscGolfLeague() {
                 else if (n.type === "course_record") { setTab("baner"); setShowNotifications(false); }
                 else if (n.type === "weekly_best") { setTab("tabell"); setShowNotifications(false); }
                 else if (n.type === "friend_request" || n.type === "friend_accepted") {
-                  // Already handled in pending requests section above
+                  const senderId = n.data?.from_user_id || n.data?.from_id;
+                  if (senderId) {
+                    const senderProfile = allProfiles.find(p => p.id === senderId);
+                    const senderPlayer = players.find(p => p.id === senderId);
+                    if (senderPlayer) setSelectedPlayer(senderPlayer);
+                    else if (senderProfile) setSelectedPlayer({ id: senderProfile.id, name: senderProfile.full_name, avatar: senderProfile.avatar_url, rounds: 0, best: null, avg: null, pts: 0, division: "Rekreasjons", trend: [], hometown: senderProfile.hometown });
+                  }
+                  setShowNotifications(false);
                 }
                 else if (n.type === "round_registered") {
                   setTab("runder"); setShowNotifications(false);
