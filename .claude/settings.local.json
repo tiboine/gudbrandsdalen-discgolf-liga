@@ -6,7 +6,8 @@
       "Bash(vercel --prod)",
       "Bash(npx vercel:*)",
       "Bash(node -e \":*)",
-      "WebSearch"
+      "WebSearch",
+      "WebFetch(domain:udisc.com)"
     ]
   }
 }

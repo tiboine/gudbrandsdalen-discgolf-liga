@@ -20,6 +20,11 @@ const COURSES = [
   { id: "vinstra", name: "Vinstra Ungdomsskole", location: "Vinstra, Nord-Fron", holes: 6, par: 18, rating: 2.7, ratings: 81, difficulty: "Lett", length: "0.5 km", time: "~16 min", udisc: "https://udisc.com/courses/vinstra-ungdomsskole-Y0eH", desc: "Kort skolebane med DiscGolfPark-kurver. Perfekt for nybegynnere og raske runder.", free: true, lat: 61.575, lng: 9.742 },
   { id: "lalm", name: "Lalm Discgolfbane", location: "Lalm, Sel", holes: 12, par: 36, rating: 4.2, ratings: 511, difficulty: "Moderat", length: "1.7 km", time: "~1 time", udisc: "https://udisc.com/courses/lalm-discgolfbane-nYVD", desc: "En av de beste banene i Innlandet med 4.2-rating. Varierte hull og flott skogsterreng. Anbefales på det sterkeste!", free: true, lat: 61.812, lng: 9.287 },
   { id: "otta", name: "Otta Disc Golf", location: "Otta, Sel", holes: 6, par: 18, rating: 2.2, ratings: 40, difficulty: "Lett", length: "0.5 km", time: "~20 min", udisc: "https://udisc.com/courses/otta-disc-golf-0vmE", desc: "Veldig korte hull, perfekt for nybegynnere. Mangler hull-kart men lett å finne.", free: true, lat: 61.772, lng: 9.537 },
+  { id: "vingarparken", name: "Vingarparken Diskgolfbane", location: "Lillehammer", holes: 9, par: 27, rating: 1.2, ratings: 25, difficulty: "Middels", length: "0.54 km", time: "~60 min", udisc: "https://udisc.com/courses/vingarparken-diskgolfbane-KDW7", desc: "Familievennlig bane i folkelig rekreasjonspark. Kortbane med gressteier, renovert i 2025.", free: true, lat: 61.107, lng: 10.427 },
+  { id: "strandpromenaden", name: "Strandpromenaden", location: "Lillehammer", holes: 6, par: 19, rating: 1.2, ratings: 107, difficulty: "Lett", length: "1.1 km", time: "~45 min", udisc: "https://udisc.com/courses/strandpromenaden-ZpDy", desc: "Sjarmerende strandbane langs Mjøsa, etablert 2012. OBS: Per 2026 mangler noen kurver og det er ingen teepads eller skilt.", free: true, lat: 61.114, lng: 10.449 },
+  { id: "smestad", name: "Smestad Frisbeegolfpark", location: "Lillehammer", holes: 6, par: 18, rating: 3.1, ratings: 187, difficulty: "Lett", length: "0.6 km", time: "~20 min", udisc: "https://udisc.com/courses/smestad-frisbeegolfpark-68VN", desc: "Småkupert men ellers ganske lett bane, perfekt for nybegynnere. Etablert 2016.", free: true, lat: 61.135, lng: 10.446 },
+  { id: "mosetertoppen", name: "Mosetertoppen Diskgolfpark", location: "Øyer", holes: 18, par: 58, rating: 3.7, ratings: 159, difficulty: "Krevende", length: "3.8 km", time: "~2 timer", udisc: "https://udisc.com/courses/oti-frisbee-mosetertoppen-diskgolf-park-D5nt", desc: "Utfordrende fjellbane på toppen av Mosetertoppen/Hafjell. Bratt og variert terreng med flotte utsikter. Etablert 2024.", free: true, lat: 61.254, lng: 10.515 },
+  { id: "fossen-kvitfjell", name: "Fossen Diskgolf Kvitfjell", location: "Fåvang", holes: 9, par: 29, rating: 4.5, ratings: 5, difficulty: "Middels", length: "0.7 km", time: "~54 min", udisc: "https://udisc.com/courses/fossen-diskgolf-kvitfjell-sorh", desc: "Ny bane (2025) ved Kvitfjell med vakker utsikt og varierte kast. Kupert terreng med Prodigy T2-kurver.", free: true, lat: 61.450, lng: 10.110 },
 ];
 
 
@@ -157,6 +162,8 @@ export default function DiscGolfLeague() {
   const [selectedPlayerRounds, setSelectedPlayerRounds] = useState([]);
   const [userHometown, setUserHometown] = useState("");
   const [showHometownSuggestions, setShowHometownSuggestions] = useState(false);
+  const [showMyRounds, setShowMyRounds] = useState(false);
+  const [selectedRound, setSelectedRound] = useState(null);
 
   useEffect(() => {
     if (!selectedPlayer) { setSelectedPlayerRounds([]); return; }
@@ -582,6 +589,12 @@ export default function DiscGolfLeague() {
               <div style={{ fontSize: 16, fontWeight: 800 }}>Siste runder</div>
               {realRounds.length > 0 && <div style={{ fontSize: 11, color: "#4a8a10", fontWeight: 600 }}>● Live</div>}
             </div>
+            {user && (
+              <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                <button onClick={() => setShowMyRounds(false)} style={{ flex: 1, padding: "10px 16px", border: "1px solid", borderColor: !showMyRounds ? "#65A30D" : "rgba(0,0,0,0.1)", borderRadius: 14, background: !showMyRounds ? "rgba(101,163,13,0.15)" : "rgba(255,255,255,0.6)", color: !showMyRounds ? "#4a8a10" : "#6b7a58", fontSize: 14, fontWeight: 700, cursor: "pointer", transition: "all 0.2s" }}>Alle runder</button>
+                <button onClick={() => setShowMyRounds(true)} style={{ flex: 1, padding: "10px 16px", border: "1px solid", borderColor: showMyRounds ? "#65A30D" : "rgba(0,0,0,0.1)", borderRadius: 14, background: showMyRounds ? "rgba(101,163,13,0.15)" : "rgba(255,255,255,0.6)", color: showMyRounds ? "#4a8a10" : "#6b7a58", fontSize: 14, fontWeight: 700, cursor: "pointer", transition: "all 0.2s" }}>Mine runder</button>
+              </div>
+            )}
             {realRounds.length > 0 && (
               <div style={{ display: "flex", gap: 6, marginBottom: 12, overflowX: "auto", paddingBottom: 4 }}>
                 <button onClick={() => setRoundFilter("alle")} style={{ padding: "5px 12px", border: "1px solid", borderColor: roundFilter === "alle" ? "#65A30D" : "rgba(0,0,0,0.1)", borderRadius: 20, background: roundFilter === "alle" ? "rgba(101,163,13,0.12)" : "rgba(255,255,255,0.6)", color: roundFilter === "alle" ? "#4a8a10" : "#6b7a58", fontSize: 11, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>Alle</button>
@@ -598,8 +611,10 @@ export default function DiscGolfLeague() {
                 <div style={{ fontSize: 13, color: "#6b7a58" }}>Vær den første til å registrere en runde!</div>
               </div>
             )}
-            {realRounds.filter(r => roundFilter === "alle" || r.course_id === roundFilter).map((r, i) => (
-              <div key={r.id} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "14px 16px", marginBottom: 8, animation: `fadeSlideUp 0.4s ease ${i * 0.06}s both`, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+            {realRounds.filter(r => (roundFilter === "alle" || r.course_id === roundFilter) && (!showMyRounds || r.user_id === user?.id)).map((r, i) => (
+              <div key={r.id} onClick={() => setSelectedRound(r)} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "14px 16px", marginBottom: 8, animation: `fadeSlideUp 0.4s ease ${i * 0.06}s both`, boxShadow: "0 2px 8px rgba(0,0,0,0.05)", cursor: "pointer", transition: "background 0.2s" }}
+                onMouseEnter={e => e.currentTarget.style.background = "rgba(101,163,13,0.06)"}
+                onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.75)"}>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 12, alignItems: "center" }}>
                   <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
                     <div onClick={(e) => { e.stopPropagation(); const p = players.find(p => p.id === r.user_id); if (p) setSelectedPlayer(p); }} style={{ width: 32, height: 32, minWidth: 32, borderRadius: "50%", overflow: "hidden", background: "rgba(101,163,13,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, border: "1px solid rgba(0,0,0,0.08)", flexShrink: 0, cursor: "pointer" }}>
@@ -621,23 +636,6 @@ export default function DiscGolfLeague() {
                     <div style={{ fontSize: 11, color: "#6b7a58", marginTop: 2 }}>({r.score === 0 ? "E" : r.score > 0 ? `+${r.score}` : r.score})</div>
                   </div>
                 </div>
-                {user && r.user_id === user.id && (
-                  <div style={{ display: "flex", gap: 6, marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(0,0,0,0.06)" }}>
-                    <button onClick={() => {
-                      setEditRound(r);
-                      const coursePar = COURSES.find(c => c.id === r.course_id)?.par ?? 0;
-                      setRegForm({ course: r.course_id, score: r.total_score ? String(r.total_score) : String(r.score + coursePar), date: r.date });
-                      setRegNote(r.note || "");
-                      setShowRegister(true);
-                    }} style={{ flex: 1, padding: "6px 0", borderRadius: 8, border: "1px solid rgba(0,0,0,0.1)", background: "rgba(0,0,0,0.03)", color: "#4a5a38", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>✏️ Rediger</button>
-                    <button onClick={async () => {
-                      if (!confirm("Sikker på at du vil slette denne runden?")) return;
-                      await supabase.from("rounds").delete().eq("id", r.id);
-                      await loadRounds();
-                      await loadPlayers();
-                    }} style={{ flex: 1, padding: "6px 0", borderRadius: 8, border: "1px solid rgba(239,68,68,0.2)", background: "rgba(239,68,68,0.05)", color: "#dc2626", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>🗑️ Slett</button>
-                  </div>
-                )}
               </div>
             ))}
           </div>
@@ -955,7 +953,9 @@ export default function DiscGolfLeague() {
               const totalScore = r.total_score ?? (r.score + (course?.par ?? 0));
               const scoreStr = r.score === 0 ? "E" : r.score > 0 ? `+${r.score}` : `${r.score}`;
               return (
-                <div key={r.id} style={{ background: "rgba(0,0,0,0.03)", borderRadius: 10, padding: "10px 14px", marginBottom: 6, border: "1px solid rgba(0,0,0,0.06)" }}>
+                <div key={r.id} onClick={() => { setSelectedPlayer(null); setSelectedRound(r); }} style={{ background: "rgba(0,0,0,0.03)", borderRadius: 10, padding: "10px 14px", marginBottom: 6, border: "1px solid rgba(0,0,0,0.06)", cursor: "pointer", transition: "background 0.15s" }}
+                  onMouseEnter={e => e.currentTarget.style.background = "rgba(101,163,13,0.06)"}
+                  onMouseLeave={e => e.currentTarget.style.background = "rgba(0,0,0,0.03)"}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12" }}>{courseName}</div>
@@ -1298,12 +1298,12 @@ export default function DiscGolfLeague() {
               {showHometownSuggestions && (() => {
                 const q = userHometown.toLowerCase().trim();
                 const uniqueHometowns = [...new Set(allProfiles.map(p => p.hometown).filter(h => h && h.trim()))];
-                const filtered = q ? uniqueHometowns.filter(h => h.toLowerCase().includes(q) && h.toLowerCase() !== q) : uniqueHometowns;
+                const filtered = q ? uniqueHometowns.filter(h => h.toLowerCase().startsWith(q) && h.toLowerCase() !== q) : uniqueHometowns;
                 if (filtered.length === 0) return null;
                 return (
                   <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 10, background: "#fff", border: "1px solid rgba(0,0,0,0.12)", borderRadius: 12, marginTop: 4, boxShadow: "0 4px 16px rgba(0,0,0,0.1)", maxHeight: 150, overflowY: "auto" }}>
                     {filtered.map(h => (
-                      <div key={h} onMouseDown={(e) => { e.preventDefault(); setUserHometown(h); setShowHometownSuggestions(false); }} style={{ padding: "10px 14px", fontSize: 13, color: "#1c2b12", cursor: "pointer", borderBottom: "1px solid rgba(0,0,0,0.04)" }}
+                      <div key={h} onMouseDown={async (e) => { e.preventDefault(); setUserHometown(h); setShowHometownSuggestions(false); await supabase.from("profiles").update({ hometown: h }).eq("id", user.id); loadPlayers(); loadAllProfiles(); }} style={{ padding: "10px 14px", fontSize: 13, color: "#1c2b12", cursor: "pointer", borderBottom: "1px solid rgba(0,0,0,0.04)" }}
                         onMouseEnter={e => e.currentTarget.style.background = "rgba(101,163,13,0.08)"}
                         onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                         {h}
@@ -1357,11 +1357,133 @@ export default function DiscGolfLeague() {
               );
             })()}
 
+            {/* Mine runder */}
+            {(() => {
+              const myRounds = realRounds.filter(r => r.user_id === user.id).sort((a, b) => b.date.localeCompare(a.date));
+              const displayRounds = myRounds.slice(0, 10);
+              if (myRounds.length === 0) return null;
+              return (
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Mine runder</div>
+                  {displayRounds.map(r => {
+                    const course = COURSES.find(c => c.id === r.course_id);
+                    const courseName = course?.name || r.course_name || "Ukjent bane";
+                    const totalScore = r.total_score ?? (r.score + (course?.par ?? 0));
+                    const scoreStr = r.score === 0 ? "E" : r.score > 0 ? `+${r.score}` : `${r.score}`;
+                    return (
+                      <div key={r.id} onClick={() => { setShowProfile(false); setSelectedRound(r); }} style={{ background: "rgba(0,0,0,0.03)", borderRadius: 10, padding: "10px 14px", marginBottom: 6, border: "1px solid rgba(0,0,0,0.06)", cursor: "pointer", transition: "background 0.15s" }}
+                        onMouseEnter={e => e.currentTarget.style.background = "rgba(101,163,13,0.06)"}
+                        onMouseLeave={e => e.currentTarget.style.background = "rgba(0,0,0,0.03)"}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <div>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12" }}>{courseName}</div>
+                            <div style={{ fontSize: 11, color: "#6b7a58", marginTop: 2 }}>
+                              {new Date(r.date + "T12:00:00").toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                            </div>
+                          </div>
+                          <div style={{ textAlign: "right" }}>
+                            <div style={{ fontSize: 18, fontWeight: 900, color: r.score <= 0 ? "#4a8a10" : "#ef4444" }}>{totalScore}</div>
+                            <div style={{ fontSize: 10, color: "#6b7a58" }}>({scoreStr})</div>
+                          </div>
+                        </div>
+                        {r.note && <div style={{ fontSize: 11, color: "#5a7040", marginTop: 6, fontStyle: "italic", background: "rgba(101,163,13,0.06)", padding: "3px 8px", borderRadius: 6, display: "inline-block" }}>💬 {r.note}</div>}
+                      </div>
+                    );
+                  })}
+                  {myRounds.length > 10 && (
+                    <button onClick={() => { setShowProfile(false); setTab("runder"); setShowMyRounds(true); }} style={{ width: "100%", padding: 10, border: "1px solid rgba(0,0,0,0.08)", borderRadius: 10, background: "rgba(0,0,0,0.03)", color: "#4a8a10", fontWeight: 700, fontSize: 12, cursor: "pointer", marginTop: 4 }}>Vis alle ({myRounds.length} runder)</button>
+                  )}
+                </div>
+              );
+            })()}
+
             {/* Handlinger */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <button onClick={() => { setShowProfile(false); }} style={{ width: "100%", padding: 13, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#4a5a38", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Lukk</button>
-              <button onClick={() => { signOut(); setShowProfile(false); }} style={{ width: "100%", padding: 13, border: "1px solid rgba(239,68,68,0.2)", borderRadius: 12, background: "rgba(239,68,68,0.05)", color: "#dc2626", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Logg ut</button>
+            <div style={{ display: "flex", flexDirection: "row", gap: 8 }}>
+              <button onClick={() => { setShowProfile(false); }} style={{ flex: 1, padding: 13, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#4a5a38", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Lukk</button>
+              <button onClick={() => { signOut(); setShowProfile(false); }} style={{ flex: 1, padding: 13, border: "1px solid rgba(239,68,68,0.2)", borderRadius: 12, background: "rgba(239,68,68,0.05)", color: "#dc2626", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Logg ut</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {selectedRound && (
+        <div onClick={() => setSelectedRound(null)} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, background: "linear-gradient(180deg, #ffffff, #f0f9e8)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 24, animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
+            {(() => {
+              const r = selectedRound;
+              const course = COURSES.find(c => c.id === r.course_id);
+              const courseName = course?.name || r.course_name || "Ukjent bane";
+              const totalScore = r.total_score ?? (r.score + (course?.par ?? 0));
+              const scoreStr = r.score === 0 ? "E" : r.score > 0 ? `+${r.score}` : `${r.score}`;
+              const isOwn = user && r.user_id === user.id;
+              return (
+                <>
+                  {/* Player */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+                    <div onClick={() => { const p = players.find(p => p.id === r.user_id); if (p) { setSelectedRound(null); setSelectedPlayer(p); } }} style={{ width: 42, height: 42, minWidth: 42, borderRadius: "50%", overflow: "hidden", background: "rgba(101,163,13,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, border: "2px solid rgba(101,163,13,0.2)", flexShrink: 0, cursor: "pointer" }}>
+                      {r.profiles?.avatar_url?.startsWith("http") ? <img src={r.profiles.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (r.profiles?.full_name?.[0] ?? "?")}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: "#1c2b12" }}>{r.profiles?.full_name ?? "Ukjent spiller"}</div>
+                      <div style={{ fontSize: 11, color: "#6b7a58" }}>{new Date(r.date + "T12:00:00").toLocaleDateString("nb-NO", { day: "2-digit", month: "long", year: "numeric" })}</div>
+                    </div>
+                  </div>
+
+                  {/* Score */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(101,163,13,0.07)", border: "1px solid rgba(101,163,13,0.12)", borderRadius: 14, padding: "16px 20px", marginBottom: 16 }}>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "#1c2b12", marginBottom: 4 }}>{courseName}</div>
+                      {course && (
+                        <a href={course.udisc} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ fontSize: 11, color: "#4a8a10", fontWeight: 600, textDecoration: "none" }}>🔗 Se på UDisc</a>
+                      )}
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: 28, fontWeight: 900, color: r.score <= 0 ? "#4a8a10" : "#ef4444", lineHeight: 1 }}>{totalScore}</div>
+                      <div style={{ fontSize: 12, color: "#6b7a58", marginTop: 2 }}>({scoreStr})</div>
+                    </div>
+                  </div>
+
+                  {/* Note */}
+                  {r.note && (
+                    <div style={{ marginBottom: 16, padding: "10px 14px", borderRadius: 10, background: "rgba(101,163,13,0.06)", border: "1px solid rgba(101,163,13,0.1)" }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Notat</div>
+                      <div style={{ fontSize: 13, color: "#4a5a38", fontStyle: "italic" }}>💬 {r.note}</div>
+                    </div>
+                  )}
+
+                  {/* Co-players */}
+                  {r.co_players && r.co_players.length > 0 && (
+                    <div style={{ marginBottom: 16 }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>Medspillere</div>
+                      <div style={{ fontSize: 13, color: "#4a5a38" }}>{r.co_players.join(", ")}</div>
+                    </div>
+                  )}
+
+                  {/* Own round actions */}
+                  {isOwn && (
+                    <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+                      <button onClick={() => {
+                        setSelectedRound(null);
+                        setEditRound(r);
+                        const coursePar = course?.par ?? 0;
+                        setRegForm({ course: r.course_id, score: r.total_score ? String(r.total_score) : String(r.score + coursePar), date: r.date });
+                        setRegNote(r.note || "");
+                        setShowRegister(true);
+                      }} style={{ flex: 1, padding: "10px 0", borderRadius: 10, border: "1px solid rgba(0,0,0,0.1)", background: "rgba(0,0,0,0.03)", color: "#4a5a38", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>✏️ Rediger</button>
+                      <button onClick={async () => {
+                        if (!confirm("Sikker på at du vil slette denne runden?")) return;
+                        await supabase.from("rounds").delete().eq("id", r.id);
+                        setSelectedRound(null);
+                        await loadRounds();
+                        await loadPlayers();
+                      }} style={{ flex: 1, padding: "10px 0", borderRadius: 10, border: "1px solid rgba(239,68,68,0.2)", background: "rgba(239,68,68,0.05)", color: "#dc2626", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>🗑️ Slett</button>
+                    </div>
+                  )}
+
+                  <button onClick={() => setSelectedRound(null)} style={{ width: "100%", padding: 13, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#4a5a38", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Lukk</button>
+                </>
+              );
+            })()}
           </div>
         </div>
       )}
