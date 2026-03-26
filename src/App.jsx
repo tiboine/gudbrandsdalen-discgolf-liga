@@ -1200,6 +1200,42 @@ export default function DiscGolfLeague() {
               <Sparkline data={selectedPlayer.trend} color="#65A30D" />
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 10, color: "#6b7a58" }}><span>Runde 1</span><span>Runde {selectedPlayer.trend.length}</span></div>
             </div>
+            {/* Head-to-head */}
+            {user && selectedPlayer.id !== user.id && (() => {
+              const myRounds = realRounds.filter(r => r.user_id === user.id);
+              const theirRounds = selectedPlayerRounds;
+              // Find rounds on same course & date
+              const h2h = [];
+              myRounds.forEach(mr => {
+                const match = theirRounds.find(tr => tr.course_id === mr.course_id && tr.date === mr.date);
+                if (match) h2h.push({ course: mr.course_id, date: mr.date, myScore: mr.score, theirScore: match.score });
+              });
+              if (h2h.length === 0) return null;
+              const myWins = h2h.filter(h => h.myScore < h.theirScore).length;
+              const theirWins = h2h.filter(h => h.theirScore < h.myScore).length;
+              const draws = h2h.length - myWins - theirWins;
+              return (
+                <div style={{ marginTop: 20, marginBottom: 12 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12", marginBottom: 10 }}>⚔️ Du vs {selectedPlayer.name?.split(" ")[0]}</div>
+                  <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                    <div style={{ flex: 1, textAlign: "center", background: myWins > theirWins ? "rgba(101,163,13,0.1)" : "rgba(0,0,0,0.03)", borderRadius: 12, padding: "12px 8px", border: "1px solid", borderColor: myWins > theirWins ? "rgba(101,163,13,0.2)" : "rgba(0,0,0,0.06)" }}>
+                      <div style={{ fontSize: 24, fontWeight: 900, color: "#4a8a10" }}>{myWins}</div>
+                      <div style={{ fontSize: 10, color: "#6b7a58", fontWeight: 600 }}>Du</div>
+                    </div>
+                    <div style={{ flex: 1, textAlign: "center", background: "rgba(0,0,0,0.03)", borderRadius: 12, padding: "12px 8px", border: "1px solid rgba(0,0,0,0.06)" }}>
+                      <div style={{ fontSize: 24, fontWeight: 900, color: "#6b7a58" }}>{draws}</div>
+                      <div style={{ fontSize: 10, color: "#6b7a58", fontWeight: 600 }}>Uavgjort</div>
+                    </div>
+                    <div style={{ flex: 1, textAlign: "center", background: theirWins > myWins ? "rgba(107,52,163,0.08)" : "rgba(0,0,0,0.03)", borderRadius: 12, padding: "12px 8px", border: "1px solid", borderColor: theirWins > myWins ? "rgba(107,52,163,0.15)" : "rgba(0,0,0,0.06)" }}>
+                      <div style={{ fontSize: 24, fontWeight: 900, color: "#6b34a3" }}>{theirWins}</div>
+                      <div style={{ fontSize: 10, color: "#6b7a58", fontWeight: 600 }}>{selectedPlayer.name?.split(" ")[0]}</div>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 11, color: "#6b7a58", textAlign: "center" }}>Basert på {h2h.length} felles runde{h2h.length !== 1 ? "r" : ""}</div>
+                </div>
+              );
+            })()}
+
             {/* Runder */}
             <div style={{ marginTop: 20, marginBottom: 12, fontSize: 13, fontWeight: 700, color: "#1c2b12" }}>Runder</div>
             {selectedPlayerRounds.length === 0 && (
@@ -1360,36 +1396,25 @@ export default function DiscGolfLeague() {
                               })}
                             </div>
                           )}
-                          {/* Search */}
-                          <input type="text" placeholder="Søk etter spiller..." value={friendSearch} onChange={e => setFriendSearch(e.target.value)} style={{ width: "100%", padding: "8px 12px", borderRadius: 10, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 13, outline: "none", boxSizing: "border-box", marginBottom: 6 }} />
-                          <div style={{ maxHeight: 140, overflowY: "auto", borderRadius: 12, background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.08)", padding: 4 }}>
-                            {(() => {
-                              const q = friendSearch.toLowerCase().trim();
-                              const others = allProfiles.filter(p => p.id !== user?.id && !selectedFriendPlayers.includes(p.id));
-                              const filtered = q ? others.filter(p => p.full_name?.toLowerCase().includes(q)) : others;
-                              // Sort: friends first, then others
-                              const friendIds = friends.map(f => f.friend_id);
-                              const friendList = filtered.filter(p => friendIds.includes(p.id));
-                              const nonFriends = filtered.filter(p => !friendIds.includes(p.id));
-                              const sorted = [...friendList, ...nonFriends];
-                              return sorted.length === 0 ? (
-                                <div style={{ padding: 12, fontSize: 12, color: "#8a9a70", textAlign: "center" }}>{q ? "Ingen treff" : "Ingen andre spillere registrert ennå"}</div>
-                              ) : sorted.map(p => {
-                                const isFriend = friendIds.includes(p.id);
-                                return (
-                                  <div key={p.id} onClick={() => { setSelectedFriendPlayers(prev => [...prev, p.id]); setFriendSearch(""); }} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 8, cursor: "pointer", transition: "background 0.15s" }}
+                          {/* Friends list — only show accepted friends not already selected */}
+                          {(() => {
+                            const availableFriends = friends.filter(f => !selectedFriendPlayers.includes(f.friend_id)).map(f => allProfiles.find(p => p.id === f.friend_id)).filter(Boolean);
+                            return availableFriends.length > 0 ? (
+                              <div style={{ maxHeight: 140, overflowY: "auto", borderRadius: 12, background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.08)", padding: 4 }}>
+                                {availableFriends.map(p => (
+                                  <div key={p.id} onClick={() => { setSelectedFriendPlayers(prev => [...prev, p.id]); }} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 8, cursor: "pointer", transition: "background 0.15s" }}
                                     onMouseEnter={e => e.currentTarget.style.background = "rgba(101,163,13,0.08)"}
                                     onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                                     <div style={{ width: 24, height: 24, minWidth: 24, borderRadius: "50%", overflow: "hidden", background: "rgba(101,163,13,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, border: "1px solid rgba(0,0,0,0.06)", flexShrink: 0 }}>
                                       {p.avatar_url?.startsWith("http") ? <img src={p.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (p.full_name?.[0] ?? "?")}
                                     </div>
                                     <span style={{ fontSize: 13, fontWeight: 600, color: "#1c2b12" }}>{p.full_name}</span>
-                                    {isFriend && <span style={{ fontSize: 9, color: "#4a8a10", marginLeft: "auto", fontWeight: 600 }}>Venn ✓</span>}
+                                    <span style={{ fontSize: 9, color: "#4a8a10", marginLeft: "auto", fontWeight: 600 }}>Venn ✓</span>
                                   </div>
-                                );
-                              });
-                            })()}
-                          </div>
+                                ))}
+                              </div>
+                            ) : null;
+                          })()}
                         </div>
                       )}
                     </div>

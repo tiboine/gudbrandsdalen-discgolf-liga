@@ -360,6 +360,22 @@ export function BellIcon({ size = 24, color = "#6b34a3" }) {
   );
 }
 
+// Friends icon — two people with a heart/link
+function FriendsIcon({ size = 32, color = "#6b34a3" } = {}) {
+  return (
+    <svg viewBox="0 0 32 32" width={size} height={size} fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* Person 1 */}
+      <circle cx="11" cy="10" r="4" stroke={color} strokeWidth="1.8" />
+      <path d="M4 24c0-4 3-7 7-7s7 3 7 7" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      {/* Person 2 */}
+      <circle cx="22" cy="10" r="3.5" stroke={color} strokeWidth="1.8" />
+      <path d="M16 24c0-3.5 2.5-6 6-6s6 2.5 6 6" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      {/* Heart between them */}
+      <path d="M16 16.5c0-1 .8-1.8 1.5-1.8s1.2.5 1.2 1.2c0 0 0 .1-.1.2L16 19l-2.6-2.9c-.1-.1-.1-.2-.1-.2 0-.7.5-1.2 1.2-1.2s1.5.8 1.5 1.8z" fill={color} opacity="0.7" />
+    </svg>
+  );
+}
+
 // ---- Exports: Tab and Stat icon mappings ----
 
 export const TAB_ICONS = {
@@ -370,6 +386,7 @@ export const TAB_ICONS = {
   badges: BadgesIcon,
   intro: NewHereIcon,
   admin: AdminIcon,
+  venner: FriendsIcon,
 };
 
 export const STAT_ICONS = {
