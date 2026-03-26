@@ -468,23 +468,23 @@ export default function DiscGolfLeague() {
 
           {(() => {
             const allTabs = [{ id: "tabell", label: "Ligatabell", icon: "🏆" }, { id: "runder", label: "Runder", icon: "📋" }, { id: "baner", label: "Baner", icon: "🗺️" }, { id: "regler", label: "Poeng", icon: "📊" }, { id: "badges", label: "Badges", icon: "🏅" }, { id: "intro", label: "Ny her?", icon: "👋" }, ...(isAdmin ? [{ id: "admin", label: "Admin", icon: "🔧" }] : [])];
-            const row1 = allTabs.slice(0, 5);
-            const row2 = allTabs.slice(5);
-            const btnWidth = "calc(20% - 3.2px)";
-            const tabBtnStyle = (t) => ({ width: btnWidth, minWidth: 0, padding: "10px 6px", border: "none", borderRadius: 10, background: tab === t.id ? "#ffffff" : "transparent", color: tab === t.id ? "#4a8a10" : "#6b7a58", fontWeight: tab === t.id ? 700 : 500, fontSize: 12, cursor: "pointer", transition: "all 0.2s", boxShadow: tab === t.id ? "0 1px 4px rgba(0,0,0,0.1)" : "none" });
+            const mid = Math.ceil(allTabs.length / 2);
+            const row1 = allTabs.slice(0, mid);
+            const row2 = allTabs.slice(mid);
+            const tabBtnStyle = (t, rowLen) => ({ flex: `1 1 ${100/rowLen}%`, minWidth: 0, padding: "10px 4px", border: "none", borderRadius: 10, background: tab === t.id ? "#ffffff" : "transparent", color: tab === t.id ? "#4a8a10" : "#6b7a58", fontWeight: tab === t.id ? 700 : 500, fontSize: 11, cursor: "pointer", transition: "all 0.2s", boxShadow: tab === t.id ? "0 1px 4px rgba(0,0,0,0.1)" : "none" });
             return (
               <div style={{ background: "rgba(0,0,0,0.06)", borderRadius: 12, padding: 4, display: "flex", flexDirection: "column", gap: 2 }}>
                 <div style={{ display: "flex", gap: 4 }}>
                   {row1.map(t => (
-                    <button key={t.id} onClick={() => setTab(t.id)} style={tabBtnStyle(t)}>
+                    <button key={t.id} onClick={() => setTab(t.id)} style={tabBtnStyle(t, row1.length)}>
                       <div style={{ fontSize: 14, marginBottom: 2 }}>{t.icon}</div>{t.label}
                     </button>
                   ))}
                 </div>
                 {row2.length > 0 && (
-                  <div style={{ display: "flex", gap: 4, justifyContent: "center" }}>
+                  <div style={{ display: "flex", gap: 4 }}>
                     {row2.map(t => (
-                      <button key={t.id} onClick={() => setTab(t.id)} style={tabBtnStyle(t)}>
+                      <button key={t.id} onClick={() => setTab(t.id)} style={tabBtnStyle(t, row2.length)}>
                         <div style={{ fontSize: 14, marginBottom: 2 }}>{t.icon}</div>{t.label}
                       </button>
                     ))}
@@ -1257,7 +1257,8 @@ export default function DiscGolfLeague() {
 
       {showProfile && user && (
         <div onClick={() => setShowProfile(false)} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, background: "linear-gradient(180deg, #ffffff, #f0f9e8)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 24, animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, maxHeight: "85vh", background: "linear-gradient(180deg, #ffffff, #f0f9e8)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+            <div style={{ flex: 1, overflowY: "auto", padding: "24px 24px 0" }}>
 
             {/* Header */}
             <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
@@ -1397,10 +1398,14 @@ export default function DiscGolfLeague() {
               );
             })()}
 
-            {/* Handlinger */}
-            <div style={{ display: "flex", flexDirection: "row", gap: 8 }}>
-              <button onClick={() => { setShowProfile(false); }} style={{ flex: 1, padding: 13, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#4a5a38", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Lukk</button>
-              <button onClick={() => { signOut(); setShowProfile(false); }} style={{ flex: 1, padding: 13, border: "1px solid rgba(239,68,68,0.2)", borderRadius: 12, background: "rgba(239,68,68,0.05)", color: "#dc2626", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Logg ut</button>
+            </div>{/* end scrollable area */}
+
+            {/* Sticky buttons */}
+            <div style={{ padding: "12px 24px 24px", borderTop: "1px solid rgba(0,0,0,0.06)", background: "linear-gradient(180deg, #f8fdf2, #f0f9e8)", flexShrink: 0 }}>
+              <div style={{ display: "flex", flexDirection: "row", gap: 8 }}>
+                <button onClick={() => { setShowProfile(false); }} style={{ flex: 1, padding: 13, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#4a5a38", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Lukk</button>
+                <button onClick={() => { signOut(); setShowProfile(false); }} style={{ flex: 1, padding: 13, border: "1px solid rgba(239,68,68,0.2)", borderRadius: 12, background: "rgba(239,68,68,0.05)", color: "#dc2626", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Logg ut</button>
+              </div>
             </div>
           </div>
         </div>
