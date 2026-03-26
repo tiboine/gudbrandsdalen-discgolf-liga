@@ -149,6 +149,7 @@ export default function DiscGolfLeague() {
   const [selectedFriendPlayers, setSelectedFriendPlayers] = useState([]); // array of profile ids to register scores for
   const [friendSearch, setFriendSearch] = useState("");
   const [showFriendScores, setShowFriendScores] = useState(false); // expandable section toggle
+  const [sentRequests, setSentRequests] = useState([]); // track sent friend request IDs
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -368,6 +369,7 @@ export default function DiscGolfLeague() {
       user_id: friendId, type: "friend_request", title: "Ny venneforespørsel!",
       body: `${userName} vil legge deg til som venn`, data: { from_user_id: user.id }
     });
+    setSentRequests(prev => [...prev, friendId]);
     await loadFriends();
   };
 
@@ -388,8 +390,11 @@ export default function DiscGolfLeague() {
       user_id: request.user_id, type: "friend_accepted", title: "Venneforespørsel godkjent!",
       body: `${userName} godtok venneforespørselen din`
     });
+    // Update the notification for this friend request to show "Godkjent"
+    await supabase.from("notifications").update({ title: "✓ Venneforespørsel godkjent", body: `Du og ${request.profiles?.full_name || "en spiller"} er nå venner`, read: true }).eq("user_id", user.id).eq("type", "friend_request").filter("data->>from_user_id", "eq", request.user_id);
     await loadFriends();
     await loadPendingFriendRequests();
+    await loadNotifications();
   };
 
   const declineFriendRequest = async (request) => {
@@ -464,7 +469,8 @@ export default function DiscGolfLeague() {
     ? [...COURSES].sort((a, b) => getDistance(userLocation.lat, userLocation.lng, a.lat, a.lng) - getDistance(userLocation.lat, userLocation.lng, b.lat, b.lng))
     : COURSES;
 
-  const filtered = division === "Alle" ? players : players.filter(p => p.division === division);
+  const friendIds = friends.map(f => f.friend_id);
+  const filtered = division === "Alle" ? players : division === "Venner" ? players.filter(p => friendIds.includes(p.id)) : players.filter(p => p.division === division);
 
   return (
     <div style={{ minHeight: "100vh", background: "linear-gradient(175deg, #f0f9e8 0%, #e6f4d4 40%, #f5faf0 100%)", color: "#1c2b12", fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif", position: "relative", overflow: "hidden" }}>
@@ -526,7 +532,7 @@ export default function DiscGolfLeague() {
           >+ Registrer runde</button>
 
           {(() => {
-            const allTabs = [{ id: "tabell", label: "Ligatabell" }, { id: "runder", label: "Runder" }, { id: "baner", label: "Baner" }, { id: "regler", label: "Poeng" }, { id: "badges", label: "Badges" }, { id: "intro", label: "Ny her?" }, ...(isAdmin ? [{ id: "admin", label: "Admin" }] : [])];
+            const allTabs = [{ id: "tabell", label: "Ligatabell" }, { id: "runder", label: "Runder" }, { id: "baner", label: "Baner" }, { id: "regler", label: "Poeng" }, ...(user && friends.length > 0 ? [{ id: "venner", label: "Venner" }] : []), { id: "badges", label: "Badges" }, { id: "intro", label: "Ny her?" }, ...(isAdmin ? [{ id: "admin", label: "Admin" }] : [])];
             const mid = Math.ceil(allTabs.length / 2);
             const row1 = allTabs.slice(0, mid);
             const row2 = allTabs.slice(mid);
@@ -587,7 +593,7 @@ export default function DiscGolfLeague() {
               );
             })()}
             <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
-              {["Alle", "Åpen", "Rekreasjons"].map(d => (
+              {["Alle", "Åpen", "Rekreasjons", ...(friends.length > 0 ? ["Venner"] : [])].map(d => (
                 <button key={d} onClick={() => setDivision(d)} style={{ padding: "6px 14px", border: "1px solid", borderColor: division === d ? "#65A30D" : "rgba(0,0,0,0.1)", borderRadius: 20, background: division === d ? "rgba(101,163,13,0.12)" : "rgba(255,255,255,0.6)", color: division === d ? "#4a8a10" : "#6b7a58", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>{d}</button>
               ))}
             </div>
@@ -675,7 +681,7 @@ export default function DiscGolfLeague() {
             )}
             {realRounds.filter(r => {
               const courseOk = roundFilter === "alle" || r.course_id === roundFilter;
-              const friendIds = friends.map(f => f.id);
+              const friendIds = friends.map(f => f.friend_id);
               const viewOk = roundsView === "alle" ? true : roundsView === "mine" ? r.user_id === user?.id : friendIds.includes(r.user_id);
               return courseOk && viewOk;
             }).map((r, i) => (
@@ -811,6 +817,58 @@ export default function DiscGolfLeague() {
               <div style={{ fontWeight: 700, color: "#4a8a10", marginBottom: 4 }}>💡 Slik fungerer det</div>
               Hver runde du spiller i ligaen gir poeng basert på din plassering blant alle som spilte den runden. Ved likt resultat deles poengene. Sesongen har 12 planlagte runder, men kun dine 8 beste teller — så du kan misse noen runder uten å tape for mye!
             </div>
+          </div>
+        )}
+
+        {tab === "venner" && user && (
+          <div style={{ animation: "fadeSlideUp 0.4s ease" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <div style={{ fontSize: 16, fontWeight: 800 }}>Venner ({friends.length})</div>
+            </div>
+            {friends.length === 0 && (
+              <div style={{ textAlign: "center", padding: "48px 20px", background: "rgba(255,255,255,0.6)", borderRadius: 16, border: "1px solid rgba(0,0,0,0.08)" }}>
+                <div style={{ fontSize: 40, marginBottom: 12 }}>👥</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "#1c2b12", marginBottom: 6 }}>Ingen venner ennå</div>
+                <div style={{ fontSize: 13, color: "#6b7a58" }}>Trykk på en spiller i ligatabellen og legg til som venn</div>
+              </div>
+            )}
+            {friends.map((f, i) => {
+              const profile = allProfiles.find(p => p.id === f.friend_id);
+              const playerData = players.find(p => p.id === f.friend_id);
+              if (!profile) return null;
+              return (
+                <div key={f.id} onClick={() => {
+                  if (playerData) setSelectedPlayer(playerData);
+                  else setSelectedPlayer({ id: profile.id, name: profile.full_name, avatar: profile.avatar_url, rounds: 0, best: null, avg: null, pts: 0, division: "Rekreasjons", trend: [], hometown: profile.hometown });
+                }} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "14px 16px", marginBottom: 8, display: "flex", alignItems: "center", gap: 12, cursor: "pointer", animation: `fadeSlideUp 0.4s ease ${i * 0.06}s both`, transition: "background 0.15s" }}
+                  onMouseEnter={e => e.currentTarget.style.background = "rgba(101,163,13,0.06)"}
+                  onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.75)"}>
+                  <div style={{ width: 44, height: 44, borderRadius: "50%", overflow: "hidden", background: "rgba(101,163,13,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, border: "2px solid rgba(101,163,13,0.2)", flexShrink: 0 }}>
+                    {profile.avatar_url ? <img src={profile.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (profile.full_name?.[0] ?? "?")}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "#1c2b12" }}>{profile.full_name}</div>
+                    <div style={{ fontSize: 11, color: "#6b7a58" }}>{profile.hometown ? `📍 ${profile.hometown} · ` : ""}{playerData ? `${playerData.rounds} runder · ${playerData.pts} pts` : "Ingen runder"}</div>
+                  </div>
+                  <div style={{ fontSize: 18, color: "#8a9a70" }}>›</div>
+                </div>
+              );
+            })}
+            {pendingFriendRequests.length > 0 && (
+              <div style={{ marginTop: 20 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#6b34a3", marginBottom: 8 }}>📩 Ventende forespørsler ({pendingFriendRequests.length})</div>
+                {pendingFriendRequests.map(r => (
+                  <div key={r.id} style={{ background: "rgba(107,52,163,0.05)", border: "1px solid rgba(107,52,163,0.15)", borderRadius: 12, padding: "12px 14px", marginBottom: 6, display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", background: "rgba(107,52,163,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>
+                      {r.profiles?.avatar_url ? <img src={r.profiles.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (r.profiles?.full_name?.[0] ?? "?")}
+                    </div>
+                    <div style={{ flex: 1, fontSize: 13, fontWeight: 600, color: "#1c2b12" }}>{r.profiles?.full_name || "Ukjent"}</div>
+                    <button onClick={async (e) => { e.stopPropagation(); await acceptFriendRequest(r); }} style={{ padding: "5px 12px", borderRadius: 8, border: "none", background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>Godkjenn</button>
+                    <button onClick={async (e) => { e.stopPropagation(); await declineFriendRequest(r); }} style={{ padding: "5px 10px", borderRadius: 8, border: "1px solid rgba(239,68,68,0.25)", background: "rgba(239,68,68,0.05)", color: "#dc2626", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -1134,7 +1192,7 @@ export default function DiscGolfLeague() {
                 );
               }
               return (
-                <button onClick={async () => { await sendFriendRequest(selectedPlayer.id); }} style={{ width: "100%", padding: "10px 0", borderRadius: 12, border: "1px solid rgba(101,163,13,0.3)", background: "rgba(101,163,13,0.08)", color: "#4a8a10", fontWeight: 700, fontSize: 13, cursor: "pointer", marginBottom: 16, transition: "all 0.2s" }}>👥 Legg til som venn</button>
+                <button onClick={async () => { if (!sentRequests.includes(selectedPlayer.id)) await sendFriendRequest(selectedPlayer.id); }} style={{ width: "100%", padding: "10px 0", borderRadius: 12, border: "1px solid", borderColor: sentRequests.includes(selectedPlayer.id) ? "rgba(107,52,163,0.3)" : "rgba(101,163,13,0.3)", background: sentRequests.includes(selectedPlayer.id) ? "rgba(107,52,163,0.08)" : "rgba(101,163,13,0.08)", color: sentRequests.includes(selectedPlayer.id) ? "#6b34a3" : "#4a8a10", fontWeight: 700, fontSize: 13, cursor: sentRequests.includes(selectedPlayer.id) ? "default" : "pointer", marginBottom: 16, transition: "all 0.2s" }}>{sentRequests.includes(selectedPlayer.id) ? "✓ Forespørsel sendt" : "👥 Legg til som venn"}</button>
               );
             })()}
             <div style={{ marginBottom: 12, fontSize: 13, fontWeight: 700, color: "#1c2b12" }}>Poengutvikling</div>
