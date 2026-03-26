@@ -71,7 +71,7 @@ const BADGE_DEFS = [
     return idx >= 0 && idx < 3;
   }},
   { id: "dedikert", name: "Dedikert", desc: "Fullfør 10 runder", check: (p, rounds) => rounds.length >= 10 },
-  { id: "lagspiller", name: "Lagspiller", desc: "Tagg 5 medspillere", check: () => false },
+  { id: "lagspiller", name: "Lagspiller", desc: "Legg til 5 venner", check: () => false },
 ];
 
 function getDistance(lat1, lng1, lat2, lng2) {
@@ -143,14 +143,14 @@ export default function DiscGolfLeague() {
   const [roundFilter, setRoundFilter] = useState("alle"); // "alle" or course_id
   const [regNote, setRegNote] = useState("");
   const [allProfiles, setAllProfiles] = useState([]);
-  const [selectedCoPlayers, setSelectedCoPlayers] = useState([]); // array of profile ids
-  const [recentCoPlayers, setRecentCoPlayers] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("recentCoPlayers") || "[]"); } catch { return []; }
-  });
+  const [friends, setFriends] = useState([]); // accepted friends list [{id, user_id, friend_id, status}]
+  const [pendingFriendRequests, setPendingFriendRequests] = useState([]); // incoming pending friend requests
+  const [friendScores, setFriendScores] = useState({}); // {profileId: score string} for registering friends' rounds
+  const [selectedFriendPlayers, setSelectedFriendPlayers] = useState([]); // array of profile ids to register scores for
+  const [friendSearch, setFriendSearch] = useState("");
+  const [showFriendScores, setShowFriendScores] = useState(false); // expandable section toggle
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [pendingInvites, setPendingInvites] = useState([]);
-  const [coPlayerSearch, setCoPlayerSearch] = useState("");
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showInstallTip, setShowInstallTip] = useState(false);
   const [onboardingDismissed, setOnboardingDismissed] = useState(() => {
@@ -230,7 +230,8 @@ export default function DiscGolfLeague() {
       const loadedPlayers = await loadPlayers();
       loadAllProfiles();
       loadNotifications();
-      loadPendingInvites();
+      loadFriends();
+      loadPendingFriendRequests();
       // Check badge changes after data is loaded
       const { data: allRoundsForBadges } = await supabase.from("rounds").select("*");
       if (loadedPlayers && allRoundsForBadges) checkBadgeChanges(loadedPlayers, allRoundsForBadges);
@@ -269,7 +270,7 @@ export default function DiscGolfLeague() {
       .from("rounds")
       .select("*, profiles(full_name, avatar_url)")
       .order("created_at", { ascending: false })
-      .limit(20);
+      .limit(50);
     if (data) setRealRounds(data);
   };
 
@@ -344,10 +345,57 @@ export default function DiscGolfLeague() {
     }
   };
 
-  const loadPendingInvites = async () => {
+  const loadFriends = async () => {
     if (!user) return;
-    const { data } = await supabase.from("round_invites").select("*, rounds(course_id, course_name, date, score), profiles!round_invites_inviter_id_fkey(full_name)").eq("invitee_id", user.id).eq("status", "pending");
-    if (data) setPendingInvites(data);
+    const { data } = await supabase.from("friends").select("*").eq("user_id", user.id).eq("status", "accepted");
+    if (data) setFriends(data);
+  };
+
+  const loadPendingFriendRequests = async () => {
+    if (!user) return;
+    const { data } = await supabase.from("friends").select("*, profiles!friends_user_id_fkey(full_name, avatar_url)").eq("friend_id", user.id).eq("status", "pending");
+    if (data) setPendingFriendRequests(data);
+  };
+
+  const sendFriendRequest = async (friendId) => {
+    if (!user || friendId === user.id) return;
+    // Check if friendship already exists in either direction
+    const { data: existing } = await supabase.from("friends").select("id, status").or(`and(user_id.eq.${user.id},friend_id.eq.${friendId}),and(user_id.eq.${friendId},friend_id.eq.${user.id})`);
+    if (existing && existing.length > 0) return; // already exists
+    await supabase.from("friends").insert({ user_id: user.id, friend_id: friendId, status: "pending" });
+    const userName = user.user_metadata?.full_name || "Noen";
+    await supabase.from("notifications").insert({
+      user_id: friendId, type: "friend_request", title: "Ny venneforespørsel!",
+      body: `${userName} vil legge deg til som venn`, data: { from_user_id: user.id }
+    });
+    await loadFriends();
+  };
+
+  const acceptFriendRequest = async (request) => {
+    if (!user) return;
+    // Update the request to accepted
+    await supabase.from("friends").update({ status: "accepted" }).eq("id", request.id);
+    // Create reverse friendship
+    const { data: existing } = await supabase.from("friends").select("id").eq("user_id", user.id).eq("friend_id", request.user_id);
+    if (!existing || existing.length === 0) {
+      await supabase.from("friends").insert({ user_id: user.id, friend_id: request.user_id, status: "accepted" });
+    } else {
+      await supabase.from("friends").update({ status: "accepted" }).eq("user_id", user.id).eq("friend_id", request.user_id);
+    }
+    // Notify the requester
+    const userName = user.user_metadata?.full_name || "Noen";
+    await supabase.from("notifications").insert({
+      user_id: request.user_id, type: "friend_accepted", title: "Venneforespørsel godkjent!",
+      body: `${userName} godtok venneforespørselen din`
+    });
+    await loadFriends();
+    await loadPendingFriendRequests();
+  };
+
+  const declineFriendRequest = async (request) => {
+    if (!user) return;
+    await supabase.from("friends").delete().eq("id", request.id);
+    await loadPendingFriendRequests();
   };
 
   const checkBadgeChanges = async (currentPlayers, currentRounds) => {
@@ -441,10 +489,10 @@ export default function DiscGolfLeague() {
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               {user ? (
                 <>
-                <button onClick={async () => { setShowNotifications(true); await loadNotifications(); loadPendingInvites(); supabase.from("notifications").update({ read: true }).eq("user_id", user.id).eq("read", false).then(() => { setTimeout(() => setNotifications(prev => prev.map(n => ({ ...n, read: true }))), 2000); }); }} style={{ position: "relative", background: "rgba(101,163,13,0.1)", border: "1px solid rgba(101,163,13,0.25)", borderRadius: "50%", width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                <button onClick={async () => { setShowNotifications(true); await loadNotifications(); loadPendingFriendRequests(); supabase.from("notifications").update({ read: true }).eq("user_id", user.id).eq("read", false).then(() => { setTimeout(() => setNotifications(prev => prev.map(n => ({ ...n, read: true }))), 2000); }); }} style={{ position: "relative", background: "rgba(101,163,13,0.1)", border: "1px solid rgba(101,163,13,0.25)", borderRadius: "50%", width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
                   {BellIcon({ size: 18, color: "#6b34a3" })}
-                  {(notifications.filter(n => !n.read).length + pendingInvites.length) > 0 && (
-                    <div style={{ position: "absolute", top: -2, right: -2, width: 16, height: 16, borderRadius: "50%", background: "#ef4444", color: "#fff", fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{notifications.filter(n => !n.read).length + pendingInvites.length}</div>
+                  {(notifications.filter(n => !n.read).length + pendingFriendRequests.length) > 0 && (
+                    <div style={{ position: "absolute", top: -2, right: -2, width: 16, height: 16, borderRadius: "50%", background: "#ef4444", color: "#fff", fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{notifications.filter(n => !n.read).length + pendingFriendRequests.length}</div>
                   )}
                 </button>
                 <button onClick={() => setShowProfile(true)} style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(101,163,13,0.1)", border: "1px solid rgba(101,163,13,0.25)", borderRadius: "50%", width: 34, height: 34, cursor: "pointer", overflow: "hidden", padding: 0 }}>
@@ -640,6 +688,20 @@ export default function DiscGolfLeague() {
                         {new Date(r.date + "T12:00:00").toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", year: "numeric" })}
                       </div>
                       {r.note && <div style={{ fontSize: 11, color: "#5a7040", marginTop: 4, fontStyle: "italic", background: "rgba(101,163,13,0.06)", padding: "3px 8px", borderRadius: 6, display: "inline-block" }}>💬 {r.note}</div>}
+                      {r.group_id && (() => {
+                        const groupMates = realRounds.filter(gr => gr.group_id === r.group_id && gr.id !== r.id);
+                        if (groupMates.length === 0) return null;
+                        return (
+                          <div style={{ fontSize: 11, color: "#6b7a58", marginTop: 4 }}>
+                            Spilt med: {groupMates.map((gm, gi) => (
+                              <span key={gm.id}>
+                                {gi > 0 && ", "}
+                                <span onClick={(e) => { e.stopPropagation(); const p = players.find(pl => pl.id === gm.user_id); if (p) setSelectedPlayer(p); }} style={{ color: "#4a8a10", fontWeight: 600, cursor: "pointer" }}>{gm.profiles?.full_name?.split(" ")[0] ?? "Ukjent"}</span>
+                              </span>
+                            ))}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                   <div style={{ textAlign: "right" }}>
@@ -1003,7 +1065,8 @@ export default function DiscGolfLeague() {
                     { label: "🏅 Ny badge", type: "badge_earned", title: "Ny badge: Utforsker! 🗺️", body: "Du har spilt 3 forskjellige baner" },
                     { label: "😢 Mistet badge", type: "badge_lost", title: "Du mistet Banekonge! 👑", body: "Ole Hansen tok over på Skogen" },
                     { label: "🏆 Ny banerekord", type: "course_record", title: "Ny banerekord! 🏆", body: "Kari Nordmann satte ny rekord på Jørstadmoen: -5" },
-                    { label: "🏷️ Medspiller-tagg", type: "round_invite", title: "Du ble tagget! 🏷️", body: "Ole Hansen spilte en runde på Skogen og tagget deg", data: { course_id: "skogen", date: new Date().toISOString().slice(0, 10) } },
+                    { label: "👥 Venneforespørsel", type: "friend_request", title: "Ny venneforespørsel!", body: "Ole Hansen vil legge deg til som venn", data: { from_user_id: "test" } },
+                    { label: "🥏 Runde registrert", type: "round_registered", title: "Runde registrert for deg!", body: "Ole Hansen registrerte -3 for deg på Skogen", data: { course_id: "skogen", date: new Date().toISOString().slice(0, 10) } },
                     { label: "⭐ Ukens spiller", type: "weekly_best", title: "Ukens spiller! ⭐", body: "Du hadde den beste runden denne uken: -7 på Lalm" },
                   ].map(n => (
                     <button key={n.type} onClick={async () => {
@@ -1046,6 +1109,17 @@ export default function DiscGolfLeague() {
                 </div>
               ))}
             </div>
+            {/* Legg til venn button */}
+            {user && selectedPlayer.id !== user.id && (() => {
+              const isFriend = friends.some(f => f.friend_id === selectedPlayer.id);
+              const hasPendingOutgoing = false; // We'd need to check, but for simplicity show button
+              if (isFriend) {
+                return <div style={{ marginBottom: 16, padding: "8px 14px", borderRadius: 10, background: "rgba(101,163,13,0.07)", border: "1px solid rgba(101,163,13,0.15)", fontSize: 12, color: "#4a8a10", fontWeight: 600, textAlign: "center" }}>✓ Dere er venner</div>;
+              }
+              return (
+                <button onClick={async () => { await sendFriendRequest(selectedPlayer.id); }} style={{ width: "100%", padding: "10px 0", borderRadius: 12, border: "1px solid rgba(101,163,13,0.3)", background: "rgba(101,163,13,0.08)", color: "#4a8a10", fontWeight: 700, fontSize: 13, cursor: "pointer", marginBottom: 16, transition: "all 0.2s" }}>👥 Legg til som venn</button>
+              );
+            })()}
             <div style={{ marginBottom: 12, fontSize: 13, fontWeight: 700, color: "#1c2b12" }}>Poengutvikling</div>
             <div style={{ background: "rgba(0,0,0,0.03)", borderRadius: 12, padding: 16, border: "1px solid rgba(0,0,0,0.06)" }}>
               <Sparkline data={selectedPlayer.trend} color="#65A30D" />
@@ -1078,9 +1152,20 @@ export default function DiscGolfLeague() {
                     </div>
                   </div>
                   {r.note && <div style={{ fontSize: 11, color: "#5a7040", marginTop: 6, fontStyle: "italic", background: "rgba(101,163,13,0.06)", padding: "3px 8px", borderRadius: 6, display: "inline-block" }}>💬 {r.note}</div>}
-                  {r.co_players && r.co_players.length > 0 && (
-                    <div style={{ fontSize: 10, color: "#8a9a70", marginTop: 4 }}>Medspillere: {r.co_players.join(", ")}</div>
-                  )}
+                  {r.group_id && (() => {
+                    const groupMates = selectedPlayerRounds.filter(gr => gr.group_id === r.group_id && gr.id !== r.id);
+                    // Also check realRounds for group mates not in selectedPlayerRounds
+                    const allGroupMates = realRounds.filter(gr => gr.group_id === r.group_id && gr.id !== r.id);
+                    const mates = allGroupMates.length > groupMates.length ? allGroupMates : groupMates;
+                    if (mates.length === 0) return null;
+                    return (
+                      <div style={{ fontSize: 10, color: "#8a9a70", marginTop: 4 }}>
+                        Spilt med: {mates.map((gm, gi) => (
+                          <span key={gm.id}>{gi > 0 && ", "}<span onClick={(e) => { e.stopPropagation(); const p = players.find(pl => pl.id === gm.user_id); if (p) { setSelectedPlayer(p); } }} style={{ color: "#4a8a10", fontWeight: 600, cursor: "pointer" }}>{gm.profiles?.full_name?.split(" ")[0] ?? "Ukjent"}</span></span>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
               );
             })}
@@ -1090,7 +1175,7 @@ export default function DiscGolfLeague() {
       )}
 
       {showRegister && (
-        <div onClick={() => { setShowRegister(false); setRegSuccess(false); setLocationStatus("idle"); setUserLocation(null); setEditRound(null); setRegError(""); }} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
+        <div onClick={() => { setShowRegister(false); setRegSuccess(false); setLocationStatus("idle"); setUserLocation(null); setEditRound(null); setRegError(""); setSelectedFriendPlayers([]); setFriendScores({}); setFriendSearch(""); setShowFriendScores(false); }} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
           <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, background: "linear-gradient(180deg, #ffffff, #f0f9e8)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 24, animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
             {regSuccess ? (
               <div style={{ textAlign: "center", padding: "30px 0" }}>
@@ -1173,47 +1258,65 @@ export default function DiscGolfLeague() {
                   </div>
                   {!editRound && allProfiles.length > 1 && (
                     <div>
-                      <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#5a7040", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.1em" }}>Medspillere <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(valgfritt)</span></label>
-                      {selectedCoPlayers.length > 0 && (
-                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
-                          {selectedCoPlayers.map(pid => {
-                            const p = allProfiles.find(pr => pr.id === pid);
-                            return p ? (
-                              <div key={pid} style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 8px 4px 4px", borderRadius: 20, background: "rgba(101,163,13,0.1)", border: "1px solid rgba(101,163,13,0.25)", fontSize: 12, fontWeight: 600, color: "#4a8a10" }}>
-                                <div style={{ width: 20, height: 20, minWidth: 20, borderRadius: "50%", overflow: "hidden", background: "rgba(101,163,13,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10 }}>
-                                  {p.avatar_url?.startsWith("http") ? <img src={p.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (p.full_name?.[0] ?? "?")}
-                                </div>
-                                {p.full_name?.split(" ")[0]}
-                                <span onClick={() => setSelectedCoPlayers(prev => prev.filter(id => id !== pid))} style={{ cursor: "pointer", marginLeft: 2, fontSize: 14, lineHeight: 1 }}>×</span>
-                              </div>
-                            ) : null;
-                          })}
+                      <button onClick={() => setShowFriendScores(!showFriendScores)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "10px 14px", borderRadius: 12, background: showFriendScores ? "rgba(101,163,13,0.08)" : "rgba(0,0,0,0.03)", border: showFriendScores ? "1px solid rgba(101,163,13,0.2)" : "1px solid rgba(0,0,0,0.08)", cursor: "pointer", transition: "all 0.2s" }}>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: showFriendScores ? "#4a8a10" : "#5a7040" }}>👥 Legg til venners score</span>
+                        <span style={{ fontSize: 16, color: "#6b7a58", transform: showFriendScores ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s" }}>▾</span>
+                      </button>
+                      {showFriendScores && (
+                        <div style={{ marginTop: 10, animation: "fadeSlideUp 0.2s ease" }}>
+                          {/* Selected friends with score inputs */}
+                          {selectedFriendPlayers.length > 0 && (
+                            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 10 }}>
+                              {selectedFriendPlayers.map(pid => {
+                                const p = allProfiles.find(pr => pr.id === pid);
+                                if (!p) return null;
+                                const isFriend = friends.some(f => f.friend_id === pid);
+                                return (
+                                  <div key={pid} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 10, background: "rgba(101,163,13,0.06)", border: "1px solid rgba(101,163,13,0.15)" }}>
+                                    <div style={{ width: 24, height: 24, minWidth: 24, borderRadius: "50%", overflow: "hidden", background: "rgba(101,163,13,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, flexShrink: 0 }}>
+                                      {p.avatar_url?.startsWith("http") ? <img src={p.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (p.full_name?.[0] ?? "?")}
+                                    </div>
+                                    <span style={{ fontSize: 12, fontWeight: 600, color: "#1c2b12", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.full_name?.split(" ")[0]}</span>
+                                    {!isFriend && <span style={{ fontSize: 9, color: "#b07a00", background: "rgba(251,191,36,0.15)", padding: "1px 6px", borderRadius: 6, flexShrink: 0 }}>Ny venn</span>}
+                                    <input type="number" placeholder="Total" value={friendScores[pid] || ""} onChange={e => setFriendScores(prev => ({ ...prev, [pid]: e.target.value }))} style={{ width: 70, padding: "6px 8px", borderRadius: 8, background: "rgba(255,255,255,0.8)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 13, outline: "none", textAlign: "center", marginLeft: "auto", flexShrink: 0, boxSizing: "border-box" }} />
+                                    <span onClick={() => { setSelectedFriendPlayers(prev => prev.filter(id => id !== pid)); setFriendScores(prev => { const n = { ...prev }; delete n[pid]; return n; }); }} style={{ cursor: "pointer", fontSize: 16, color: "#8a9a70", lineHeight: 1, flexShrink: 0 }}>×</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                          {/* Search */}
+                          <input type="text" placeholder="Søk etter spiller..." value={friendSearch} onChange={e => setFriendSearch(e.target.value)} style={{ width: "100%", padding: "8px 12px", borderRadius: 10, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 13, outline: "none", boxSizing: "border-box", marginBottom: 6 }} />
+                          <div style={{ maxHeight: 140, overflowY: "auto", borderRadius: 12, background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.08)", padding: 4 }}>
+                            {(() => {
+                              const q = friendSearch.toLowerCase().trim();
+                              const others = allProfiles.filter(p => p.id !== user?.id && !selectedFriendPlayers.includes(p.id));
+                              const filtered = q ? others.filter(p => p.full_name?.toLowerCase().includes(q)) : others;
+                              // Sort: friends first, then others
+                              const friendIds = friends.map(f => f.friend_id);
+                              const friendList = filtered.filter(p => friendIds.includes(p.id));
+                              const nonFriends = filtered.filter(p => !friendIds.includes(p.id));
+                              const sorted = [...friendList, ...nonFriends];
+                              return sorted.length === 0 ? (
+                                <div style={{ padding: 12, fontSize: 12, color: "#8a9a70", textAlign: "center" }}>{q ? "Ingen treff" : "Ingen andre spillere registrert ennå"}</div>
+                              ) : sorted.map(p => {
+                                const isFriend = friendIds.includes(p.id);
+                                return (
+                                  <div key={p.id} onClick={() => { setSelectedFriendPlayers(prev => [...prev, p.id]); setFriendSearch(""); }} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 8, cursor: "pointer", transition: "background 0.15s" }}
+                                    onMouseEnter={e => e.currentTarget.style.background = "rgba(101,163,13,0.08)"}
+                                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                                    <div style={{ width: 24, height: 24, minWidth: 24, borderRadius: "50%", overflow: "hidden", background: "rgba(101,163,13,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, border: "1px solid rgba(0,0,0,0.06)", flexShrink: 0 }}>
+                                      {p.avatar_url?.startsWith("http") ? <img src={p.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (p.full_name?.[0] ?? "?")}
+                                    </div>
+                                    <span style={{ fontSize: 13, fontWeight: 600, color: "#1c2b12" }}>{p.full_name}</span>
+                                    {isFriend && <span style={{ fontSize: 9, color: "#4a8a10", marginLeft: "auto", fontWeight: 600 }}>Venn ✓</span>}
+                                  </div>
+                                );
+                              });
+                            })()}
+                          </div>
                         </div>
                       )}
-                      <input type="text" placeholder="Søk etter spiller..." value={coPlayerSearch} onChange={e => setCoPlayerSearch(e.target.value)} style={{ width: "100%", padding: "8px 12px", borderRadius: 10, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 13, outline: "none", boxSizing: "border-box", marginBottom: 6 }} />
-                      <div style={{ maxHeight: 140, overflowY: "auto", borderRadius: 12, background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.08)", padding: 4 }}>
-                        {(() => {
-                          const q = coPlayerSearch.toLowerCase().trim();
-                          const others = allProfiles.filter(p => p.id !== user?.id && !selectedCoPlayers.includes(p.id));
-                          const filtered = q ? others.filter(p => p.full_name?.toLowerCase().includes(q)) : others;
-                          const recent = filtered.filter(p => recentCoPlayers.includes(p.id));
-                          const rest = filtered.filter(p => !recentCoPlayers.includes(p.id));
-                          const sorted = [...recent.sort((a, b) => recentCoPlayers.indexOf(a.id) - recentCoPlayers.indexOf(b.id)), ...rest];
-                          return sorted.length === 0 ? (
-                            <div style={{ padding: 12, fontSize: 12, color: "#8a9a70", textAlign: "center" }}>{q ? "Ingen treff" : "Ingen andre spillere registrert ennå"}</div>
-                          ) : sorted.map(p => (
-                            <div key={p.id} onClick={() => { setSelectedCoPlayers(prev => [...prev, p.id]); setCoPlayerSearch(""); }} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 8, cursor: "pointer", transition: "background 0.15s" }}
-                              onMouseEnter={e => e.currentTarget.style.background = "rgba(101,163,13,0.08)"}
-                              onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                              <div style={{ width: 24, height: 24, minWidth: 24, borderRadius: "50%", overflow: "hidden", background: "rgba(101,163,13,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, border: "1px solid rgba(0,0,0,0.06)", flexShrink: 0 }}>
-                                {p.avatar_url?.startsWith("http") ? <img src={p.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (p.full_name?.[0] ?? "?")}
-                              </div>
-                              <span style={{ fontSize: 13, fontWeight: 600, color: "#1c2b12" }}>{p.full_name}</span>
-                              {!q && recentCoPlayers.includes(p.id) && <span style={{ fontSize: 9, color: "#8a9a70", marginLeft: "auto" }}>Nylig</span>}
-                            </div>
-                          ));
-                        })()}
-                      </div>
                     </div>
                   )}
                   {regError && <div style={{ fontSize: 12, color: "#dc2626", background: "rgba(239,68,68,0.08)", padding: "8px 12px", borderRadius: 8, border: "1px solid rgba(239,68,68,0.2)" }}>{regError}</div>}
@@ -1228,6 +1331,17 @@ export default function DiscGolfLeague() {
                       setRegError(`Ugyldig score. For ${course.name} (par ${course.par}) bør total være mellom ${course.par - 15} og ${course.par + 30}`);
                       return;
                     }
+                    // Validate friend scores if any
+                    for (const pid of selectedFriendPlayers) {
+                      const fs = parseInt(friendScores[pid]);
+                      if (!fs || isNaN(fs)) { setRegError("Fyll inn score for alle valgte spillere"); return; }
+                      const fvsPar = fs - course.par;
+                      if (fs < 1 || fvsPar < -15 || fvsPar > 30) {
+                        const p = allProfiles.find(pr => pr.id === pid);
+                        setRegError(`Ugyldig score for ${p?.full_name || "spiller"}. Bør være mellom ${course.par - 15} og ${course.par + 30}`);
+                        return;
+                      }
+                    }
                     setRegError("");
                     if (user) {
                       setRoundsLoading(true);
@@ -1241,6 +1355,8 @@ export default function DiscGolfLeague() {
                           note: regNote || null,
                         }).eq("id", editRound.id);
                       } else {
+                        // Generate group_id if registering with friends
+                        const groupId = selectedFriendPlayers.length > 0 ? crypto.randomUUID() : null;
                         const { data: newRound } = await supabase.from("rounds").insert({
                           user_id: user.id,
                           course_id: regForm.course,
@@ -1249,27 +1365,48 @@ export default function DiscGolfLeague() {
                           total_score: totalScore,
                           date: regForm.date,
                           note: regNote || null,
+                          group_id: groupId,
                         }).select().single();
 
-                        // Send invites to co-players
-                        if (newRound && selectedCoPlayers.length > 0) {
-                          const inviterName = user.user_metadata?.full_name || "Noen";
-                          await supabase.from("round_invites").insert(
-                            selectedCoPlayers.map(pid => ({ round_id: newRound.id, inviter_id: user.id, invitee_id: pid }))
-                          );
-                          await supabase.from("notifications").insert(
-                            selectedCoPlayers.map(pid => ({
+                        // Register friends' rounds with same group_id
+                        if (newRound && selectedFriendPlayers.length > 0) {
+                          const userName = user.user_metadata?.full_name || "Noen";
+                          const friendRounds = selectedFriendPlayers.map(pid => {
+                            const fs = parseInt(friendScores[pid]);
+                            return {
                               user_id: pid,
-                              type: "round_invite",
-                              title: "Ny runde-invitasjon!",
-                              body: `${inviterName} spilte ${course.name} og tagget deg som medspiller. Registrer din score!`,
-                              data: { round_id: newRound.id, course_id: regForm.course, date: regForm.date },
-                            }))
-                          );
-                          // Save recent co-players
-                          const updated = [...new Set([...selectedCoPlayers, ...recentCoPlayers])].slice(0, 10);
-                          setRecentCoPlayers(updated);
-                          localStorage.setItem("recentCoPlayers", JSON.stringify(updated));
+                              course_id: regForm.course,
+                              course_name: course.name,
+                              score: fs - course.par,
+                              total_score: fs,
+                              date: regForm.date,
+                              group_id: groupId,
+                            };
+                          });
+                          await supabase.from("rounds").insert(friendRounds);
+
+                          // Send notifications to friends
+                          const friendIds = friends.map(f => f.friend_id);
+                          const notifs = selectedFriendPlayers.map(pid => {
+                            const fs = parseInt(friendScores[pid]);
+                            const fvsPar = fs - course.par;
+                            const scoreStr = fvsPar === 0 ? "E" : fvsPar > 0 ? `+${fvsPar}` : `${fvsPar}`;
+                            return {
+                              user_id: pid,
+                              type: "round_registered",
+                              title: "Runde registrert for deg!",
+                              body: `${userName} registrerte ${scoreStr} for deg på ${course.name}`,
+                              data: { course_id: regForm.course, date: regForm.date, group_id: groupId },
+                            };
+                          });
+                          await supabase.from("notifications").insert(notifs);
+
+                          // Auto-send friend requests to non-friends
+                          for (const pid of selectedFriendPlayers) {
+                            if (!friendIds.includes(pid)) {
+                              await sendFriendRequest(pid);
+                            }
+                          }
                         }
 
                         // Check for new course record
@@ -1305,9 +1442,10 @@ export default function DiscGolfLeague() {
                       setRoundsLoading(false);
                     }
                     setEditRound(null);
-                    setSelectedCoPlayers([]);
+                    setSelectedFriendPlayers([]);
+                    setFriendScores({});
                     setRegSuccess(true);
-                    setTimeout(() => { setRegSuccess(false); setShowRegister(false); setRegForm({ course: "", score: "", date: "" }); setEditRound(null); setRegError(""); setRegNote(""); setCoPlayerSearch(""); }, 2000);
+                    setTimeout(() => { setRegSuccess(false); setShowRegister(false); setRegForm({ course: "", score: "", date: "" }); setEditRound(null); setRegError(""); setRegNote(""); setFriendSearch(""); setShowFriendScores(false); }, 2000);
                   }} style={{ width: "100%", padding: 14, border: "none", borderRadius: 14, background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 24px rgba(101,163,13,0.25)", marginTop: 4 }}>{editRound ? "Lagre endring ✓" : "Registrer 🥏"}</button>
                   <button onClick={() => { setShowRegister(false); setEditRound(null); setRegError(""); }} style={{ width: "100%", padding: 12, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#6b7a58", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Avbryt</button>
                 </div>
@@ -1544,6 +1682,33 @@ export default function DiscGolfLeague() {
               );
             })()}
 
+            {/* Venner */}
+            {friends.length > 0 && (
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Venner ({friends.length})</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  {friends.map(f => {
+                    const friendProfile = allProfiles.find(p => p.id === f.friend_id);
+                    const friendPlayer = players.find(p => p.id === f.friend_id);
+                    if (!friendProfile) return null;
+                    return (
+                      <div key={f.id} onClick={() => { if (friendPlayer) { setShowProfile(false); setSelectedPlayer(friendPlayer); } }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", borderRadius: 10, background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.06)", cursor: friendPlayer ? "pointer" : "default", transition: "background 0.15s" }}
+                        onMouseEnter={e => { if (friendPlayer) e.currentTarget.style.background = "rgba(101,163,13,0.06)"; }}
+                        onMouseLeave={e => e.currentTarget.style.background = "rgba(0,0,0,0.03)"}>
+                        <div style={{ width: 28, height: 28, minWidth: 28, borderRadius: "50%", overflow: "hidden", background: "rgba(101,163,13,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, border: "1px solid rgba(0,0,0,0.06)", flexShrink: 0 }}>
+                          {friendProfile.avatar_url?.startsWith("http") ? <img src={friendProfile.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (friendProfile.full_name?.[0] ?? "?")}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: "#1c2b12", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{friendProfile.full_name}</div>
+                          {friendPlayer && <div style={{ fontSize: 10, color: "#6b7a58" }}>{friendPlayer.rounds} runder · {friendPlayer.pts} pts</div>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Mine runder */}
             {(() => {
               const myRounds = realRounds.filter(r => r.user_id === user.id).sort((a, b) => b.date.localeCompare(a.date));
@@ -1642,13 +1807,32 @@ export default function DiscGolfLeague() {
                     </div>
                   )}
 
-                  {/* Co-players */}
-                  {r.co_players && r.co_players.length > 0 && (
-                    <div style={{ marginBottom: 16 }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>Medspillere</div>
-                      <div style={{ fontSize: 13, color: "#4a5a38" }}>{r.co_players.join(", ")}</div>
-                    </div>
-                  )}
+                  {/* Spilt med (group_id) */}
+                  {r.group_id && (() => {
+                    const groupMates = realRounds.filter(gr => gr.group_id === r.group_id && gr.id !== r.id);
+                    if (groupMates.length === 0) return null;
+                    return (
+                      <div style={{ marginBottom: 16 }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>Spilt med</div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                          {groupMates.map(gm => {
+                            const gmCourse = COURSES.find(c => c.id === gm.course_id);
+                            const gmTotal = gm.total_score ?? (gm.score + (gmCourse?.par ?? 0));
+                            const gmScoreStr = gm.score === 0 ? "E" : gm.score > 0 ? `+${gm.score}` : `${gm.score}`;
+                            return (
+                              <div key={gm.id} onClick={(e) => { e.stopPropagation(); const p = players.find(pl => pl.id === gm.user_id); if (p) { setSelectedRound(null); setSelectedPlayer(p); } }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", borderRadius: 10, background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.06)", cursor: "pointer" }}>
+                                <div style={{ width: 28, height: 28, minWidth: 28, borderRadius: "50%", overflow: "hidden", background: "rgba(101,163,13,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, border: "1px solid rgba(0,0,0,0.06)", flexShrink: 0 }}>
+                                  {gm.profiles?.avatar_url?.startsWith("http") ? <img src={gm.profiles.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (gm.profiles?.full_name?.[0] ?? "?")}
+                                </div>
+                                <span style={{ fontSize: 13, fontWeight: 600, color: "#1c2b12", flex: 1 }}>{gm.profiles?.full_name ?? "Ukjent"}</span>
+                                <span style={{ fontSize: 14, fontWeight: 800, color: gm.score <= 0 ? "#4a8a10" : "#ef4444" }}>{gmTotal} <span style={{ fontSize: 11, fontWeight: 600, color: "#6b7a58" }}>({gmScoreStr})</span></span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {/* Own round actions */}
                   {isOwn && (
@@ -1685,26 +1869,24 @@ export default function DiscGolfLeague() {
             <div style={{ fontSize: 18, fontWeight: 800, color: "#1c2b12", marginBottom: 4 }}>🔔 Varsler</div>
             <div style={{ fontSize: 12, color: "#6b7a58", marginBottom: 16 }}>Invitasjoner og oppdateringer</div>
 
-            {/* Pending invites */}
-            {pendingInvites.length > 0 && (
+            {/* Pending friend requests */}
+            {pendingFriendRequests.length > 0 && (
               <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "#4a8a10", marginBottom: 8 }}>Runde-invitasjoner</div>
-                {pendingInvites.map(inv => (
-                  <div key={inv.id} style={{ background: "rgba(101,163,13,0.07)", border: "1px solid rgba(101,163,13,0.2)", borderRadius: 12, padding: "12px 14px", marginBottom: 8 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>🥏 {inv.profiles?.full_name ?? "Noen"} tagget deg</div>
-                    <div style={{ fontSize: 12, color: "#4a5a38", marginBottom: 8 }}>{inv.rounds?.course_name} · {inv.rounds?.date ? new Date(inv.rounds.date + "T12:00:00").toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", year: "numeric" }) : ""}</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#4a8a10", marginBottom: 8 }}>Venneforespørsler</div>
+                {pendingFriendRequests.map(req => (
+                  <div key={req.id} style={{ background: "rgba(101,163,13,0.07)", border: "1px solid rgba(101,163,13,0.2)", borderRadius: 12, padding: "12px 14px", marginBottom: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                      <div style={{ width: 32, height: 32, minWidth: 32, borderRadius: "50%", overflow: "hidden", background: "rgba(101,163,13,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, border: "1px solid rgba(0,0,0,0.08)", flexShrink: 0 }}>
+                        {req.profiles?.avatar_url?.startsWith("http") ? <img src={req.profiles.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (req.profiles?.full_name?.[0] ?? "?")}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 700 }}>{req.profiles?.full_name ?? "Noen"}</div>
+                        <div style={{ fontSize: 11, color: "#6b7a58" }}>vil legge deg til som venn</div>
+                      </div>
+                    </div>
                     <div style={{ display: "flex", gap: 8 }}>
-                      <button onClick={async () => {
-                        await supabase.from("round_invites").update({ status: "confirmed" }).eq("id", inv.id);
-                        setRegForm({ course: inv.rounds?.course_id ?? "", score: "", date: inv.rounds?.date ?? "" });
-                        setShowNotifications(false);
-                        setShowRegister(true);
-                        loadPendingInvites();
-                      }} style={{ flex: 1, padding: "8px 0", borderRadius: 10, border: "1px solid rgba(101,163,13,0.3)", background: "rgba(101,163,13,0.1)", color: "#4a8a10", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>🥏 Registrer min score</button>
-                      <button onClick={async () => {
-                        await supabase.from("round_invites").update({ status: "confirmed" }).eq("id", inv.id);
-                        loadPendingInvites();
-                      }} style={{ flex: 1, padding: "8px 0", borderRadius: 10, border: "none", background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>👍 Bekreft</button>
+                      <button onClick={() => acceptFriendRequest(req)} style={{ flex: 1, padding: "8px 0", borderRadius: 10, border: "none", background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>✓ Godta</button>
+                      <button onClick={() => declineFriendRequest(req)} style={{ flex: 1, padding: "8px 0", borderRadius: 10, border: "1px solid rgba(239,68,68,0.2)", background: "rgba(239,68,68,0.05)", color: "#dc2626", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>✕ Avslå</button>
                     </div>
                   </div>
                 ))}
@@ -1712,7 +1894,7 @@ export default function DiscGolfLeague() {
             )}
 
             {/* General notifications */}
-            {notifications.length === 0 && pendingInvites.length === 0 && (
+            {notifications.length === 0 && pendingFriendRequests.length === 0 && (
               <div style={{ textAlign: "center", padding: "30px 0" }}>
                 <div style={{ fontSize: 32, marginBottom: 8 }}>🔕</div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "#6b7a58" }}>Ingen varsler ennå</div>
@@ -1723,13 +1905,11 @@ export default function DiscGolfLeague() {
                 if (n.type === "badge_earned" || n.type === "badge_lost") { setTab("badges"); setShowNotifications(false); }
                 else if (n.type === "course_record") { setTab("baner"); setShowNotifications(false); }
                 else if (n.type === "weekly_best") { setTab("tabell"); setShowNotifications(false); }
-                else if (n.type === "round_invite") {
-                  // Navigate to register round
-                  if (n.data?.course_id) {
-                    setRegForm({ course: n.data.course_id, score: "", date: n.data.date || "" });
-                    setShowNotifications(false);
-                    setShowRegister(true);
-                  }
+                else if (n.type === "friend_request" || n.type === "friend_accepted") {
+                  // Already handled in pending requests section above
+                }
+                else if (n.type === "round_registered") {
+                  setTab("runder"); setShowNotifications(false);
                 }
               }} style={{ background: !n.read ? "rgba(107,52,163,0.08)" : "rgba(0,0,0,0.02)", border: !n.read ? "1px solid rgba(107,52,163,0.2)" : "1px solid rgba(0,0,0,0.06)", borderRadius: 12, padding: "12px 14px", marginBottom: 6, cursor: "pointer", transition: "background 0.15s" }}
                 onMouseEnter={e => e.currentTarget.style.background = !n.read ? "rgba(107,52,163,0.12)" : "rgba(101,163,13,0.06)"}
