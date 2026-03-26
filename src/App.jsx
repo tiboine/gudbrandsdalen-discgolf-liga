@@ -156,6 +156,7 @@ export default function DiscGolfLeague() {
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [selectedPlayerRounds, setSelectedPlayerRounds] = useState([]);
   const [userHometown, setUserHometown] = useState("");
+  const [showHometownSuggestions, setShowHometownSuggestions] = useState(false);
 
   useEffect(() => {
     if (!selectedPlayer) { setSelectedPlayerRounds([]); return; }
@@ -317,7 +318,7 @@ export default function DiscGolfLeague() {
   };
 
   const loadAllProfiles = async () => {
-    const { data } = await supabase.from("profiles").select("id, full_name, avatar_url");
+    const { data } = await supabase.from("profiles").select("id, full_name, avatar_url, hometown");
     if (data) setAllProfiles(data);
   };
 
@@ -442,8 +443,10 @@ export default function DiscGolfLeague() {
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, margin: "16px 0" }}>
-            {[{ label: "Spillere", value: players.length, icon: "👥" }, { label: "Runder spilt", value: realRounds.length, icon: "🥏" }, { label: "Baner", value: COURSES.length, icon: "🗺️" }].map(s => (
-              <div key={s.label} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "12px 10px", textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
+            {[{ label: "Spillere", value: players.length, icon: "👥", tab: "tabell" }, { label: "Runder spilt", value: realRounds.length, icon: "🥏", tab: "runder" }, { label: "Baner", value: COURSES.length, icon: "🗺️", tab: "baner" }].map(s => (
+              <div key={s.label} onClick={() => setTab(s.tab)} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "12px 10px", textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", cursor: "pointer", transition: "transform 0.15s, box-shadow 0.15s" }}
+                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)"; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.06)"; }}>
                 <div style={{ fontSize: 13, marginBottom: 2 }}>{s.icon}</div>
                 <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.1 }}><AnimNum value={s.value} /></div>
                 <div style={{ fontSize: 10, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>{s.label}</div>
@@ -460,7 +463,8 @@ export default function DiscGolfLeague() {
             const allTabs = [{ id: "tabell", label: "Ligatabell", icon: "🏆" }, { id: "runder", label: "Runder", icon: "📋" }, { id: "baner", label: "Baner", icon: "🗺️" }, { id: "regler", label: "Poeng", icon: "📊" }, { id: "badges", label: "Badges", icon: "🏅" }, { id: "intro", label: "Ny her?", icon: "👋" }, ...(isAdmin ? [{ id: "admin", label: "Admin", icon: "🔧" }] : [])];
             const row1 = allTabs.slice(0, 5);
             const row2 = allTabs.slice(5);
-            const tabBtnStyle = (t) => ({ flex: "1 1 0", minWidth: 0, padding: "10px 6px", border: "none", borderRadius: 10, background: tab === t.id ? "#ffffff" : "transparent", color: tab === t.id ? "#4a8a10" : "#6b7a58", fontWeight: tab === t.id ? 700 : 500, fontSize: 12, cursor: "pointer", transition: "all 0.2s", boxShadow: tab === t.id ? "0 1px 4px rgba(0,0,0,0.1)" : "none" });
+            const btnWidth = "calc(20% - 3.2px)";
+            const tabBtnStyle = (t) => ({ width: btnWidth, minWidth: 0, padding: "10px 6px", border: "none", borderRadius: 10, background: tab === t.id ? "#ffffff" : "transparent", color: tab === t.id ? "#4a8a10" : "#6b7a58", fontWeight: tab === t.id ? 700 : 500, fontSize: 12, cursor: "pointer", transition: "all 0.2s", boxShadow: tab === t.id ? "0 1px 4px rgba(0,0,0,0.1)" : "none" });
             return (
               <div style={{ background: "rgba(0,0,0,0.06)", borderRadius: 12, padding: 4, display: "flex", flexDirection: "column", gap: 2 }}>
                 <div style={{ display: "flex", gap: 4 }}>
@@ -473,7 +477,7 @@ export default function DiscGolfLeague() {
                 {row2.length > 0 && (
                   <div style={{ display: "flex", gap: 4, justifyContent: "center" }}>
                     {row2.map(t => (
-                      <button key={t.id} onClick={() => setTab(t.id)} style={{ ...tabBtnStyle(t), flex: "0 1 auto", minWidth: 70, padding: "10px 14px" }}>
+                      <button key={t.id} onClick={() => setTab(t.id)} style={tabBtnStyle(t)}>
                         <div style={{ fontSize: 14, marginBottom: 2 }}>{t.icon}</div>{t.label}
                       </button>
                     ))}
@@ -893,6 +897,27 @@ export default function DiscGolfLeague() {
                 </div>
               </div>
             ))}
+
+            {/* Test notifikasjoner */}
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12", marginBottom: 8, marginTop: 20 }}>{"\u{1F9EA}"} Test notifikasjoner</div>
+            <div style={{ fontSize: 11, color: "#6b7a58", marginBottom: 12 }}>Send testnotifikasjoner til deg selv</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {[
+                { label: "\u{1F3C5} Ny badge", type: "badge_earned", title: "Ny badge: Utforsker! \u{1F5FA}\u{FE0F}", body: "Du har spilt 3 forskjellige baner" },
+                { label: "\u{1F622} Mistet badge", type: "badge_lost", title: "Du mistet Banekonge! \u{1F451}", body: "Ole Hansen tok over på Skogen" },
+                { label: "\u{1F3C6} Ny banerekord", type: "course_record", title: "Ny banerekord! \u{1F3C6}", body: "Kari Nordmann satte ny rekord på Jørstadmoen: -5" },
+                { label: "\u{1F94F} Medspiller-tagg", type: "round_invite", title: "Du ble tagget! \u{1F3F7}\u{FE0F}", body: "Ole Hansen spilte en runde på Skogen og tagget deg" },
+                { label: "\u2B50 Ukens spiller", type: "weekly_best", title: "Ukens spiller! \u2B50", body: "Du hadde den beste runden denne uken: -7 på Lalm" },
+              ].map(n => (
+                <button key={n.type} onClick={async () => {
+                  await supabase.from("notifications").insert({ user_id: user.id, type: n.type, title: n.title, body: n.body, read: false });
+                  await loadNotifications();
+                  alert("Notifikasjon sendt!");
+                }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 12, background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#1c2b12", textAlign: "left" }}>
+                  <span>{n.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -1137,6 +1162,34 @@ export default function DiscGolfLeague() {
                           setRecentCoPlayers(updated);
                           localStorage.setItem("recentCoPlayers", JSON.stringify(updated));
                         }
+
+                        // Check for new course record
+                        if (newRound) {
+                          const { data: courseRounds } = await supabase.from("rounds").select("user_id, score").eq("course_id", regForm.course);
+                          if (courseRounds) {
+                            const uniqueUsers = new Set(courseRounds.map(r => r.user_id));
+                            if (uniqueUsers.size >= 2) {
+                              const bestScore = Math.min(...courseRounds.map(r => r.score));
+                              if (vsPar === bestScore) {
+                                const otherPlayers = courseRounds.filter(r => r.user_id !== user.id).map(r => r.user_id);
+                                const uniqueOthers = [...new Set(otherPlayers)];
+                                if (uniqueOthers.length > 0) {
+                                  const userName = user.user_metadata?.full_name || "Noen";
+                                  const scoreStr = vsPar === 0 ? "E" : vsPar > 0 ? `+${vsPar}` : `${vsPar}`;
+                                  await supabase.from("notifications").insert(
+                                    uniqueOthers.map(pid => ({
+                                      user_id: pid,
+                                      type: "course_record",
+                                      title: "Ny banerekord! \u{1F3C6}",
+                                      body: `${userName} satte ny rekord på ${course.name}: ${scoreStr}`,
+                                      read: false,
+                                    }))
+                                  );
+                                }
+                              }
+                            }
+                          }
+                        }
                       }
                       await loadRounds();
                       await loadPlayers();
@@ -1233,13 +1286,32 @@ export default function DiscGolfLeague() {
               </div>
             </div>
 
-            {/* Hjemsted */}
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Hjemsted</div>
-              <input type="text" placeholder="f.eks. Lillehammer, Ringebu, Otta..." value={userHometown} onChange={e => setUserHometown(e.target.value)} onBlur={async () => {
+            {/* Hjemsted / Klubb */}
+            <div style={{ marginBottom: 20, position: "relative" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Hjemsted / Klubb</div>
+              <input type="text" placeholder="f.eks. Lillehammer, Sel DGK, Ringebu..." value={userHometown} onChange={e => { setUserHometown(e.target.value); setShowHometownSuggestions(true); }} onFocus={() => setShowHometownSuggestions(true)} onBlur={async () => {
+                setTimeout(() => setShowHometownSuggestions(false), 200);
                 await supabase.from("profiles").update({ hometown: userHometown || null }).eq("id", user.id);
                 loadPlayers();
+                loadAllProfiles();
               }} style={{ width: "100%", padding: "10px 14px", borderRadius: 12, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+              {showHometownSuggestions && (() => {
+                const q = userHometown.toLowerCase().trim();
+                const uniqueHometowns = [...new Set(allProfiles.map(p => p.hometown).filter(h => h && h.trim()))];
+                const filtered = q ? uniqueHometowns.filter(h => h.toLowerCase().includes(q) && h.toLowerCase() !== q) : uniqueHometowns;
+                if (filtered.length === 0) return null;
+                return (
+                  <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 10, background: "#fff", border: "1px solid rgba(0,0,0,0.12)", borderRadius: 12, marginTop: 4, boxShadow: "0 4px 16px rgba(0,0,0,0.1)", maxHeight: 150, overflowY: "auto" }}>
+                    {filtered.map(h => (
+                      <div key={h} onMouseDown={(e) => { e.preventDefault(); setUserHometown(h); setShowHometownSuggestions(false); }} style={{ padding: "10px 14px", fontSize: 13, color: "#1c2b12", cursor: "pointer", borderBottom: "1px solid rgba(0,0,0,0.04)" }}
+                        onMouseEnter={e => e.currentTarget.style.background = "rgba(101,163,13,0.08)"}
+                        onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                        {h}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Sesong-stats — real data */}
