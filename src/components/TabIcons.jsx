@@ -1,30 +1,37 @@
 import React from "react";
 
 // -- 1. LogoIcon -- "GDL" monogram in a double-border circle
-export function LogoIcon({ size = 24, color = "#3a4a2a" }) {
+export function LogoIcon({ size = 24, color = "#6b34a3" }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="16" cy="16" r="14" stroke={color} strokeWidth="1.8" />
-      <circle cx="16" cy="16" r="11.5" stroke={color} strokeWidth="1" />
+      {/* Outer circle */}
+      <circle cx="16" cy="16" r="14.5" stroke={color} strokeWidth="1.6" />
+      {/* Inner spiral-like rings */}
+      <path d="M16 3.5a12.5 12.5 0 0 1 0 25" stroke={color} strokeWidth="1.2" fill="none" />
+      <circle cx="16" cy="16" r="10" stroke={color} strokeWidth="1.2" fill="none" />
+      {/* GDL text — stylized with the G wrapping around D */}
       <text
         x="16"
-        y="17.5"
+        y="17"
         textAnchor="middle"
         dominantBaseline="middle"
         fill={color}
         fontFamily="DM Sans, sans-serif"
         fontWeight="800"
-        fontSize="9"
-        letterSpacing="-0.5"
+        fontSize="8.5"
+        letterSpacing="-0.3"
+        style={{ fontStyle: "italic" }}
       >
         GDL
       </text>
+      {/* Small disc accent — bottom of G */}
+      <circle cx="11" cy="20.5" r="1" fill={color} opacity="0.5" />
     </svg>
   );
 }
 
 // -- 2. PlayersIcon -- Two overlapping person silhouettes
-export function PlayersIcon({ size = 24, color = "#3a4a2a" }) {
+export function PlayersIcon({ size = 24, color = "#6b34a3" }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
       {/* Back person */}
@@ -49,65 +56,75 @@ export function PlayersIcon({ size = 24, color = "#3a4a2a" }) {
 }
 
 // -- 3. RoundsIcon -- Scorecard with numbers and rows
-export function RoundsIcon({ size = 24, color = "#3a4a2a", accentColor = "#65A30D" }) {
+export function RoundsIcon({ size = 24, color = "#6b34a3", accentColor = "#65A30D" }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Card body with folded corner */}
-      <path
-        d="M6 5h15l5 5v17H6V5z"
-        stroke={color}
-        strokeWidth="1.8"
-        strokeLinejoin="round"
-      />
-      <path d="M21 5v5h5" stroke={color} strokeWidth="1.8" strokeLinejoin="round" />
-      {/* Header numbers */}
-      <text x="9.5" y="14" fill={color} fontFamily="DM Sans, sans-serif" fontWeight="700" fontSize="5.5">1</text>
-      <text x="17" y="14" fill={color} fontFamily="DM Sans, sans-serif" fontWeight="700" fontSize="5.5">3</text>
-      {/* Accent circle around "12" */}
-      <circle cx="14" cy="12.5" r="3.2" fill={accentColor} opacity="0.2" />
-      <text x="14" y="14" textAnchor="middle" fill={accentColor} fontFamily="DM Sans, sans-serif" fontWeight="700" fontSize="5.5">12</text>
-      {/* Row lines */}
-      <line x1="9" y1="18.5" x2="22" y2="18.5" stroke={color} strokeWidth="1.2" strokeLinecap="round" opacity="0.5" />
-      <line x1="9" y1="21.5" x2="20" y2="21.5" stroke={color} strokeWidth="1.2" strokeLinecap="round" opacity="0.5" />
-      <line x1="9" y1="24.5" x2="18" y2="24.5" stroke={color} strokeWidth="1.2" strokeLinecap="round" opacity="0.5" />
+    <svg width={size} height={size} viewBox="0 0 36 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* Back card (left, tilted) */}
+      <g transform="rotate(-12 12 16)">
+        <rect x="5" y="4" width="16" height="22" rx="2" stroke={color} strokeWidth="1.5" fill="#fff" />
+        <line x1="8" y1="10" x2="18" y2="10" stroke={color} strokeWidth="1" opacity="0.3" />
+        <line x1="8" y1="13" x2="17" y2="13" stroke={color} strokeWidth="1" opacity="0.3" />
+        <line x1="8" y1="16" x2="16" y2="16" stroke={color} strokeWidth="1" opacity="0.3" />
+        <text x="10" y="8" fill={color} fontFamily="DM Sans, sans-serif" fontWeight="700" fontSize="5">1</text>
+      </g>
+      {/* Back card (right, tilted) */}
+      <g transform="rotate(10 24 16)">
+        <rect x="15" y="4" width="16" height="22" rx="2" stroke={color} strokeWidth="1.5" fill="#fff" />
+        <line x1="18" y1="10" x2="28" y2="10" stroke={color} strokeWidth="1" opacity="0.3" />
+        <line x1="18" y1="13" x2="27" y2="13" stroke={color} strokeWidth="1" opacity="0.3" />
+        <line x1="18" y1="16" x2="26" y2="16" stroke={color} strokeWidth="1" opacity="0.3" />
+        <text x="27" y="8" fill={color} fontFamily="DM Sans, sans-serif" fontWeight="700" fontSize="5" textAnchor="end">3</text>
+      </g>
+      {/* Front card (center, straight) */}
+      <rect x="10" y="3" width="16" height="22" rx="2" stroke={color} strokeWidth="1.8" fill="#fff" />
+      <line x1="13" y1="11" x2="23" y2="11" stroke={color} strokeWidth="1" opacity="0.3" />
+      <line x1="13" y1="14" x2="22" y2="14" stroke={color} strokeWidth="1" opacity="0.3" />
+      <line x1="13" y1="17" x2="21" y2="17" stroke={color} strokeWidth="1" opacity="0.3" />
+      <line x1="13" y1="20" x2="20" y2="20" stroke={color} strokeWidth="1" opacity="0.3" />
+      {/* Green "12" badge */}
+      <rect x="14" y="4.5" width="9" height="5" rx="1.5" fill={accentColor} opacity="0.15" />
+      <text x="18.5" y="8.5" textAnchor="middle" fill={accentColor} fontFamily="DM Sans, sans-serif" fontWeight="800" fontSize="5">12</text>
     </svg>
   );
 }
 
 // -- 4. CoursesIcon -- Fairway path with disc golf basket
-export function CoursesIcon({ size = 24, color = "#3a4a2a" }) {
+export function CoursesIcon({ size = 24, color = "#6b34a3", accentColor = "#65A30D" }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Fairway path */}
+    <svg width={size} height={size} viewBox="0 0 40 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* Infinity/figure-8 fairway outline */}
       <path
-        d="M6 26C10 22 10 16 16 14s8 2 12-2"
+        d="M12 14c0-5 4-10 8-10s6 3 6 5-2 5-6 5-6 3-6 5 2 5 6 5 8-5 8-10"
         stroke={color}
         strokeWidth="1.8"
         strokeLinecap="round"
-        strokeDasharray="3 2"
-        opacity="0.4"
+        fill="none"
       />
-      {/* Throwing arc */}
+      {/* Curved throwing line (green accent) */}
       <path
-        d="M6 26Q12 10 22 8"
-        stroke={color}
-        strokeWidth="1.8"
+        d="M8 20C12 18 14 12 20 10"
+        stroke={accentColor}
+        strokeWidth="2"
         strokeLinecap="round"
+        fill="none"
       />
-      {/* Disc golf basket - pole */}
-      <line x1="24" y1="5" x2="24" y2="15" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      {/* Small disc at start of throw */}
+      <circle cx="8" cy="20" r="2.5" stroke={color} strokeWidth="1.2" fill="none" />
+      <circle cx="8" cy="20" r="1" fill={color} />
+      {/* Disc golf basket */}
+      <line x1="21" y1="5" x2="21" y2="12" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
       {/* Basket chains */}
-      <path d="M21 7l3 3.5 3-3.5" stroke={color} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M18.5 6.5L21 9l2.5-2.5" stroke={color} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
       {/* Basket tray */}
-      <path d="M21 10.5h6" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
-      {/* Base */}
-      <line x1="22.5" y1="15" x2="25.5" y2="15" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M18.5 9h5" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      {/* Base disc */}
+      <path d="M19.5 12h3" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   );
 }
 
 // -- 5. LeagueTableIcon -- Trophy cup with handles
-export function LeagueTableIcon({ size = 24, color = "#3a4a2a" }) {
+export function LeagueTableIcon({ size = 24, color = "#6b34a3" }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
       {/* Cup body */}
@@ -145,7 +162,7 @@ export function LeagueTableIcon({ size = 24, color = "#3a4a2a" }) {
 }
 
 // -- 6. RoundsTabIcon -- Clipboard with checklist
-export function RoundsTabIcon({ size = 24, color = "#3a4a2a", accentColor = "#65A30D" }) {
+export function RoundsTabIcon({ size = 24, color = "#6b34a3", accentColor = "#65A30D" }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
       {/* Clipboard body */}
@@ -166,7 +183,7 @@ export function RoundsTabIcon({ size = 24, color = "#3a4a2a", accentColor = "#65
 }
 
 // -- 7. CoursesTabIcon -- Folded map with trail and markers
-export function CoursesTabIcon({ size = 24, color = "#3a4a2a", accentColor = "#65A30D" }) {
+export function CoursesTabIcon({ size = 24, color = "#6b34a3", accentColor = "#65A30D" }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
       {/* Map body - folded in thirds */}
@@ -204,7 +221,7 @@ export function CoursesTabIcon({ size = 24, color = "#3a4a2a", accentColor = "#6
 }
 
 // -- 8. PointsIcon -- Bar chart with 4 bars
-export function PointsIcon({ size = 24, color = "#3a4a2a", accentColor = "#65A30D" }) {
+export function PointsIcon({ size = 24, color = "#6b34a3", accentColor = "#65A30D" }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
       {/* Base line */}
@@ -223,7 +240,7 @@ export function PointsIcon({ size = 24, color = "#3a4a2a", accentColor = "#65A30
 }
 
 // -- 9. BadgesIcon -- Medal with ribbon and star
-export function BadgesIcon({ size = 24, color = "#3a4a2a", accentColor = "#65A30D" }) {
+export function BadgesIcon({ size = 24, color = "#6b34a3", accentColor = "#65A30D" }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
       {/* Ribbon tails */}
@@ -250,7 +267,7 @@ export function BadgesIcon({ size = 24, color = "#3a4a2a", accentColor = "#65A30
 }
 
 // -- 10. NewHereIcon -- Compass rose with question mark
-export function NewHereIcon({ size = 24, color = "#3a4a2a" }) {
+export function NewHereIcon({ size = 24, color = "#6b34a3" }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
       {/* Outer circle */}
@@ -287,7 +304,7 @@ export function NewHereIcon({ size = 24, color = "#3a4a2a" }) {
 }
 
 // -- 11. AdminIcon -- Gear with a key
-export function AdminIcon({ size = 24, color = "#3a4a2a" }) {
+export function AdminIcon({ size = 24, color = "#6b34a3" }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
       {/* Gear outer path */}
@@ -309,7 +326,7 @@ export function AdminIcon({ size = 24, color = "#3a4a2a" }) {
 }
 
 // -- 12. BellIcon -- Notification bell
-export function BellIcon({ size = 24, color = "#3a4a2a" }) {
+export function BellIcon({ size = 24, color = "#6b34a3" }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
       {/* Bell body */}

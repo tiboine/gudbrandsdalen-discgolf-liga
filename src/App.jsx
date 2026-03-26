@@ -1263,14 +1263,42 @@ export default function DiscGolfLeague() {
 
             {/* Header */}
             <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
-              {user.user_metadata?.avatar_url
-                ? <img src={user.user_metadata.avatar_url} alt="" style={{ width: 60, height: 60, borderRadius: "50%", border: "3px solid rgba(101,163,13,0.4)", boxShadow: "0 4px 16px rgba(101,163,13,0.2)" }} />
-                : <div style={{ width: 60, height: 60, borderRadius: "50%", background: "linear-gradient(135deg, #A3E635, #65A30D)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, color: "#0a0f0a", fontWeight: 800 }}>{user.user_metadata?.full_name?.[0] ?? "?"}</div>
-              }
+              <div style={{ position: "relative", cursor: "pointer", flexShrink: 0 }} onClick={() => document.getElementById("avatar-upload").click()}>
+                {user.user_metadata?.avatar_url
+                  ? <img src={user.user_metadata.avatar_url} alt="" style={{ width: 60, height: 60, borderRadius: "50%", border: "3px solid rgba(101,163,13,0.4)", boxShadow: "0 4px 16px rgba(101,163,13,0.2)", objectFit: "cover" }} />
+                  : <div style={{ width: 60, height: 60, borderRadius: "50%", background: "linear-gradient(135deg, #A3E635, #65A30D)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, color: "#0a0f0a", fontWeight: 800 }}>{user.user_metadata?.full_name?.[0] ?? "?"}</div>
+                }
+                <div style={{ position: "absolute", bottom: -2, right: -2, width: 22, height: 22, borderRadius: "50%", background: "#fff", border: "2px solid rgba(0,0,0,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11 }}>📷</div>
+                <input id="avatar-upload" type="file" accept="image/*" style={{ display: "none" }} onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const ext = file.name.split(".").pop();
+                  const path = `avatars/${user.id}.${ext}`;
+                  const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+                  if (upErr) { alert("Feil ved opplasting: " + upErr.message); return; }
+                  const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
+                  const avatarUrl = urlData.publicUrl + "?t=" + Date.now();
+                  await supabase.auth.updateUser({ data: { avatar_url: avatarUrl } });
+                  await supabase.from("profiles").update({ avatar_url: avatarUrl }).eq("id", user.id);
+                  setUser({ ...user, user_metadata: { ...user.user_metadata, avatar_url: avatarUrl } });
+                  loadPlayers(); loadAllProfiles();
+                }} />
+              </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 20, fontWeight: 800, color: "#1c2b12" }}>{user.user_metadata?.full_name ?? "Ukjent"}</div>
                 <div style={{ fontSize: 12, color: "#6b7a58", marginTop: 2 }}>{user.email}</div>
-                <div style={{ fontSize: 11, color: "#4a8a10", fontWeight: 700, marginTop: 4, background: "rgba(101,163,13,0.1)", display: "inline-block", padding: "2px 10px", borderRadius: 10, border: "1px solid rgba(101,163,13,0.2)" }}>🏅 {userDivision} divisjon</div>
+                <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 4 }}>
+                  <div style={{ fontSize: 11, color: "#4a8a10", fontWeight: 700, background: "rgba(101,163,13,0.1)", padding: "2px 10px", borderRadius: 10, border: "1px solid rgba(101,163,13,0.2)" }}>🏅 {userDivision} divisjon</div>
+                  {user.user_metadata?.avatar_url && (
+                    <button onClick={async () => {
+                      if (!confirm("Fjerne profilbildet?")) return;
+                      await supabase.auth.updateUser({ data: { avatar_url: null } });
+                      await supabase.from("profiles").update({ avatar_url: null }).eq("id", user.id);
+                      setUser({ ...user, user_metadata: { ...user.user_metadata, avatar_url: null } });
+                      loadPlayers(); loadAllProfiles();
+                    }} style={{ fontSize: 10, color: "#dc2626", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", padding: 0 }}>Fjern bilde</button>
+                  )}
+                </div>
               </div>
             </div>
 
