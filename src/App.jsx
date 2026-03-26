@@ -165,6 +165,7 @@ export default function DiscGolfLeague() {
   const [showHometownSuggestions, setShowHometownSuggestions] = useState(false);
   const [showMyRounds, setShowMyRounds] = useState(false);
   const [selectedRound, setSelectedRound] = useState(null);
+  const [showAvatarMenu, setShowAvatarMenu] = useState(false);
 
   useEffect(() => {
     if (!selectedPlayer) { setSelectedPlayerRounds([]); return; }
@@ -332,8 +333,14 @@ export default function DiscGolfLeague() {
 
   const loadNotifications = async () => {
     if (!user) return;
-    const { data } = await supabase.from("notifications").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20);
+    const { data } = await supabase.from("notifications").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5);
     if (data) setNotifications(data);
+    // Clean up old notifications beyond 5
+    const { data: allNotifs } = await supabase.from("notifications").select("id").eq("user_id", user.id).order("created_at", { ascending: false });
+    if (allNotifs && allNotifs.length > 5) {
+      const idsToDelete = allNotifs.slice(5).map(n => n.id);
+      await supabase.from("notifications").delete().in("id", idsToDelete);
+    }
   };
 
   const loadPendingInvites = async () => {
@@ -431,8 +438,8 @@ export default function DiscGolfLeague() {
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               {user ? (
                 <>
-                <button onClick={() => { setShowNotifications(true); loadNotifications(); loadPendingInvites(); }} style={{ position: "relative", background: "rgba(101,163,13,0.1)", border: "1px solid rgba(101,163,13,0.25)", borderRadius: "50%", width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                  <BellIcon size={18} color="#4a7a10" />
+                <button onClick={async () => { setShowNotifications(true); loadNotifications(); loadPendingInvites(); await supabase.from("notifications").update({ read: true }).eq("user_id", user.id).eq("read", false); setNotifications(prev => prev.map(n => ({ ...n, read: true }))); }} style={{ position: "relative", background: "rgba(101,163,13,0.1)", border: "1px solid rgba(101,163,13,0.25)", borderRadius: "50%", width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                  {BellIcon({ size: 18, color: "#6b34a3" })}
                   {(notifications.filter(n => !n.read).length + pendingInvites.length) > 0 && (
                     <div style={{ position: "absolute", top: -2, right: -2, width: 16, height: 16, borderRadius: "50%", background: "#ef4444", color: "#fff", fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{notifications.filter(n => !n.read).length + pendingInvites.length}</div>
                   )}
@@ -455,7 +462,7 @@ export default function DiscGolfLeague() {
               <div key={s.label} onClick={() => setTab(s.tab)} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "12px 10px", textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", cursor: "pointer", transition: "transform 0.15s, box-shadow 0.15s" }}
                 onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)"; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.06)"; }}>
-                <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}>{STAT_ICONS[s.iconKey]({ size: 30, color: "#3a4a2a" })}</div>
+                <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}>{STAT_ICONS[s.iconKey]({ size: 30, color: "#6b34a3" })}</div>
                 <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.1 }}><AnimNum value={s.value} /></div>
                 <div style={{ fontSize: 10, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>{s.label}</div>
               </div>
@@ -478,7 +485,7 @@ export default function DiscGolfLeague() {
                 <div style={{ display: "flex", gap: 4 }}>
                   {row1.map(t => (
                     <button key={t.id} onClick={() => setTab(t.id)} style={tabBtnStyle(t, row1.length)}>
-                      {TAB_ICONS[t.id] ? TAB_ICONS[t.id]({ size: 22, color: tab === t.id ? "#4a8a10" : "#6b7a58" }) : null}{t.label}
+                      {TAB_ICONS[t.id] ? TAB_ICONS[t.id]({ size: 22, color: tab === t.id ? "#4a8a10" : "#6b34a3" }) : null}{t.label}
                     </button>
                   ))}
                 </div>
@@ -486,7 +493,7 @@ export default function DiscGolfLeague() {
                   <div style={{ display: "flex", gap: 4 }}>
                     {row2.map(t => (
                       <button key={t.id} onClick={() => setTab(t.id)} style={tabBtnStyle(t, row2.length)}>
-                        {TAB_ICONS[t.id] ? TAB_ICONS[t.id]({ size: 22, color: tab === t.id ? "#4a8a10" : "#6b7a58" }) : null}{t.label}
+                        {TAB_ICONS[t.id] ? TAB_ICONS[t.id]({ size: 22, color: tab === t.id ? "#4a8a10" : "#6b34a3" }) : null}{t.label}
                       </button>
                     ))}
                   </div>
@@ -517,7 +524,9 @@ export default function DiscGolfLeague() {
               const courseName = COURSES.find(c => c.id === best.course_id)?.name || best.course_name || "Ukjent bane";
               const scoreStr = best.score === 0 ? "E" : best.score > 0 ? `+${best.score}` : `${best.score}`;
               return (
-                <div style={{ background: "linear-gradient(135deg, rgba(251,191,36,0.12), rgba(251,191,36,0.04))", border: "1px solid rgba(251,191,36,0.3)", borderRadius: 14, padding: "12px 16px", marginBottom: 14, display: "flex", alignItems: "center", gap: 10, animation: "fadeSlideUp 0.4s ease" }}>
+                <div onClick={() => { const p = players.find(p => p.name === playerName || p.id === best.user_id); if (p) setSelectedPlayer(p); }} style={{ background: "linear-gradient(135deg, rgba(251,191,36,0.12), rgba(251,191,36,0.04))", border: "1px solid rgba(251,191,36,0.3)", borderRadius: 14, padding: "12px 16px", marginBottom: 14, display: "flex", alignItems: "center", gap: 10, animation: "fadeSlideUp 0.4s ease", cursor: "pointer", transition: "background 0.2s" }}
+                  onMouseEnter={e => e.currentTarget.style.background = "rgba(251,191,36,0.15)"}
+                  onMouseLeave={e => e.currentTarget.style.background = "linear-gradient(135deg, rgba(251,191,36,0.12), rgba(251,191,36,0.04))"}>
                   <div style={{ fontSize: 24, flexShrink: 0 }}>⭐</div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: "#b07a00", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 2 }}>Ukens spiller</div>
@@ -1263,7 +1272,7 @@ export default function DiscGolfLeague() {
 
             {/* Header */}
             <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
-              <div style={{ position: "relative", cursor: "pointer", flexShrink: 0 }} onClick={() => document.getElementById("avatar-upload").click()}>
+              <div style={{ position: "relative", cursor: "pointer", flexShrink: 0 }} onClick={() => setShowAvatarMenu(!showAvatarMenu)}>
                 {user.user_metadata?.avatar_url
                   ? <img src={user.user_metadata.avatar_url} alt="" style={{ width: 60, height: 60, borderRadius: "50%", border: "3px solid rgba(101,163,13,0.4)", boxShadow: "0 4px 16px rgba(101,163,13,0.2)", objectFit: "cover" }} />
                   : <div style={{ width: 60, height: 60, borderRadius: "50%", background: "linear-gradient(135deg, #A3E635, #65A30D)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, color: "#0a0f0a", fontWeight: 800 }}>{user.user_metadata?.full_name?.[0] ?? "?"}</div>
@@ -1282,22 +1291,53 @@ export default function DiscGolfLeague() {
                   await supabase.from("profiles").update({ avatar_url: avatarUrl }).eq("id", user.id);
                   setUser({ ...user, user_metadata: { ...user.user_metadata, avatar_url: avatarUrl } });
                   loadPlayers(); loadAllProfiles();
+                  setShowAvatarMenu(false);
                 }} />
+                {showAvatarMenu && (
+                  <div onClick={e => e.stopPropagation()} style={{ position: "absolute", top: 66, left: 0, zIndex: 20, background: "#fff", border: "1px solid rgba(0,0,0,0.12)", borderRadius: 12, boxShadow: "0 4px 20px rgba(0,0,0,0.15)", minWidth: 200, overflow: "hidden", animation: "fadeSlideUp 0.2s ease" }}>
+                    <div onClick={() => { document.getElementById("avatar-upload").click(); }} style={{ padding: "10px 14px", fontSize: 13, fontWeight: 600, color: "#1c2b12", cursor: "pointer", borderBottom: "1px solid rgba(0,0,0,0.06)" }}
+                      onMouseEnter={e => e.currentTarget.style.background = "rgba(101,163,13,0.08)"}
+                      onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                      📷 Last opp nytt bilde
+                    </div>
+                    {user.user_metadata?.avatar_url && (
+                      <div onClick={async () => {
+                        await supabase.auth.updateUser({ data: { avatar_url: null } });
+                        await supabase.from("profiles").update({ avatar_url: null }).eq("id", user.id);
+                        setUser({ ...user, user_metadata: { ...user.user_metadata, avatar_url: null } });
+                        loadPlayers(); loadAllProfiles();
+                        setShowAvatarMenu(false);
+                      }} style={{ padding: "10px 14px", fontSize: 13, fontWeight: 600, color: "#dc2626", cursor: "pointer", borderBottom: "1px solid rgba(0,0,0,0.06)" }}
+                        onMouseEnter={e => e.currentTarget.style.background = "rgba(239,68,68,0.06)"}
+                        onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                        🗑️ Fjern bilde
+                      </div>
+                    )}
+                    {(user.app_metadata?.provider === "google" || (user.user_metadata?.avatar_url && user.user_metadata?.avatar_url?.includes("googleusercontent"))) && (() => {
+                      const googleAvatarUrl = user.identities?.find(i => i.provider === "google")?.identity_data?.avatar_url || user.user_metadata?.picture;
+                      if (!googleAvatarUrl || user.user_metadata?.avatar_url === googleAvatarUrl) return null;
+                      return (
+                        <div onClick={async () => {
+                          await supabase.auth.updateUser({ data: { avatar_url: googleAvatarUrl } });
+                          await supabase.from("profiles").update({ avatar_url: googleAvatarUrl }).eq("id", user.id);
+                          setUser({ ...user, user_metadata: { ...user.user_metadata, avatar_url: googleAvatarUrl } });
+                          loadPlayers(); loadAllProfiles();
+                          setShowAvatarMenu(false);
+                        }} style={{ padding: "10px 14px", fontSize: 13, fontWeight: 600, color: "#1c2b12", cursor: "pointer" }}
+                          onMouseEnter={e => e.currentTarget.style.background = "rgba(101,163,13,0.08)"}
+                          onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                          🔗 Bruk Google-bilde
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 20, fontWeight: 800, color: "#1c2b12" }}>{user.user_metadata?.full_name ?? "Ukjent"}</div>
                 <div style={{ fontSize: 12, color: "#6b7a58", marginTop: 2 }}>{user.email}</div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 4 }}>
                   <div style={{ fontSize: 11, color: "#4a8a10", fontWeight: 700, background: "rgba(101,163,13,0.1)", padding: "2px 10px", borderRadius: 10, border: "1px solid rgba(101,163,13,0.2)" }}>🏅 {userDivision} divisjon</div>
-                  {user.user_metadata?.avatar_url && (
-                    <button onClick={async () => {
-                      if (!confirm("Fjerne profilbildet?")) return;
-                      await supabase.auth.updateUser({ data: { avatar_url: null } });
-                      await supabase.from("profiles").update({ avatar_url: null }).eq("id", user.id);
-                      setUser({ ...user, user_metadata: { ...user.user_metadata, avatar_url: null } });
-                      loadPlayers(); loadAllProfiles();
-                    }} style={{ fontSize: 10, color: "#dc2626", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", padding: 0 }}>Fjern bilde</button>
-                  )}
                 </div>
               </div>
             </div>
@@ -1324,6 +1364,10 @@ export default function DiscGolfLeague() {
                 await supabase.from("profiles").update({ hometown: userHometown || null }).eq("id", user.id);
                 loadPlayers();
                 loadAllProfiles();
+              }} onKeyDown={async (e) => {
+                if (e.key === "Enter") {
+                  e.target.blur();
+                }
               }} style={{ width: "100%", padding: "10px 14px", borderRadius: 12, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
               {showHometownSuggestions && (() => {
                 const q = userHometown.toLowerCase().trim();
@@ -1433,7 +1477,7 @@ export default function DiscGolfLeague() {
             <div style={{ padding: "12px 24px 24px", borderTop: "1px solid rgba(0,0,0,0.06)", background: "linear-gradient(180deg, #f8fdf2, #f0f9e8)", flexShrink: 0 }}>
               <div style={{ display: "flex", flexDirection: "row", gap: 8 }}>
                 <button onClick={() => { setShowProfile(false); }} style={{ flex: 1, padding: 13, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#4a5a38", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Lukk</button>
-                <button onClick={() => { signOut(); setShowProfile(false); }} style={{ flex: 1, padding: 13, border: "1px solid rgba(239,68,68,0.2)", borderRadius: 12, background: "rgba(239,68,68,0.05)", color: "#dc2626", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Logg ut</button>
+                <button onClick={() => { if (confirm("Er du sikker på at du vil logge ut?")) { signOut(); setShowProfile(false); } }} style={{ flex: 1, padding: 13, border: "1px solid rgba(239,68,68,0.2)", borderRadius: 12, background: "rgba(239,68,68,0.05)", color: "#dc2626", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Logg ut</button>
               </div>
             </div>
           </div>
@@ -1562,26 +1606,29 @@ export default function DiscGolfLeague() {
               </div>
             )}
             {notifications.map(n => (
-              <div key={n.id} onClick={async () => {
-                if (!n.read) await supabase.from("notifications").update({ read: true }).eq("id", n.id);
-                setNotifications(prev => prev.map(nn => nn.id === n.id ? { ...nn, read: true } : nn));
-              }} style={{ background: n.read ? "rgba(0,0,0,0.02)" : "rgba(101,163,13,0.06)", border: `1px solid ${n.read ? "rgba(0,0,0,0.06)" : "rgba(101,163,13,0.15)"}`, borderRadius: 12, padding: "12px 14px", marginBottom: 6, cursor: "pointer" }}>
+              <div key={n.id} onClick={() => {
+                if (n.type === "badge_earned" || n.type === "badge_lost") { setTab("badges"); setShowNotifications(false); }
+                else if (n.type === "course_record") { setTab("baner"); setShowNotifications(false); }
+                else if (n.type === "weekly_best") { setTab("tabell"); setShowNotifications(false); }
+                else if (n.type === "round_invite") {
+                  // Navigate to register round
+                  if (n.data?.course_id) {
+                    setRegForm({ course: n.data.course_id, score: "", date: n.data.date || "" });
+                    setShowNotifications(false);
+                    setShowRegister(true);
+                  }
+                }
+              }} style={{ background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 12, padding: "12px 14px", marginBottom: 6, cursor: "pointer", transition: "background 0.15s" }}
+                onMouseEnter={e => e.currentTarget.style.background = "rgba(101,163,13,0.06)"}
+                onMouseLeave={e => e.currentTarget.style.background = "rgba(0,0,0,0.02)"}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <div style={{ fontSize: 13, fontWeight: n.read ? 500 : 700, color: "#1c2b12" }}>{n.title}</div>
-                  {!n.read && <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#4a8a10", flexShrink: 0, marginTop: 4 }} />}
+                  <div style={{ fontSize: 13, fontWeight: 500, color: "#1c2b12" }}>{n.title}</div>
                 </div>
                 {n.body && <div style={{ fontSize: 12, color: "#4a5a38", marginTop: 4, lineHeight: 1.5 }}>{n.body}</div>}
                 <div style={{ fontSize: 10, color: "#8a9a70", marginTop: 6 }}>{new Date(n.created_at).toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</div>
               </div>
             ))}
 
-            <button onClick={async () => {
-              const unread = notifications.filter(n => !n.read).map(n => n.id);
-              if (unread.length > 0) {
-                await supabase.from("notifications").update({ read: true }).in("id", unread);
-                setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-              }
-            }} style={{ width: "100%", padding: 10, border: "none", borderRadius: 10, background: "rgba(0,0,0,0.04)", color: "#6b7a58", fontWeight: 600, fontSize: 12, cursor: "pointer", marginTop: 8 }}>Merk alle som lest</button>
             <button onClick={() => setShowNotifications(false)} style={{ width: "100%", padding: 13, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#4a5a38", fontWeight: 700, fontSize: 14, cursor: "pointer", marginTop: 8 }}>Lukk</button>
           </div>
         </div>
