@@ -405,7 +405,9 @@ export default function DiscGolfLeague() {
 
   const signOut = () => supabase.auth.signOut();
 
-  const isAdmin = user?.email === import.meta.env.VITE_ADMIN_EMAIL;
+  const ADMIN_EMAILS = [import.meta.env.VITE_ADMIN_EMAIL, "urbanthor@gmail.com"].filter(Boolean);
+  const isAdmin = ADMIN_EMAILS.includes(user?.email);
+  const [adminTab, setAdminTab] = useState("oversikt");
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -859,73 +861,113 @@ export default function DiscGolfLeague() {
         {tab === "admin" && isAdmin && (
           <div style={{ animation: "fadeSlideUp 0.4s ease" }}>
             <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 4 }}>🔧 Adminpanel</div>
-            <div style={{ fontSize: 12, color: "#6b7a58", marginBottom: 16 }}>Kun synlig for deg</div>
+            <div style={{ fontSize: 12, color: "#6b7a58", marginBottom: 12 }}>Kun synlig for administratorer</div>
 
-            {/* Stats */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 16 }}>
-              {[{ label: "Brukere", value: players.length + (realRounds.length === 0 ? 0 : 0), icon: "👥" }, { label: "Runder totalt", value: realRounds.length, icon: "🥏" }, { label: "Baner brukt", value: [...new Set(realRounds.map(r => r.course_id))].length, icon: "🗺️" }].map(s => (
-                <div key={s.label} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "12px 8px", textAlign: "center" }}>
-                  <div style={{ fontSize: 16, marginBottom: 2 }}>{s.icon}</div>
-                  <div style={{ fontSize: 22, fontWeight: 800 }}>{s.value}</div>
-                  <div style={{ fontSize: 10, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>{s.label}</div>
-                </div>
+            {/* Admin tabs */}
+            <div style={{ display: "flex", gap: 4, background: "rgba(0,0,0,0.06)", borderRadius: 10, padding: 3, marginBottom: 16 }}>
+              {[{ id: "oversikt", label: "📊 Oversikt" }, { id: "runder", label: "🥏 Runder" }, { id: "spillere", label: "👥 Spillere" }, { id: "test", label: "🧪 Test" }].map(t => (
+                <button key={t.id} onClick={() => setAdminTab(t.id)} style={{ flex: 1, padding: "8px 6px", border: "none", borderRadius: 8, background: adminTab === t.id ? "#fff" : "transparent", color: adminTab === t.id ? "#4a8a10" : "#6b7a58", fontWeight: adminTab === t.id ? 700 : 500, fontSize: 11, cursor: "pointer", transition: "all 0.2s", boxShadow: adminTab === t.id ? "0 1px 4px rgba(0,0,0,0.1)" : "none" }}>{t.label}</button>
               ))}
             </div>
 
-            {/* All rounds */}
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12", marginBottom: 8 }}>Alle registrerte runder</div>
-            {realRounds.length === 0 && <div style={{ fontSize: 13, color: "#6b7a58", textAlign: "center", padding: 20 }}>Ingen runder ennå</div>}
-            {realRounds.map((r, i) => (
-              <div key={r.id} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "12px 14px", marginBottom: 8, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700 }}>{r.profiles?.full_name ?? "Ukjent"}</div>
-                  <div style={{ fontSize: 11, color: "#6b7a58" }}>{r.course_name} · {new Date(r.date + "T12:00:00").toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", year: "numeric" })}</div>
+            {/* Oversikt */}
+            {adminTab === "oversikt" && (
+              <div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 16 }}>
+                  {[{ label: "Brukere", value: players.length, icon: "👥" }, { label: "Runder totalt", value: realRounds.length, icon: "🥏" }, { label: "Baner brukt", value: [...new Set(realRounds.map(r => r.course_id))].length, icon: "🗺️" }].map(s => (
+                    <div key={s.label} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "12px 8px", textAlign: "center" }}>
+                      <div style={{ fontSize: 16, marginBottom: 2 }}>{s.icon}</div>
+                      <div style={{ fontSize: 22, fontWeight: 800 }}>{s.value}</div>
+                      <div style={{ fontSize: 10, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>{s.label}</div>
+                    </div>
+                  ))}
                 </div>
-                <div style={{ fontSize: 16, fontWeight: 900, color: r.score <= 0 ? "#4a8a10" : "#ef4444", minWidth: 36, textAlign: "right" }}>{r.score > 0 ? "+" : ""}{r.score}</div>
+
+                {/* Siste aktivitet */}
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12", marginBottom: 8 }}>Siste aktivitet</div>
+                {realRounds.slice(0, 5).map(r => (
+                  <div key={r.id} style={{ background: "rgba(0,0,0,0.03)", borderRadius: 10, padding: "8px 12px", marginBottom: 4, fontSize: 12, color: "#4a5a38", border: "1px solid rgba(0,0,0,0.04)" }}>
+                    <span style={{ fontWeight: 700 }}>{r.profiles?.full_name ?? "Ukjent"}</span> spilte {r.course_name} · <span style={{ color: r.score <= 0 ? "#4a8a10" : "#ef4444", fontWeight: 700 }}>{r.score > 0 ? "+" : ""}{r.score}</span> · {new Date(r.date + "T12:00:00").toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit" })}
+                  </div>
+                ))}
+                {realRounds.length === 0 && <div style={{ fontSize: 12, color: "#8a9a70", textAlign: "center", padding: 16 }}>Ingen aktivitet ennå</div>}
+              </div>
+            )}
+
+            {/* Runder */}
+            {adminTab === "runder" && (
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12", marginBottom: 8 }}>Alle registrerte runder ({realRounds.length})</div>
+                {realRounds.length === 0 && <div style={{ fontSize: 13, color: "#6b7a58", textAlign: "center", padding: 20 }}>Ingen runder ennå</div>}
+                {realRounds.map(r => (
+                  <div key={r.id} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "12px 14px", marginBottom: 8, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700 }}>{r.profiles?.full_name ?? "Ukjent"}</div>
+                      <div style={{ fontSize: 11, color: "#6b7a58" }}>{r.course_name} · {new Date(r.date + "T12:00:00").toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", year: "numeric" })}</div>
+                    </div>
+                    <div style={{ fontSize: 16, fontWeight: 900, color: r.score <= 0 ? "#4a8a10" : "#ef4444", minWidth: 36, textAlign: "right" }}>{r.score > 0 ? "+" : ""}{r.score}</div>
+                    <button onClick={async () => {
+                      if (!confirm(`Slett runde av ${r.profiles?.full_name}?`)) return;
+                      await supabase.from("rounds").delete().eq("id", r.id);
+                      await loadRounds();
+                      await loadPlayers();
+                    }} style={{ padding: "5px 10px", borderRadius: 8, border: "1px solid rgba(239,68,68,0.25)", background: "rgba(239,68,68,0.07)", color: "#dc2626", fontSize: 12, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}>Slett</button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Spillere */}
+            {adminTab === "spillere" && (
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12", marginBottom: 8 }}>Alle spillere ({players.length})</div>
+                {players.length === 0 && <div style={{ fontSize: 13, color: "#6b7a58", textAlign: "center", padding: 20 }}>Ingen registrerte spillere ennå</div>}
+                {players.map(p => (
+                  <div key={p.id} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "12px 14px", marginBottom: 8, display: "flex", alignItems: "center", gap: 10 }}>
+                    <div onClick={() => setSelectedPlayer(p)} style={{ width: 32, height: 32, borderRadius: "50%", overflow: "hidden", background: "rgba(101,163,13,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, border: "1px solid rgba(0,0,0,0.08)", flexShrink: 0, cursor: "pointer" }}>
+                      {p.avatar?.startsWith("http") ? <img src={p.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (p.name?.[0] ?? "?")}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700 }}>{p.name}</div>
+                      <div style={{ fontSize: 11, color: "#6b7a58" }}>{p.hometown ? `${p.hometown} · ` : ""}{p.division} · {p.rounds} runder · {p.pts} pts</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Test */}
+            {adminTab === "test" && (
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12", marginBottom: 4 }}>🧪 Test notifikasjoner</div>
+                <div style={{ fontSize: 11, color: "#6b7a58", marginBottom: 12 }}>Send testnotifikasjoner til deg selv</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {[
+                    { label: "🏅 Ny badge", type: "badge_earned", title: "Ny badge: Utforsker! 🗺️", body: "Du har spilt 3 forskjellige baner" },
+                    { label: "😢 Mistet badge", type: "badge_lost", title: "Du mistet Banekonge! 👑", body: "Ole Hansen tok over på Skogen" },
+                    { label: "🏆 Ny banerekord", type: "course_record", title: "Ny banerekord! 🏆", body: "Kari Nordmann satte ny rekord på Jørstadmoen: -5" },
+                    { label: "🏷️ Medspiller-tagg", type: "round_invite", title: "Du ble tagget! 🏷️", body: "Ole Hansen spilte en runde på Skogen og tagget deg", data: { course_id: "skogen", date: new Date().toISOString().slice(0, 10) } },
+                    { label: "⭐ Ukens spiller", type: "weekly_best", title: "Ukens spiller! ⭐", body: "Du hadde den beste runden denne uken: -7 på Lalm" },
+                  ].map(n => (
+                    <button key={n.type} onClick={async () => {
+                      await supabase.from("notifications").insert({ user_id: user.id, type: n.type, title: n.title, body: n.body, data: n.data || {}, read: false });
+                      await loadNotifications();
+                      alert("Notifikasjon sendt!");
+                    }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 12, background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#1c2b12", textAlign: "left" }}>
+                      <span>{n.label}</span>
+                    </button>
+                  ))}
+                </div>
+
+                <div style={{ marginTop: 20, fontSize: 13, fontWeight: 700, color: "#1c2b12", marginBottom: 8 }}>⚠️ Farlig sone</div>
                 <button onClick={async () => {
-                  if (!confirm(`Slett runde av ${r.profiles?.full_name}?`)) return;
-                  await supabase.from("rounds").delete().eq("id", r.id);
-                  await loadRounds();
-                  await loadPlayers();
-                }} style={{ padding: "5px 10px", borderRadius: 8, border: "1px solid rgba(239,68,68,0.25)", background: "rgba(239,68,68,0.07)", color: "#dc2626", fontSize: 12, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}>Slett</button>
-              </div>
-            ))}
-
-            {/* All users */}
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12", marginBottom: 8, marginTop: 20 }}>Alle brukere</div>
-            {players.length === 0 && <div style={{ fontSize: 13, color: "#6b7a58", textAlign: "center", padding: 20 }}>Ingen registrerte spillere ennå</div>}
-            {players.map((p, i) => (
-              <div key={p.id} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "12px 14px", marginBottom: 8, display: "flex", alignItems: "center", gap: 10 }}>
-                <div onClick={() => setSelectedPlayer(p)} style={{ width: 32, height: 32, borderRadius: "50%", overflow: "hidden", background: "rgba(101,163,13,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, border: "1px solid rgba(0,0,0,0.08)", flexShrink: 0, cursor: "pointer" }}>
-                  {p.avatar?.startsWith("http") ? <img src={p.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (p.name?.[0] ?? "?")}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700 }}>{p.name}</div>
-                  <div style={{ fontSize: 11, color: "#6b7a58" }}>{p.division} · {p.rounds} runder · {p.pts} pts</div>
-                </div>
-              </div>
-            ))}
-
-            {/* Test notifikasjoner */}
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12", marginBottom: 8, marginTop: 20 }}>{"\u{1F9EA}"} Test notifikasjoner</div>
-            <div style={{ fontSize: 11, color: "#6b7a58", marginBottom: 12 }}>Send testnotifikasjoner til deg selv</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {[
-                { label: "\u{1F3C5} Ny badge", type: "badge_earned", title: "Ny badge: Utforsker! \u{1F5FA}\u{FE0F}", body: "Du har spilt 3 forskjellige baner" },
-                { label: "\u{1F622} Mistet badge", type: "badge_lost", title: "Du mistet Banekonge! \u{1F451}", body: "Ole Hansen tok over på Skogen" },
-                { label: "\u{1F3C6} Ny banerekord", type: "course_record", title: "Ny banerekord! \u{1F3C6}", body: "Kari Nordmann satte ny rekord på Jørstadmoen: -5" },
-                { label: "\u{1F94F} Medspiller-tagg", type: "round_invite", title: "Du ble tagget! \u{1F3F7}\u{FE0F}", body: "Ole Hansen spilte en runde på Skogen og tagget deg" },
-                { label: "\u2B50 Ukens spiller", type: "weekly_best", title: "Ukens spiller! \u2B50", body: "Du hadde den beste runden denne uken: -7 på Lalm" },
-              ].map(n => (
-                <button key={n.type} onClick={async () => {
-                  await supabase.from("notifications").insert({ user_id: user.id, type: n.type, title: n.title, body: n.body, read: false });
+                  if (!confirm("Slett ALLE notifikasjoner for deg?")) return;
+                  await supabase.from("notifications").delete().eq("user_id", user.id);
                   await loadNotifications();
-                  alert("Notifikasjon sendt!");
-                }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 12, background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#1c2b12", textAlign: "left" }}>
-                  <span>{n.label}</span>
-                </button>
-              ))}
-            </div>
+                  alert("Alle notifikasjoner slettet");
+                }} style={{ padding: "10px 14px", borderRadius: 12, background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.2)", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#dc2626", width: "100%" }}>🗑️ Slett alle mine notifikasjoner</button>
+              </div>
+            )}
           </div>
         )}
       </div>
