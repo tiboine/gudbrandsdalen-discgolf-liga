@@ -865,7 +865,7 @@ export default function DiscGolfLeague() {
 
             {/* Admin tabs */}
             <div style={{ display: "flex", gap: 4, background: "rgba(0,0,0,0.06)", borderRadius: 10, padding: 3, marginBottom: 16 }}>
-              {[{ id: "oversikt", label: "📊 Oversikt" }, { id: "runder", label: "🥏 Runder" }, { id: "spillere", label: "👥 Spillere" }, { id: "test", label: "🧪 Test" }].map(t => (
+              {[{ id: "oversikt", label: "📊 Oversikt" }, { id: "runder", label: "🥏 Runder" }, { id: "spillere", label: "👥 Spillere" }, { id: "profiler", label: "🪪 Profiler" }, { id: "test", label: "🧪 Test" }].map(t => (
                 <button key={t.id} onClick={() => setAdminTab(t.id)} style={{ flex: 1, padding: "8px 6px", border: "none", borderRadius: 8, background: adminTab === t.id ? "#fff" : "transparent", color: adminTab === t.id ? "#4a8a10" : "#6b7a58", fontWeight: adminTab === t.id ? 700 : 500, fontSize: 11, cursor: "pointer", transition: "all 0.2s", boxShadow: adminTab === t.id ? "0 1px 4px rgba(0,0,0,0.1)" : "none" }}>{t.label}</button>
               ))}
             </div>
@@ -933,6 +933,40 @@ export default function DiscGolfLeague() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* Profiler */}
+            {adminTab === "profiler" && (
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12", marginBottom: 8 }}>Registrerte profiler ({allProfiles.length})</div>
+                {allProfiles.length === 0 && <div style={{ fontSize: 12, color: "#8a9a70", textAlign: "center", padding: 16 }}>Ingen profiler ennå</div>}
+                {allProfiles.map(p => {
+                  const playerData = players.find(pl => pl.id === p.id);
+                  return (
+                    <div key={p.id} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "12px 14px", marginBottom: 8, display: "flex", alignItems: "center", gap: 10 }}>
+                      <div onClick={() => playerData && setSelectedPlayer(playerData)} style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", background: "rgba(101,163,13,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, border: "1px solid rgba(0,0,0,0.08)", flexShrink: 0, cursor: playerData ? "pointer" : "default" }}>
+                        {p.avatar_url ? <img src={p.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (p.full_name?.[0] ?? "?")}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12" }}>{p.full_name || "Uten navn"}</div>
+                        <div style={{ fontSize: 11, color: "#6b7a58" }}>
+                          {p.hometown ? `📍 ${p.hometown}` : "Ingen hjemsted"}
+                          {playerData ? ` · ${playerData.rounds} runder · ${playerData.pts} pts` : " · 0 runder"}
+                        </div>
+                        <div style={{ fontSize: 10, color: "#8a9a70", marginTop: 2, fontFamily: "monospace" }}>{p.id.slice(0, 8)}…</div>
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
+                        {playerData ? (
+                          <div style={{ fontSize: 10, padding: "2px 8px", borderRadius: 10, background: "rgba(101,163,13,0.1)", color: "#4a8a10", fontWeight: 600 }}>Aktiv</div>
+                        ) : (
+                          <div style={{ fontSize: 10, padding: "2px 8px", borderRadius: 10, background: "rgba(0,0,0,0.05)", color: "#8a9a70", fontWeight: 600 }}>Ingen runder</div>
+                        )}
+                        {ADMIN_EMAILS.includes(p.full_name) ? null : null}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
 
