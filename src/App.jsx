@@ -327,7 +327,7 @@ export default function DiscGolfLeague() {
   };
 
   const loadAllProfiles = async () => {
-    const { data, error } = await supabase.from("profiles").select("id, full_name, avatar_url, hometown");
+    const { data, error } = await supabase.from("profiles").select("id, full_name, avatar_url, hometown, disabled");
     console.log("loadAllProfiles:", data?.length, "profiles", error);
     if (data) setAllProfiles(data);
   };
@@ -958,12 +958,34 @@ export default function DiscGolfLeague() {
                         <div style={{ fontSize: 10, color: "#8a9a70", marginTop: 2, fontFamily: "monospace" }}>{p.id.slice(0, 8)}…</div>
                       </div>
                       <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
-                        {playerData ? (
+                        {p.disabled ? (
+                          <div style={{ fontSize: 10, padding: "2px 8px", borderRadius: 10, background: "rgba(239,68,68,0.1)", color: "#dc2626", fontWeight: 600 }}>Deaktivert</div>
+                        ) : playerData ? (
                           <div style={{ fontSize: 10, padding: "2px 8px", borderRadius: 10, background: "rgba(101,163,13,0.1)", color: "#4a8a10", fontWeight: 600 }}>Aktiv</div>
                         ) : (
                           <div style={{ fontSize: 10, padding: "2px 8px", borderRadius: 10, background: "rgba(0,0,0,0.05)", color: "#8a9a70", fontWeight: 600 }}>Ingen runder</div>
                         )}
-                        {ADMIN_EMAILS.includes(p.full_name) ? null : null}
+                        {!ADMIN_EMAILS.includes(p.full_name) && (
+                          <div style={{ display: "flex", gap: 4 }}>
+                            <button onClick={async () => {
+                              const action = p.disabled ? "aktivere" : "deaktivere";
+                              if (!confirm(`${p.disabled ? "Aktivere" : "Deaktivere"} ${p.full_name}?`)) return;
+                              await supabase.from("profiles").update({ disabled: !p.disabled }).eq("id", p.id);
+                              loadAllProfiles();
+                            }} style={{ padding: "3px 8px", borderRadius: 6, border: "1px solid", borderColor: p.disabled ? "rgba(101,163,13,0.3)" : "rgba(239,168,68,0.3)", background: p.disabled ? "rgba(101,163,13,0.07)" : "rgba(239,168,68,0.07)", color: p.disabled ? "#4a8a10" : "#b45309", fontSize: 10, fontWeight: 600, cursor: "pointer" }}>{p.disabled ? "Aktiver" : "Deaktiver"}</button>
+                            {p.disabled && (
+                              <button onClick={async () => {
+                                const input = prompt(`Skriv "slett" for å permanent slette ${p.full_name} og alle deres runder:`);
+                                if (input?.toLowerCase() !== "slett") { if (input !== null) alert("Feil tekst. Sletting avbrutt."); return; }
+                                await supabase.from("rounds").delete().eq("user_id", p.id);
+                                await supabase.from("notifications").delete().eq("user_id", p.id);
+                                await supabase.from("profiles").delete().eq("id", p.id);
+                                loadAllProfiles(); loadPlayers(); loadRounds();
+                                alert(`${p.full_name} er slettet.`);
+                              }} style={{ padding: "3px 8px", borderRadius: 6, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.07)", color: "#dc2626", fontSize: 10, fontWeight: 600, cursor: "pointer" }}>Slett</button>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
