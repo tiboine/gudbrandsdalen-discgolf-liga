@@ -438,7 +438,7 @@ export default function DiscGolfLeague() {
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               {user ? (
                 <>
-                <button onClick={async () => { setShowNotifications(true); loadNotifications(); loadPendingInvites(); await supabase.from("notifications").update({ read: true }).eq("user_id", user.id).eq("read", false); setNotifications(prev => prev.map(n => ({ ...n, read: true }))); }} style={{ position: "relative", background: "rgba(101,163,13,0.1)", border: "1px solid rgba(101,163,13,0.25)", borderRadius: "50%", width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                <button onClick={async () => { setShowNotifications(true); await loadNotifications(); loadPendingInvites(); supabase.from("notifications").update({ read: true }).eq("user_id", user.id).eq("read", false).then(() => { setTimeout(() => setNotifications(prev => prev.map(n => ({ ...n, read: true }))), 2000); }); }} style={{ position: "relative", background: "rgba(101,163,13,0.1)", border: "1px solid rgba(101,163,13,0.25)", borderRadius: "50%", width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
                   {BellIcon({ size: 18, color: "#6b34a3" })}
                   {(notifications.filter(n => !n.read).length + pendingInvites.length) > 0 && (
                     <div style={{ position: "absolute", top: -2, right: -2, width: 16, height: 16, borderRadius: "50%", background: "#ef4444", color: "#fff", fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{notifications.filter(n => !n.read).length + pendingInvites.length}</div>
@@ -1281,9 +1281,23 @@ export default function DiscGolfLeague() {
                 <input id="avatar-upload" type="file" accept="image/*" style={{ display: "none" }} onChange={async (e) => {
                   const file = e.target.files?.[0];
                   if (!file) return;
-                  const ext = file.name.split(".").pop();
-                  const path = `avatars/${user.id}.${ext}`;
-                  const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+                  // Compress and resize to 500px
+                  const compressed = await new Promise((resolve) => {
+                    const img = new Image();
+                    img.onload = () => {
+                      const canvas = document.createElement("canvas");
+                      const maxSize = 500;
+                      let w = img.width, h = img.height;
+                      if (w > h) { h = Math.round(h * maxSize / w); w = maxSize; }
+                      else { w = Math.round(w * maxSize / h); h = maxSize; }
+                      canvas.width = w; canvas.height = h;
+                      canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+                      canvas.toBlob(resolve, "image/webp", 0.8);
+                    };
+                    img.src = URL.createObjectURL(file);
+                  });
+                  const path = `avatars/${user.id}.webp`;
+                  const { error: upErr } = await supabase.storage.from("avatars").upload(path, compressed, { upsert: true, contentType: "image/webp" });
                   if (upErr) { alert("Feil ved opplasting: " + upErr.message); return; }
                   const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
                   const avatarUrl = urlData.publicUrl + "?t=" + Date.now();
@@ -1618,11 +1632,12 @@ export default function DiscGolfLeague() {
                     setShowRegister(true);
                   }
                 }
-              }} style={{ background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 12, padding: "12px 14px", marginBottom: 6, cursor: "pointer", transition: "background 0.15s" }}
-                onMouseEnter={e => e.currentTarget.style.background = "rgba(101,163,13,0.06)"}
-                onMouseLeave={e => e.currentTarget.style.background = "rgba(0,0,0,0.02)"}>
+              }} style={{ background: !n.read ? "rgba(107,52,163,0.08)" : "rgba(0,0,0,0.02)", border: !n.read ? "1px solid rgba(107,52,163,0.2)" : "1px solid rgba(0,0,0,0.06)", borderRadius: 12, padding: "12px 14px", marginBottom: 6, cursor: "pointer", transition: "background 0.15s" }}
+                onMouseEnter={e => e.currentTarget.style.background = !n.read ? "rgba(107,52,163,0.12)" : "rgba(101,163,13,0.06)"}
+                onMouseLeave={e => e.currentTarget.style.background = !n.read ? "rgba(107,52,163,0.08)" : "rgba(0,0,0,0.02)"}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <div style={{ fontSize: 13, fontWeight: 500, color: "#1c2b12" }}>{n.title}</div>
+                  <div style={{ fontSize: 13, fontWeight: !n.read ? 700 : 500, color: !n.read ? "#6b34a3" : "#1c2b12" }}>{n.title}</div>
+                  {!n.read && <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#6b34a3", flexShrink: 0, marginTop: 4, marginLeft: 8 }} />}
                 </div>
                 {n.body && <div style={{ fontSize: 12, color: "#4a5a38", marginTop: 4, lineHeight: 1.5 }}>{n.body}</div>}
                 <div style={{ fontSize: 10, color: "#8a9a70", marginTop: 6 }}>{new Date(n.created_at).toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</div>
