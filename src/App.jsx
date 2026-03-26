@@ -327,7 +327,8 @@ export default function DiscGolfLeague() {
   };
 
   const loadAllProfiles = async () => {
-    const { data } = await supabase.from("profiles").select("id, full_name, avatar_url, hometown");
+    const { data, error } = await supabase.from("profiles").select("id, full_name, avatar_url, hometown");
+    console.log("loadAllProfiles:", data?.length, "profiles", error);
     if (data) setAllProfiles(data);
   };
 
