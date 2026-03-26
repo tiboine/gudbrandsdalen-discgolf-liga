@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { BADGE_ICONS } from "./components/BadgeIcons";
+import { TAB_ICONS, STAT_ICONS, LogoIcon, BellIcon } from "./components/TabIcons";
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -420,7 +421,7 @@ export default function DiscGolfLeague() {
         <div style={{ maxWidth: 600, margin: "0 auto" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 38, height: 38, borderRadius: "50%", background: "linear-gradient(135deg, #A3E635, #65A30D)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, color: "#0a0f0a", boxShadow: "0 0 20px rgba(163,230,53,0.3)" }}>🥏</div>
+              <div style={{ width: 38, height: 38, borderRadius: "50%", background: "linear-gradient(135deg, #A3E635, #65A30D)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 0 20px rgba(163,230,53,0.3)" }}><LogoIcon size={22} color="#0a0f0a" /></div>
               <div>
                 <div style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: "#5a9e0f", fontWeight: 700 }}>Gudbrandsdalen</div>
                 <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.02em", lineHeight: 1.1 }}>Discgolf Liga</div>
@@ -430,8 +431,8 @@ export default function DiscGolfLeague() {
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               {user ? (
                 <>
-                <button onClick={() => { setShowNotifications(true); loadNotifications(); loadPendingInvites(); }} style={{ position: "relative", background: "rgba(101,163,13,0.1)", border: "1px solid rgba(101,163,13,0.25)", borderRadius: "50%", width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16 }}>
-                  🔔
+                <button onClick={() => { setShowNotifications(true); loadNotifications(); loadPendingInvites(); }} style={{ position: "relative", background: "rgba(101,163,13,0.1)", border: "1px solid rgba(101,163,13,0.25)", borderRadius: "50%", width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                  <BellIcon size={18} color="#4a7a10" />
                   {(notifications.filter(n => !n.read).length + pendingInvites.length) > 0 && (
                     <div style={{ position: "absolute", top: -2, right: -2, width: 16, height: 16, borderRadius: "50%", background: "#ef4444", color: "#fff", fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{notifications.filter(n => !n.read).length + pendingInvites.length}</div>
                   )}
@@ -450,11 +451,11 @@ export default function DiscGolfLeague() {
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, margin: "16px 0" }}>
-            {[{ label: "Spillere", value: players.length, icon: "👥", tab: "tabell" }, { label: "Runder spilt", value: realRounds.length, icon: "🥏", tab: "runder" }, { label: "Baner", value: COURSES.length, icon: "🗺️", tab: "baner" }].map(s => (
+            {[{ label: "Spillere", value: players.length, iconKey: "players", tab: "tabell" }, { label: "Runder spilt", value: realRounds.length, iconKey: "rounds", tab: "runder" }, { label: "Baner", value: COURSES.length, iconKey: "courses", tab: "baner" }].map(s => (
               <div key={s.label} onClick={() => setTab(s.tab)} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "12px 10px", textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", cursor: "pointer", transition: "transform 0.15s, box-shadow 0.15s" }}
                 onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)"; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.06)"; }}>
-                <div style={{ fontSize: 13, marginBottom: 2 }}>{s.icon}</div>
+                <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}>{STAT_ICONS[s.iconKey]({ size: 30, color: "#3a4a2a" })}</div>
                 <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.1 }}><AnimNum value={s.value} /></div>
                 <div style={{ fontSize: 10, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>{s.label}</div>
               </div>
@@ -467,17 +468,17 @@ export default function DiscGolfLeague() {
           >+ Registrer runde</button>
 
           {(() => {
-            const allTabs = [{ id: "tabell", label: "Ligatabell", icon: "🏆" }, { id: "runder", label: "Runder", icon: "📋" }, { id: "baner", label: "Baner", icon: "🗺️" }, { id: "regler", label: "Poeng", icon: "📊" }, { id: "badges", label: "Badges", icon: "🏅" }, { id: "intro", label: "Ny her?", icon: "👋" }, ...(isAdmin ? [{ id: "admin", label: "Admin", icon: "🔧" }] : [])];
+            const allTabs = [{ id: "tabell", label: "Ligatabell" }, { id: "runder", label: "Runder" }, { id: "baner", label: "Baner" }, { id: "regler", label: "Poeng" }, { id: "badges", label: "Badges" }, { id: "intro", label: "Ny her?" }, ...(isAdmin ? [{ id: "admin", label: "Admin" }] : [])];
             const mid = Math.ceil(allTabs.length / 2);
             const row1 = allTabs.slice(0, mid);
             const row2 = allTabs.slice(mid);
-            const tabBtnStyle = (t, rowLen) => ({ flex: `1 1 ${100/rowLen}%`, minWidth: 0, padding: "10px 4px", border: "none", borderRadius: 10, background: tab === t.id ? "#ffffff" : "transparent", color: tab === t.id ? "#4a8a10" : "#6b7a58", fontWeight: tab === t.id ? 700 : 500, fontSize: 11, cursor: "pointer", transition: "all 0.2s", boxShadow: tab === t.id ? "0 1px 4px rgba(0,0,0,0.1)" : "none" });
+            const tabBtnStyle = (t, rowLen) => ({ flex: `1 1 ${100/rowLen}%`, minWidth: 0, padding: "8px 4px 6px", border: "none", borderRadius: 10, background: tab === t.id ? "#ffffff" : "transparent", color: tab === t.id ? "#4a8a10" : "#6b7a58", fontWeight: tab === t.id ? 700 : 500, fontSize: 11, cursor: "pointer", transition: "all 0.2s", boxShadow: tab === t.id ? "0 1px 4px rgba(0,0,0,0.1)" : "none", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 });
             return (
               <div style={{ background: "rgba(0,0,0,0.06)", borderRadius: 12, padding: 4, display: "flex", flexDirection: "column", gap: 2 }}>
                 <div style={{ display: "flex", gap: 4 }}>
                   {row1.map(t => (
                     <button key={t.id} onClick={() => setTab(t.id)} style={tabBtnStyle(t, row1.length)}>
-                      <div style={{ fontSize: 14, marginBottom: 2 }}>{t.icon}</div>{t.label}
+                      {TAB_ICONS[t.id] ? TAB_ICONS[t.id]({ size: 22, color: tab === t.id ? "#4a8a10" : "#6b7a58" }) : null}{t.label}
                     </button>
                   ))}
                 </div>
@@ -485,7 +486,7 @@ export default function DiscGolfLeague() {
                   <div style={{ display: "flex", gap: 4 }}>
                     {row2.map(t => (
                       <button key={t.id} onClick={() => setTab(t.id)} style={tabBtnStyle(t, row2.length)}>
-                        <div style={{ fontSize: 14, marginBottom: 2 }}>{t.icon}</div>{t.label}
+                        {TAB_ICONS[t.id] ? TAB_ICONS[t.id]({ size: 22, color: tab === t.id ? "#4a8a10" : "#6b7a58" }) : null}{t.label}
                       </button>
                     ))}
                   </div>
