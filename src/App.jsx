@@ -832,6 +832,7 @@ export default function DiscGolfLeague() {
                     {c.ratings && <span style={{ fontSize: 10, color: "#6b7a58", marginLeft: 4 }}>({c.ratings})</span>}
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+                    {MAJOR_COURSE_IDS.has(c.id) && <div style={{ padding: "3px 8px", borderRadius: 8, background: "rgba(251,191,36,0.15)", border: "1px solid rgba(251,191,36,0.35)", fontSize: 10, fontWeight: 700, color: "#b07a00" }}>⭐ Major</div>}
                     <div style={{ padding: "4px 10px", borderRadius: 10, background: "rgba(101,163,13,0.1)", border: "1px solid rgba(101,163,13,0.2)", fontSize: 11, fontWeight: 700, color: "#4a8a10" }}>{c.holes} hull</div>
                     <div style={{ fontSize: 10, color: "#6b7a58" }}>Par {c.par}</div>
                     {roundCount > 0 && <div style={{ fontSize: 10, color: "#4a8a10", fontWeight: 700 }}>🥏 {roundCount} runder</div>}
@@ -1385,7 +1386,7 @@ export default function DiscGolfLeague() {
                       <option value="">Velg bane...</option>
                       {sortedCourses.map(c => {
                         const dist = userLocation ? ` · ${getDistance(userLocation.lat, userLocation.lng, c.lat, c.lng)} km` : "";
-                        return <option key={c.id} value={c.id}>{c.name} ({c.holes}h, par {c.par}){dist}</option>;
+                        return <option key={c.id} value={c.id}>{MAJOR_COURSE_IDS.has(c.id) ? "⭐ " : ""}{c.name} ({c.holes}h, par {c.par}){dist}</option>;
                       })}
                     </select>
                   </div>
@@ -1398,7 +1399,23 @@ export default function DiscGolfLeague() {
                     {regForm.course && regForm.score !== "" && (() => {
                       const par = COURSES.find(c => c.id === regForm.course)?.par;
                       const diff = parseInt(regForm.score) - par;
-                      return par ? <div style={{ fontSize: 12, color: diff <= 0 ? "#4a8a10" : "#ef4444", marginTop: 4, fontWeight: 600 }}>{diff === 0 ? "Even par (E)" : diff > 0 ? `+${diff} over par` : `${diff} under par`}</div> : null;
+                      if (!par || isNaN(diff)) return null;
+                      const isMajor = MAJOR_COURSE_IDS.has(regForm.course);
+                      const pts = scoreToPoints(diff, isMajor);
+                      const scoreLabel = diff === 0 ? "E (even par)" : diff > 0 ? `+${diff} over par` : `${diff} under par`;
+                      const bgColor = pts >= 8 ? "rgba(101,163,13,0.08)" : pts >= 5 ? "rgba(251,191,36,0.08)" : "rgba(239,68,68,0.06)";
+                      const borderColor = pts >= 8 ? "rgba(101,163,13,0.2)" : pts >= 5 ? "rgba(251,191,36,0.25)" : "rgba(239,68,68,0.15)";
+                      const ptsColor = pts >= 8 ? "#4a8a10" : pts >= 5 ? "#b07a00" : "#ef4444";
+                      return (
+                        <div style={{ marginTop: 8, padding: "10px 14px", borderRadius: 12, background: bgColor, border: `1px solid ${borderColor}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <div style={{ fontSize: 13, color: diff <= 0 ? "#4a8a10" : "#ef4444", fontWeight: 700 }}>{scoreLabel}</div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            {isMajor && <span style={{ fontSize: 10, color: "#b07a00", fontWeight: 700, background: "rgba(251,191,36,0.12)", border: "1px solid rgba(251,191,36,0.3)", borderRadius: 6, padding: "2px 6px" }}>⭐ ×1.5</span>}
+                            <span style={{ fontSize: 20, fontWeight: 900, color: ptsColor }}>{pts}</span>
+                            <span style={{ fontSize: 11, color: "#6b7a58", fontWeight: 600 }}>pts</span>
+                          </div>
+                        </div>
+                      );
                     })()}
                   </div>
                   <div>
@@ -1819,8 +1836,7 @@ export default function DiscGolfLeague() {
               const myPlayer = players.find(p => p.id === user.id);
               const bestScore = myScores.length ? Math.min(...myScores) : null;
               const coursesPlayed = myPlayer?.coursesPlayed ?? 0;
-              const totalCourses = COURSES.length;
-              const remaining = Math.max(0, totalCourses - coursesPlayed);
+              const totalCourses = LEAGUE_COURSE_IDS.length;
               return (
                 <div style={{ marginBottom: 20 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Min sesong · Vår 2026</div>
@@ -1837,19 +1853,25 @@ export default function DiscGolfLeague() {
                       </div>
                     ))}
                   </div>
-                  {/* Sesongframgang — baner spilt av ligaens totale */}
+                  {/* Banegrid — hvilke av de 12 ligabanene er spilt */}
                   <div style={{ marginTop: 12 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: "#5a7040" }}>Baner spilt</div>
-                      <div style={{ fontSize: 11, color: "#6b7a58" }}>{coursesPlayed}/{totalCourses} for kvalifisering</div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: "#5a7040" }}>Ligabaner</div>
+                      <div style={{ fontSize: 11, color: "#6b7a58" }}>{coursesPlayed}/{totalCourses} spilt</div>
                     </div>
-                    <div style={{ height: 8, borderRadius: 4, background: "rgba(0,0,0,0.06)", overflow: "hidden" }}>
-                      <div style={{ height: "100%", borderRadius: 4, background: "linear-gradient(90deg, #A3E635, #65A30D)", width: `${Math.min(coursesPlayed / totalCourses, 1) * 100}%`, transition: "width 0.5s ease" }} />
-                    </div>
-                    <div style={{ fontSize: 10, color: "#8a9a70", marginTop: 4 }}>
-                      {coursesPlayed === 0 ? "Spill din første bane! 🚀" :
-                       remaining > 0 ? `${remaining} ${remaining === 1 ? "bane" : "baner"} igjen for å bli kvalifisert` :
-                       "🏆 Alle baner spilt — du er kvalifisert!"}
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 5 }}>
+                      {LEAGUE_COURSE_IDS.map(cid => {
+                        const course = COURSES.find(c => c.id === cid);
+                        const count = myRounds.filter(r => r.course_id === cid).length;
+                        const isMajor = MAJOR_COURSE_IDS.has(cid);
+                        const shortName = course?.name.split(" ")[0] ?? cid;
+                        return (
+                          <div key={cid} style={{ padding: "6px 8px", borderRadius: 8, background: count > 0 ? "rgba(101,163,13,0.1)" : "rgba(0,0,0,0.04)", border: `1px solid ${count > 0 ? "rgba(101,163,13,0.25)" : "rgba(0,0,0,0.08)"}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2 }}>
+                            <div style={{ fontSize: 10, fontWeight: 700, color: count > 0 ? "#1c2b12" : "#8a9a70", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{isMajor ? "⭐ " : ""}{shortName}</div>
+                            <div style={{ fontSize: 12, fontWeight: 800, color: count > 0 ? "#4a8a10" : "#c0c8b0", flexShrink: 0 }}>{count > 0 ? (count > 1 ? `×${count}` : "✓") : "—"}</div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
               {myRounds.length === 0 && <div style={{ marginTop: 10, fontSize: 11, color: "#8a9a70", textAlign: "center", fontStyle: "italic" }}>Registrer din første runde for å se statistikk 🚀</div>}
