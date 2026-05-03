@@ -1521,6 +1521,27 @@ export default function DiscGolfLeague() {
                       setRegError(`Ugyldig score. For ${course.name} (par ${course.par}) bør total være mellom ${course.par - 15} og ${course.par + 30}`);
                       return;
                     }
+                    // Max 2 rounds per course per week
+                    if (!editRound) {
+                      const d = new Date(regForm.date);
+                      const dayOfWeek = d.getDay();
+                      const weekStart = new Date(d);
+                      weekStart.setDate(d.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+                      const weekEnd = new Date(weekStart);
+                      weekEnd.setDate(weekStart.getDate() + 7);
+                      const weekStartStr = weekStart.toISOString().slice(0, 10);
+                      const weekEndStr = weekEnd.toISOString().slice(0, 10);
+                      const roundsThisWeek = realRounds.filter(r =>
+                        r.user_id === user.id &&
+                        r.course_id === regForm.course &&
+                        r.date >= weekStartStr &&
+                        r.date < weekEndStr
+                      );
+                      if (roundsThisWeek.length >= 2) {
+                        setRegError(`Du har allerede registrert 2 runder på ${course.name} denne uken. Maks 2 per bane per uke.`);
+                        return;
+                      }
+                    }
                     // Validate friend scores if any
                     for (const pid of selectedFriendPlayers) {
                       const fs = parseInt(friendScores[pid]);
