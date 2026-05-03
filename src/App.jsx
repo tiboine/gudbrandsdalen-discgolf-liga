@@ -856,9 +856,14 @@ export default function DiscGolfLeague() {
                 {selectedCourse?.id === c.id && (
                   <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid rgba(0,0,0,0.08)", animation: "fadeSlideUp 0.3s ease" }}>
                     <div style={{ fontSize: 12, color: "#4a5a38", lineHeight: 1.6, marginBottom: 12 }}>{c.desc}</div>
-                    <a href={c.udisc} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 10, background: "rgba(101,163,13,0.12)", border: "1px solid rgba(101,163,13,0.25)", color: "#4a8a10", fontWeight: 700, fontSize: 12, textDecoration: "none" }}>
-                      🔗 Se på UDisc
-                    </a>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      <a href={c.udisc} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 10, background: "rgba(101,163,13,0.12)", border: "1px solid rgba(101,163,13,0.25)", color: "#4a8a10", fontWeight: 700, fontSize: 12, textDecoration: "none" }}>
+                        🔗 Se på UDisc
+                      </a>
+                      <a href={`https://www.google.com/maps?q=${c.lat},${c.lng}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 10, background: "rgba(66,133,244,0.08)", border: "1px solid rgba(66,133,244,0.25)", color: "#1a73e8", fontWeight: 700, fontSize: 12, textDecoration: "none" }}>
+                        📍 Åpne i Google Maps
+                      </a>
+                    </div>
                   </div>
                 )}
               </div>
@@ -2008,7 +2013,10 @@ export default function DiscGolfLeague() {
                     <div>
                       <div style={{ fontSize: 14, fontWeight: 700, color: "#1c2b12", marginBottom: 4 }}>{courseName}</div>
                       {course && (
-                        <a href={course.udisc} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ fontSize: 11, color: "#4a8a10", fontWeight: 600, textDecoration: "none" }}>🔗 Se på UDisc</a>
+                        <div style={{ display: "flex", gap: 10 }}>
+                          <a href={course.udisc} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ fontSize: 11, color: "#4a8a10", fontWeight: 600, textDecoration: "none" }}>🔗 UDisc</a>
+                          <a href={`https://www.google.com/maps?q=${course.lat},${course.lng}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ fontSize: 11, color: "#1a73e8", fontWeight: 600, textDecoration: "none" }}>📍 Maps</a>
+                        </div>
                       )}
                     </div>
                     <div style={{ textAlign: "right" }}>
