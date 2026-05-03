@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { BADGE_ICONS } from "./components/BadgeIcons";
 import { TAB_ICONS, STAT_ICONS, LogoIcon, BellIcon } from "./components/TabIcons";
+import { INCLUDE_MOCKS, MOCK_PROFILES, getMockRounds } from "./data/mockData";
+import { THEMES, BG_IMAGES, applyTheme } from "./themes";
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -29,11 +31,24 @@ const COURSES = [
 ];
 
 
-const STABLEFORD_INFO = [
-  { place: "1.", pts: 14 }, { place: "2.", pts: 12 }, { place: "3.", pts: 10 },
-  { place: "4.", pts: 8 }, { place: "5.", pts: 6 }, { place: "6.", pts: 5 },
-  { place: "7.", pts: 4 }, { place: "8.", pts: 3 }, { place: "9-10.", pts: 2 },
-];
+const LEAGUE_COURSE_IDS = ["skogen", "lalm", "jorstadmoen", "sandbumoen", "lundesetra", "mosetertoppen", "gaala", "fossen-kvitfjell", "kvam", "oyer", "ringebu-u", "vingarparken"];
+const MAJOR_COURSE_IDS = new Set(["skogen", "lalm", "jorstadmoen"]);
+
+function scoreToPoints(score, isMajor) {
+  let pts;
+  if (score <= -4) pts = 10;
+  else if (score <= -2) pts = 9;
+  else if (score <= 0) pts = 8;
+  else if (score <= 2) pts = 7;
+  else if (score <= 4) pts = 6;
+  else if (score <= 6) pts = 5;
+  else if (score <= 8) pts = 4;
+  else if (score <= 10) pts = 3;
+  else if (score <= 13) pts = 2;
+  else if (score <= 16) pts = 1;
+  else pts = 0;
+  return isMajor ? Math.ceil(pts * 1.5) : pts;
+}
 
 const getMaxStreak = (rounds) => {
   if (!rounds.length) return 0;
@@ -167,6 +182,15 @@ export default function DiscGolfLeague() {
   const [roundsView, setRoundsView] = useState("alle"); // "alle", "mine", "venner"
   const [selectedRound, setSelectedRound] = useState(null);
   const [showAvatarMenu, setShowAvatarMenu] = useState(false);
+  const [themeId, setThemeId] = useState(() => {
+    try { return localStorage.getItem("themeId") || "skog"; } catch { return "skog"; }
+  });
+  const [showThemePicker, setShowThemePicker] = useState(false);
+  useEffect(() => {
+    applyTheme(themeId);
+    try { localStorage.setItem("themeId", themeId); } catch {}
+  }, [themeId]);
+  const theme = THEMES[themeId] || THEMES.skog;
 
   useEffect(() => {
     if (!selectedPlayer) { setSelectedPlayerRounds([]); return; }
@@ -272,57 +296,56 @@ export default function DiscGolfLeague() {
       .select("*, profiles(full_name, avatar_url)")
       .order("created_at", { ascending: false })
       .limit(50);
-    if (data) setRealRounds(data);
+    const real = data || [];
+    const mocks = INCLUDE_MOCKS ? getMockRounds(COURSES) : [];
+    const merged = [...real, ...mocks].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 50);
+    setRealRounds(merged);
   };
 
   const loadPlayers = async () => {
-    const { data: profiles } = await supabase.from("profiles").select("*");
-    const { data: rounds } = await supabase.from("rounds").select("*");
-    if (!profiles) return;
-
-    // Group rounds into events by course+date
-    const STABLEFORD = [14, 12, 10, 8, 6, 5, 4, 3, 2, 2];
-    const roundPts = {};
-    const events = {};
-    (rounds || []).forEach(r => {
-      const key = `${r.course_id}_${r.date}`;
-      if (!events[key]) events[key] = [];
-      events[key].push(r);
-    });
-
-    // Assign pts per round with tie-sharing
-    Object.values(events).forEach(ev => {
-      const sorted = [...ev].sort((a, b) => a.score - b.score);
-      let i = 0;
-      while (i < sorted.length) {
-        let j = i;
-        while (j < sorted.length - 1 && sorted[j].score === sorted[j + 1].score) j++;
-        const slice = STABLEFORD.slice(i, j + 1);
-        const avg = Math.round(slice.reduce((a, b) => a + b, 0) / slice.length);
-        for (let k = i; k <= j; k++) roundPts[sorted[k].id] = avg;
-        i = j + 1;
-      }
-    });
+    const { data: profilesData } = await supabase.from("profiles").select("*");
+    const { data: roundsData } = await supabase.from("rounds").select("*");
+    if (!profilesData) return;
+    const profiles = INCLUDE_MOCKS ? [...profilesData, ...MOCK_PROFILES] : profilesData;
+    const rounds = INCLUDE_MOCKS ? [...(roundsData || []), ...getMockRounds(COURSES)] : (roundsData || []);
 
     const result = profiles.map(p => {
-      const pr = (rounds || []).filter(r => r.user_id === p.id);
-      const withPts = pr.map(r => ({ ...r, sp: roundPts[r.id] ?? 0 }));
-      const best8 = [...withPts].sort((a, b) => b.sp - a.sp).slice(0, 8);
-      const totalPts = best8.reduce((sum, r) => sum + r.sp, 0);
+      const pr = rounds.filter(r => r.user_id === p.id);
+      const leagueRounds = pr.filter(r => LEAGUE_COURSE_IDS.includes(r.course_id));
+
+      const totalPts = leagueRounds.reduce((sum, r) => {
+        return sum + scoreToPoints(r.score, MAJOR_COURSE_IDS.has(r.course_id));
+      }, 0);
+
+      const leagueCoursesPlayed = new Set(leagueRounds.map(r => r.course_id)).size;
+      const qualified = leagueRounds.length > 0;
+
       const scores = pr.map(r => r.score).sort((a, b) => a - b);
+      const byDate = [...leagueRounds].sort((a, b) => new Date(a.created_at || a.date) - new Date(b.created_at || b.date));
+
       return {
         id: p.id,
         name: p.full_name || "Ukjent",
         avatar: p.avatar_url,
         rounds: pr.length,
+        leagueRounds: leagueRounds.length,
         best: scores.length ? scores[0] : null,
         avg: scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length * 10) / 10 : null,
         pts: totalPts,
+        coursesPlayed: leagueCoursesPlayed,
+        qualified,
         division: p.division || "Rekreasjons",
         hometown: p.hometown || "",
-        trend: withPts.slice(-10).map(r => r.sp),
+        trend: byDate.slice(-10).map(r => scoreToPoints(r.score, MAJOR_COURSE_IDS.has(r.course_id))),
       };
-    }).filter(p => p.rounds > 0).sort((a, b) => b.pts - a.pts);
+    }).filter(p => p.rounds > 0);
+
+    result.sort((a, b) => {
+      if (a.qualified !== b.qualified) return a.qualified ? -1 : 1;
+      if (a.qualified) return b.pts - a.pts;
+      if (a.coursesPlayed !== b.coursesPlayed) return b.coursesPlayed - a.coursesPlayed;
+      return b.pts - a.pts;
+    });
 
     setPlayers(result);
     return result;
@@ -331,7 +354,9 @@ export default function DiscGolfLeague() {
   const loadAllProfiles = async () => {
     const { data, error } = await supabase.from("profiles").select("id, full_name, avatar_url, hometown, disabled");
     console.log("loadAllProfiles:", data?.length, "profiles", error);
-    if (data) setAllProfiles(data);
+    const real = data || [];
+    const merged = INCLUDE_MOCKS ? [...real, ...MOCK_PROFILES] : real;
+    setAllProfiles(merged);
   };
 
   const loadNotifications = async () => {
@@ -471,13 +496,30 @@ export default function DiscGolfLeague() {
 
   const friendIds = friends.map(f => f.friend_id);
   const filtered = division === "Alle" ? players : division === "Venner" ? players.filter(p => friendIds.includes(p.id)) : players.filter(p => p.division === division);
+  const qualifiedPlayers = filtered.filter(p => p.qualified);
+  const unqualifiedPlayers = filtered.filter(p => !p.qualified);
 
   return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(175deg, #f0f9e8 0%, #e6f4d4 40%, #f5faf0 100%)", color: "#1c2b12", fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif", position: "relative", overflow: "hidden" }}>
+    <div style={{ minHeight: "100vh", background: theme.bg, color: theme.text, fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif", position: "relative", overflow: "hidden", transition: "background 0.4s ease, color 0.4s ease" }}>
       <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none", opacity: 0.025, backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")` }} />
+      {theme.bgImage && BG_IMAGES[theme.bgImage] && (
+        <div style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 0,
+          pointerEvents: "none",
+          opacity: theme.isDark ? 0.18 : 0.10,
+          backgroundImage: `url("${BG_IMAGES[theme.bgImage]}")`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          mixBlendMode: theme.isDark ? "screen" : "multiply",
+          transition: "opacity 0.4s ease",
+        }} />
+      )}
       <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 0, pointerEvents: "none", opacity: 0.12 }}>
         <svg viewBox="0 0 1200 200" preserveAspectRatio="none" style={{ width: "100%", height: "200px" }}>
-          <path d="M0,200 L0,140 L100,80 L200,120 L300,40 L400,90 L500,20 L600,70 L700,30 L800,80 L900,50 L1000,100 L1100,60 L1200,90 L1200,200 Z" fill="#A3E635" />
+          <path d="M0,200 L0,140 L100,80 L200,120 L300,40 L400,90 L500,20 L600,70 L700,30 L800,80 L900,50 L1000,100 L1100,60 L1200,90 L1200,200 Z" fill={theme.mountain} />
         </svg>
       </div>
 
@@ -485,14 +527,17 @@ export default function DiscGolfLeague() {
         <div style={{ maxWidth: 600, margin: "0 auto" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 38, height: 38, borderRadius: "50%", background: "linear-gradient(135deg, #A3E635, #65A30D)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, color: "#0a0f0a", boxShadow: "0 0 20px rgba(163,230,53,0.3)" }}>🥏</div>
+              <div style={{ width: 38, height: 38, borderRadius: "50%", background: `linear-gradient(135deg, ${theme.accentLight}, ${theme.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, color: theme.isDark ? "#0a0f0a" : "#0a0f0a", boxShadow: `0 0 20px ${theme.accent}55` }}>🥏</div>
               <div>
-                <div style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: "#5a9e0f", fontWeight: 700 }}>Gudbrandsdalen</div>
+                <div style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: theme.accent, fontWeight: 700 }}>Gudbrandsdalen</div>
                 <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.02em", lineHeight: 1.1 }}>Discgolf Liga</div>
                 <div style={{ fontSize: 10, color: "#6b7a58", fontWeight: 600, marginTop: 2 }}>Sesong: Vår 2026</div>
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <button onClick={() => setShowThemePicker(true)} title="Bytt fargetema" style={{ position: "relative", background: `${theme.accent}1a`, border: `1px solid ${theme.accent}40`, borderRadius: "50%", width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16 }}>
+                🎨
+              </button>
               {user ? (
                 <>
                 <button onClick={async () => { setShowNotifications(true); await loadNotifications(); loadPendingFriendRequests(); supabase.from("notifications").update({ read: true }).eq("user_id", user.id).eq("read", false).then(() => { setTimeout(() => setNotifications(prev => prev.map(n => ({ ...n, read: true }))), 2000); }); }} style={{ position: "relative", background: "rgba(101,163,13,0.1)", border: "1px solid rgba(101,163,13,0.25)", borderRadius: "50%", width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
@@ -604,9 +649,9 @@ export default function DiscGolfLeague() {
                 <div style={{ fontSize: 13, color: "#6b7a58", lineHeight: 1.6 }}>Registrer deg og spill en runde for å komme på tabellen!</div>
               </div>
             )}
-            {filtered.length >= 3 && division !== "Rekreasjons" && (
+            {qualifiedPlayers.length >= 3 && division !== "Rekreasjons" && (
               <div style={{ display: "flex", gap: 8, marginBottom: 16, alignItems: "flex-end", justifyContent: "center" }}>
-                {[filtered[1], filtered[0], filtered[2]].filter(Boolean).map((p, i) => {
+                {[qualifiedPlayers[1], qualifiedPlayers[0], qualifiedPlayers[2]].filter(Boolean).map((p, i) => {
                   const h = [100, 130, 80], m = ["🥈", "🥇", "🥉"], sz = [44, 56, 40];
                   return (
                     <div key={p.id} onClick={() => setSelectedPlayer(p)} style={{ textAlign: "center", cursor: "pointer", flex: 1, animation: `fadeSlideUp 0.5s ease ${i * 0.1}s both` }}>
@@ -617,20 +662,20 @@ export default function DiscGolfLeague() {
                       <div style={{ height: h[i], borderRadius: "12px 12px 0 0", background: i === 1 ? "linear-gradient(180deg, rgba(101,163,13,0.15), rgba(101,163,13,0.04))" : "rgba(255,255,255,0.6)", border: i === 1 ? "1px solid rgba(101,163,13,0.2)" : "1px solid rgba(0,0,0,0.08)", borderBottom: "none", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
                         <div style={{ fontSize: 20 }}>{m[i]}</div>
                         <div style={{ fontSize: 22, fontWeight: 900, color: i === 1 ? "#4a8a10" : "#2a3a1a" }}>{p.pts}</div>
-                        <div style={{ fontSize: 9, color: "#6b7a58", textTransform: "uppercase", letterSpacing: "0.1em" }}>poeng</div>
+                        <div style={{ fontSize: 9, color: "#6b7a58", textTransform: "uppercase", letterSpacing: "0.1em" }}>pts</div>
                       </div>
                     </div>
                   );
                 })}
               </div>
             )}
-            {filtered.length > 0 && (
+            {qualifiedPlayers.length > 0 && (
             <div style={{ background: "rgba(255,255,255,0.7)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "22px 1fr 50px 44px 70px", padding: "10px 14px", fontSize: 10, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700, borderBottom: "1px solid rgba(0,0,0,0.06)", background: "rgba(255,255,255,0.5)" }}>
-                <div>#</div><div>Spiller</div><div style={{ textAlign: "right" }}>Snitt</div><div style={{ textAlign: "right" }}>Pts</div><div style={{ textAlign: "right" }}>Trend</div>
+              <div style={{ display: "grid", gridTemplateColumns: "22px 1fr 50px 50px 70px", padding: "10px 14px", fontSize: 10, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700, borderBottom: "1px solid rgba(0,0,0,0.06)", background: "rgba(255,255,255,0.5)" }}>
+                <div>#</div><div>Spiller</div><div style={{ textAlign: "right" }}>Snitt</div><div style={{ textAlign: "right" }}>Poeng</div><div style={{ textAlign: "right" }}>Trend</div>
               </div>
-              {filtered.map((p, i) => (
-                <div key={p.id} onClick={() => setSelectedPlayer(p)} style={{ display: "grid", gridTemplateColumns: "22px 1fr 50px 44px 70px", padding: "12px 14px", alignItems: "center", cursor: "pointer", borderBottom: "1px solid rgba(0,0,0,0.04)", background: i === 0 ? "rgba(101,163,13,0.06)" : "transparent", transition: "background 0.2s" }}
+              {qualifiedPlayers.map((p, i) => (
+                <div key={p.id} onClick={() => setSelectedPlayer(p)} style={{ display: "grid", gridTemplateColumns: "22px 1fr 50px 50px 70px", padding: "12px 14px", alignItems: "center", cursor: "pointer", borderBottom: "1px solid rgba(0,0,0,0.04)", background: i === 0 ? "rgba(101,163,13,0.06)" : "transparent", transition: "background 0.2s" }}
                   onMouseEnter={e => e.currentTarget.style.background = "rgba(101,163,13,0.08)"}
                   onMouseLeave={e => e.currentTarget.style.background = i === 0 ? "rgba(101,163,13,0.06)" : "transparent"}>
                   <div style={{ fontSize: 13, fontWeight: 800, color: i < 3 ? "#4a8a10" : "#8a9a80" }}>{i + 1}</div>
@@ -646,6 +691,34 @@ export default function DiscGolfLeague() {
                 </div>
               ))}
             </div>
+            )}
+            {unqualifiedPlayers.length > 0 && (
+              <div style={{ marginTop: 20 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em" }}>Ingen ligarunder ennå</div>
+                  <div style={{ fontSize: 10, color: "#8a9a70" }}>Spill en av de {LEAGUE_COURSE_IDS.length} ligabanene</div>
+                </div>
+                <div style={{ background: "rgba(255,255,255,0.5)", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 16, overflow: "hidden" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "22px 1fr 60px 70px", padding: "10px 14px", fontSize: 10, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700, borderBottom: "1px solid rgba(0,0,0,0.06)", background: "rgba(255,255,255,0.4)" }}>
+                    <div>#</div><div>Spiller</div><div style={{ textAlign: "right" }}>Baner</div><div style={{ textAlign: "right" }}>Trend</div>
+                  </div>
+                  {unqualifiedPlayers.map((p) => (
+                    <div key={p.id} onClick={() => setSelectedPlayer(p)} style={{ display: "grid", gridTemplateColumns: "22px 1fr 60px 70px", padding: "12px 14px", alignItems: "center", cursor: "pointer", borderBottom: "1px solid rgba(0,0,0,0.04)", opacity: 0.85, transition: "opacity 0.2s" }}
+                      onMouseEnter={e => e.currentTarget.style.opacity = "1"}
+                      onMouseLeave={e => e.currentTarget.style.opacity = "0.85"}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#8a9a80" }}>—</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div style={{ width: 30, height: 30, minWidth: 30, minHeight: 30, borderRadius: "50%", overflow: "hidden", background: "rgba(101,163,13,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, border: "1px solid rgba(0,0,0,0.08)", flexShrink: 0 }}>
+                          {p.avatar?.startsWith("http") ? <img src={p.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (p.name?.[0] ?? "?")}
+                        </div>
+                        <div style={{ minWidth: 0 }}><div style={{ fontSize: 13, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name.split(" ")[0]}</div><div style={{ fontSize: 10, color: "#6b7a58" }}>{p.rounds}r{p.hometown ? ` · ${p.hometown}` : ` · ${p.division}`}</div></div>
+                      </div>
+                      <div style={{ textAlign: "right", fontSize: 12, fontWeight: 700, color: "#5a7040" }}>{p.coursesPlayed}/{LEAGUE_COURSE_IDS.length}</div>
+                      <div style={{ display: "flex", justifyContent: "flex-end" }}>{p.trend.length >= 2 ? <Sparkline data={p.trend} color="#8a9a70" /> : <span style={{ fontSize: 10, color: "#8a9a70" }}>—</span>}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
         )}
@@ -800,22 +873,27 @@ export default function DiscGolfLeague() {
 
         {tab === "regler" && (
           <div>
-            <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 4 }}>Stableford-poeng</div>
-            <div style={{ fontSize: 12, color: "#6b7a58", marginBottom: 16, lineHeight: 1.5 }}>Poeng deles ut basert på plassering i hver runde. Beste 8 av 12 runder teller.</div>
-            <div style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
-              {STABLEFORD_INFO.map((s, i) => (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", borderBottom: "1px solid rgba(0,0,0,0.05)", background: i === 0 ? "rgba(101,163,13,0.07)" : "transparent" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: "50%", background: i < 3 ? `rgba(101,163,13,${0.2 - i * 0.05})` : "rgba(0,0,0,0.05)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800, color: i < 3 ? "#4a8a10" : "#6b7a58" }}>{s.place}</div>
-                    <span style={{ fontSize: 13, fontWeight: 600 }}>Plass {s.place}</span>
+            <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 4 }}>Slik fungerer ligaen</div>
+            <div style={{ fontSize: 12, color: "#6b7a58", marginBottom: 16, lineHeight: 1.5 }}>12 baner · vår + høst · alle runder teller. Poeng etter score mot par — majors gir 1,5× poeng.</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {[
+                { icon: "📍", title: "1. Spill ligabanene", body: `Ligaen har ${LEAGUE_COURSE_IDS.length} baner i Gudbrandsdalen. Én runde per bane på våren og én på høsten — totalt 24 runder i sesongen.` },
+                { icon: "🎯", title: "2. Poeng etter score mot par", body: "Under par = mange poeng. Jo høyere over par, jo færre poeng. ≤−4: 10pts · −3/−2: 9pts · −1/0: 8pts · +1/+2: 7pts · +3/+4: 6pts · +5/+6: 5pts · +7/+8: 4pts · +9/+10: 3pts · +11–13: 2pts · +14–16: 1pt · ≥+17: 0pts" },
+                { icon: "⭐", title: "3. Majors gir 1,5× poeng", body: "Skogen, Lalm og Jørstadmoen er major-baner. Poengene på disse banene rundes opp og multipliseres med 1,5. Eksempel: 8 pts → 12 pts på en major." },
+                { icon: "🏆", title: "4. Flest poeng vinner", body: "Alle registrerte runder på ligabanene teller. Ingen minimumsgrense — spill når du kan og samle poeng gjennom sesongen." },
+              ].map((s, i) => (
+                <div key={i} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: 14, display: "flex", gap: 12 }}>
+                  <div style={{ fontSize: 22, lineHeight: 1 }}>{s.icon}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 4 }}>{s.title}</div>
+                    <div style={{ fontSize: 12, color: "#5a7040", lineHeight: 1.5 }}>{s.body}</div>
                   </div>
-                  <div style={{ fontSize: 16, fontWeight: 900, color: i < 3 ? "#4a8a10" : "#1c2b12" }}>{s.pts} <span style={{ fontSize: 10, fontWeight: 600, color: "#6b7a58" }}>pts</span></div>
                 </div>
               ))}
             </div>
             <div style={{ marginTop: 16, padding: 16, borderRadius: 14, background: "rgba(101,163,13,0.07)", border: "1px solid rgba(101,163,13,0.15)", fontSize: 12, color: "#4a5a38", lineHeight: 1.6 }}>
-              <div style={{ fontWeight: 700, color: "#4a8a10", marginBottom: 4 }}>💡 Slik fungerer det</div>
-              Hver runde du spiller i ligaen gir poeng basert på din plassering blant alle som spilte den runden. Ved likt resultat deles poengene. Sesongen har 12 planlagte runder, men kun dine 8 beste teller — så du kan misse noen runder uten å tape for mye!
+              <div style={{ fontWeight: 700, color: "#4a8a10", marginBottom: 4 }}>💡 Format: Score-Stableford</div>
+              Du trenger ikke prestere for å delta — men du trenger å prestere for å vinne. Ingen oppmøtepoeng. Major-banene holder spenningen oppe gjennom hele sesongen.
             </div>
           </div>
         )}
@@ -951,8 +1029,8 @@ export default function DiscGolfLeague() {
                 {[
                   { num: "1", title: "Spill en runde", text: "Dra til en av de 12 banene i Gudbrandsdalen og spill en runde. Du velger selv når og hvor!" },
                   { num: "2", title: "Registrer scoren din", text: "Åpne appen og trykk «Registrer runde». Skriv inn scoren din (mot par) og hvilken bane du spilte." },
-                  { num: "3", title: "Få ligapoeng", text: "Du får poeng basert på hvor godt du gjør det sammenlignet med andre. 1. plass = 14 poeng, 2. plass = 12 poeng, osv." },
-                  { num: "4", title: "Sesongen", text: "Ligaen har 12 runder totalt. Kun dine 8 beste runder teller — så du kan ta det med ro noen uker!" },
+                  { num: "3", title: "Få ligapoeng", text: "Du får poeng basert på din score mot par: under par = mange poeng, over par = færre poeng. Majors (Skogen, Lalm, Jørstadmoen) gir 1,5× poeng." },
+                  { num: "4", title: "Sesongen", text: "12 baner, én runde vår og én høst = 24 runder totalt. Alle runder teller — prestér for å klatre på tabellen!" },
                 ].map(s => (
                   <div key={s.num} style={{ display: "flex", gap: 12 }}>
                     <div style={{ width: 28, height: 28, borderRadius: "50%", background: "linear-gradient(135deg, #A3E635, #65A30D)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800, color: "#0a0f0a", flexShrink: 0 }}>{s.num}</div>
@@ -1318,7 +1396,7 @@ export default function DiscGolfLeague() {
                   </div>
                   <div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                      <label style={{ fontSize: 11, fontWeight: 700, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em" }}>Total score (kast)</label>
+                      <label style={{ fontSize: 11, fontWeight: 700, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em" }}>Score mot par</label>
                       {regForm.course && <span style={{ fontSize: 11, color: "#6b7a58" }}>Par: {COURSES.find(c => c.id === regForm.course)?.par ?? "?"}</span>}
                     </div>
                     <input type="number" placeholder={regForm.course ? `f.eks. ${(COURSES.find(c => c.id === regForm.course)?.par ?? 54) - 3}` : "Velg bane først"} value={regForm.score} onChange={e => setRegForm({ ...regForm, score: e.target.value })} style={{ width: "100%", padding: "12px 14px", borderRadius: 12, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
@@ -1745,6 +1823,9 @@ export default function DiscGolfLeague() {
               const myScores = myRounds.map(r => r.score);
               const myPlayer = players.find(p => p.id === user.id);
               const bestScore = myScores.length ? Math.min(...myScores) : null;
+              const coursesPlayed = myPlayer?.coursesPlayed ?? 0;
+              const totalCourses = COURSES.length;
+              const remaining = Math.max(0, totalCourses - coursesPlayed);
               return (
                 <div style={{ marginBottom: 20 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Min sesong · Vår 2026</div>
@@ -1761,20 +1842,19 @@ export default function DiscGolfLeague() {
                       </div>
                     ))}
                   </div>
-                  {/* Sesongframgang */}
+                  {/* Sesongframgang — baner spilt av ligaens totale */}
                   <div style={{ marginTop: 12 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: "#5a7040" }}>Sesongframgang</div>
-                      <div style={{ fontSize: 11, color: "#6b7a58" }}>{Math.min(myRounds.length, 8)}/8 tellende runder</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: "#5a7040" }}>Baner spilt</div>
+                      <div style={{ fontSize: 11, color: "#6b7a58" }}>{coursesPlayed}/{totalCourses} for kvalifisering</div>
                     </div>
                     <div style={{ height: 8, borderRadius: 4, background: "rgba(0,0,0,0.06)", overflow: "hidden" }}>
-                      <div style={{ height: "100%", borderRadius: 4, background: "linear-gradient(90deg, #A3E635, #65A30D)", width: `${Math.min(myRounds.length / 8, 1) * 100}%`, transition: "width 0.5s ease" }} />
+                      <div style={{ height: "100%", borderRadius: 4, background: "linear-gradient(90deg, #A3E635, #65A30D)", width: `${Math.min(coursesPlayed / totalCourses, 1) * 100}%`, transition: "width 0.5s ease" }} />
                     </div>
                     <div style={{ fontSize: 10, color: "#8a9a70", marginTop: 4 }}>
-                      {myRounds.length === 0 ? "Spill din første runde! 🚀" :
-                       myRounds.length < 8 ? `${8 - myRounds.length} runder igjen for å fullføre sesongen` :
-                       myRounds.length < 12 ? `✅ Minimum oppnådd! ${12 - myRounds.length} runder igjen av sesongen` :
-                       "🏆 Alle 12 runder spilt!"}
+                      {coursesPlayed === 0 ? "Spill din første bane! 🚀" :
+                       remaining > 0 ? `${remaining} ${remaining === 1 ? "bane" : "baner"} igjen for å bli kvalifisert` :
+                       "🏆 Alle baner spilt — du er kvalifisert!"}
                     </div>
                   </div>
               {myRounds.length === 0 && <div style={{ marginTop: 10, fontSize: 11, color: "#8a9a70", textAlign: "center", fontStyle: "italic" }}>Registrer din første runde for å se statistikk 🚀</div>}
@@ -2115,6 +2195,45 @@ export default function DiscGolfLeague() {
             </div>
             <div style={{ fontSize: 10, color: "#8a9a70", marginTop: 8, textAlign: "center", lineHeight: 1.5 }}>
               Les mer i vår <button onClick={() => setShowPrivacy(true)} style={{ background: "none", border: "none", color: "#A3E635", fontWeight: 700, cursor: "pointer", fontSize: 10, textDecoration: "underline", padding: 0 }}>personvernerklæring</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showThemePicker && (
+        <div onClick={() => setShowThemePicker(false)} style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.45)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: theme.isDark ? "rgba(20,22,30,0.98)" : "rgba(255,255,255,0.98)", color: theme.text, borderRadius: 24, padding: 20, width: "100%", maxWidth: 460, maxHeight: "85vh", overflowY: "auto", animation: "slideUp 0.3s ease", border: `1px solid ${theme.accent}33`, boxShadow: `0 -8px 40px rgba(0,0,0,0.2)` }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+              <div style={{ fontSize: 18, fontWeight: 800 }}>🎨 Velg fargetema</div>
+              <button onClick={() => setShowThemePicker(false)} style={{ background: "none", border: "none", fontSize: 22, cursor: "pointer", color: theme.textMuted, lineHeight: 1 }}>×</button>
+            </div>
+            <div style={{ fontSize: 12, color: theme.textMuted, marginBottom: 16 }}>Live forhåndsvisning. Endringen lagres lokalt på din enhet.</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {Object.entries(THEMES).map(([id, t]) => {
+                const active = id === themeId;
+                return (
+                  <button key={id} onClick={() => setThemeId(id)} style={{ display: "flex", alignItems: "center", gap: 12, padding: 12, borderRadius: 14, border: `2px solid ${active ? t.accent : "rgba(0,0,0,0.08)"}`, background: active ? `${t.accent}15` : (theme.isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.02)"), cursor: "pointer", textAlign: "left", transition: "all 0.2s" }}>
+                    <div style={{ width: 56, height: 56, minWidth: 56, borderRadius: 12, background: t.bg, border: "1px solid rgba(0,0,0,0.1)", position: "relative", overflow: "hidden", flexShrink: 0 }}>
+                      <div style={{ position: "absolute", bottom: 6, left: 6, width: 14, height: 14, borderRadius: "50%", background: `linear-gradient(135deg, ${t.accentLight}, ${t.accent})` }} />
+                      <div style={{ position: "absolute", top: 6, right: 6, width: 10, height: 10, borderRadius: "50%", background: t.mountain, opacity: 0.6 }} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: theme.text, display: "flex", alignItems: "center", gap: 6 }}>
+                        <span>{t.emoji}</span><span>{t.name}</span>
+                        {active && <span style={{ fontSize: 10, fontWeight: 700, color: t.accent, background: `${t.accent}20`, padding: "2px 8px", borderRadius: 10, marginLeft: "auto" }}>VALGT</span>}
+                      </div>
+                      <div style={{ display: "flex", gap: 4, marginTop: 6 }}>
+                        {[t.accent, t.accentLight, t.accentDark, t.mountain].map((c, i) => (
+                          <div key={i} style={{ width: 18, height: 18, borderRadius: 4, background: c, border: "1px solid rgba(0,0,0,0.1)" }} />
+                        ))}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{ marginTop: 16, padding: 12, borderRadius: 10, background: `${theme.accent}10`, border: `1px solid ${theme.accent}25`, fontSize: 11, color: theme.textMuted, lineHeight: 1.5 }}>
+              💡 Noen elementer kan fortsatt vises i den gamle grønne paletten — de blir oppdatert når dere har bestemt dere for et tema.
             </div>
           </div>
         </div>

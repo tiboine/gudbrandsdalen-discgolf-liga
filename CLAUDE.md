@@ -2,7 +2,7 @@
 
 ## Prosjektoversikt
 
-En ligaapp for frisbeegolf/discgolf i Gudbrandsdalen, Innlandet. Spillere registrerer runder, samler Stableford-poeng basert på plassering, og følger en live ligatabell gjennom sesongen.
+En ligaapp for frisbeegolf/discgolf i Gudbrandsdalen, Innlandet. Spillere registrerer runder, samler Stableford-poeng basert på score mot par, og følger en live ligatabell gjennom sesongen.
 
 Målgruppe: Lokale discgolfspillere i Gudbrandsdalen (Lillehammer, Øyer, Ringebu, Sør-Fron, Nord-Fron, Sel). Appen skal være enkel, mobilvennlig og morsom å bruke.
 
@@ -44,10 +44,11 @@ Målgruppe: Lokale discgolfspillere i Gudbrandsdalen (Lillehammer, Øyer, Ringeb
 - Klikkbar ekspandering med beskrivelse og direkte UDisc-lenke
 - Alle baner er gratis
 
-### 4. Poengsystem (Stableford)
-- Poeng basert på plassering per runde: 1.plass=14pts, 2.=12, 3.=10, osv.
-- Beste 8 av 12 runder teller for sluttresultatet
-- Ved likt resultat deles poengene
+### 4. Poengsystem (Score-Stableford)
+- Poeng basert på score mot par per runde: ≤−4=10pts, −3/−2=9, −1/0=8, +1/+2=7, +3/+4=6, +5/+6=5, +7/+8=4, +9/+10=3, +11–13=2, +14–16=1, ≥+17=0
+- Major-baner (Skogen, Lalm, Jørstadmoen) gir 1,5× poeng (avrundes opp)
+- 12 baner, 1 runde vår + 1 runde høst = 24 runder totalt, alle teller
+- Ingen oppmøtepoeng — man må prestere for å klatre
 
 ### 5. Registrer runde (modal)
 - Velg bane (dropdown med hull/par/rating)
@@ -57,16 +58,22 @@ Målgruppe: Lokale discgolfspillere i Gudbrandsdalen (Lillehammer, Øyer, Ringeb
 
 ## Baner i ligaen (fra UDisc)
 
-| ID | Bane | Sted | Hull | Par | UDisc Rating |
-|----|------|------|------|-----|-------------|
-| skogen | Skogen Diskgolfbane | Lillehammer | 22 | 63 | ★4.2 |
-| jorstadmoen | Jørstadmoen | Lillehammer | 18 | 54 | ★3.9 |
-| sandbumoen | Sandbumoen Discgolfbane | Sør-Fron/Otta | 18 | 55 | ★3.9 |
-| kvam | Kvam Idrettspark | Kvam, Nord-Fron | 9 | 27 | ★3.8 |
-| ringebu | Ringebu Ungdomskole | Ringebu | 9 | 27 | ★2.5 |
-| vinstra | Vinstra Ungdomsskole | Vinstra | 6 | 18 | ★2.7 |
-| otta | Otta Disc Golf | Otta, Sel | 6 | 18 | ★2.2 |
-| oyer | Øyer Ungdomsskole | Øyer | 9 | 27 | ★3.2 |
+Konstanten `LEAGUE_COURSE_IDS` i `src/App.jsx` definerer de 12 ligabanene. `MAJOR_COURSE_IDS` (Set) markerer major-baner.
+
+| ID | Bane | Sted | Major |
+|----|------|------|-------|
+| skogen | Skogen Diskgolfbane | Lillehammer | ⭐ Major |
+| lalm | Lalm Discgolfbane | Lalm, Sel | ⭐ Major |
+| jorstadmoen | Jørstadmoen | Lillehammer | ⭐ Major |
+| sandbumoen | Sandbumoen Discgolfbane | Sør-Fron | — |
+| lundesetra | Lundesetra Frisbeegolfbane | Venabygd, Ringebu | — |
+| mosetertoppen | Mosetertoppen Diskgolfpark | Øyer | — |
+| gaala | Gålå | Gålå, Sør-Fron | — |
+| fossen-kvitfjell | Fossen Diskgolf Kvitfjell | Fåvang | — |
+| kvam | Kvam Idrettspark | Kvam, Nord-Fron | — |
+| oyer | Øyer Ungdomsskole | Øyer | — |
+| ringebu-u | Ringebu Ungdomskole Discgolfbane | Ringebu | — |
+| vingarparken | Vingarparken Diskgolfbane | Lillehammer | — |
 
 UDisc-lenker finnes i COURSES-arrayet i `src/App.jsx`. UDisc har ingen offentlig API (per mars 2026), men spillere kan eksportere sine runder som CSV fra UDisc-appen.
 
