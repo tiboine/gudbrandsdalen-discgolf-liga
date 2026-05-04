@@ -427,6 +427,13 @@ export default function DiscGolfLeague() {
     try { localStorage.setItem("cache_profiles", JSON.stringify(profiles)); } catch {}
   };
 
+  const loadFeedback = async () => {
+    setAdminFeedbackLoading(true);
+    const { data } = await supabase.from("feedback").select("*").order("created_at", { ascending: false });
+    setAdminFeedback(data || []);
+    setAdminFeedbackLoading(false);
+  };
+
   const loadNotifications = async () => {
     if (!user) return;
     const { data } = await supabase.from("notifications").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5);
@@ -555,6 +562,8 @@ export default function DiscGolfLeague() {
   const ADMIN_EMAILS = [import.meta.env.VITE_ADMIN_EMAIL, "urbanthor@gmail.com"].filter(Boolean);
   const isAdmin = ADMIN_EMAILS.includes(user?.email);
   const [adminTab, setAdminTab] = useState("oversikt");
+  const [adminFeedback, setAdminFeedback] = useState([]);
+  const [adminFeedbackLoading, setAdminFeedbackLoading] = useState(false);
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -1152,8 +1161,8 @@ export default function DiscGolfLeague() {
 
             {/* Admin tabs */}
             <div style={{ display: "flex", gap: 4, background: "rgba(0,0,0,0.06)", borderRadius: 10, padding: 3, marginBottom: 16 }}>
-              {[{ id: "oversikt", label: "📊 Oversikt" }, { id: "runder", label: "🥏 Runder" }, { id: "spillere", label: "👥 Spillere" }, { id: "profiler", label: "🪪 Profiler" }, { id: "test", label: "🧪 Test" }].map(t => (
-                <button key={t.id} onClick={() => setAdminTab(t.id)} style={{ flex: 1, padding: "8px 6px", border: "none", borderRadius: 8, background: adminTab === t.id ? "#fff" : "transparent", color: adminTab === t.id ? "#4a8a10" : "#6b7a58", fontWeight: adminTab === t.id ? 700 : 500, fontSize: 11, cursor: "pointer", transition: "all 0.2s", boxShadow: adminTab === t.id ? "0 1px 4px rgba(0,0,0,0.1)" : "none" }}>{t.label}</button>
+              {[{ id: "oversikt", label: "📊 Oversikt" }, { id: "runder", label: "🥏 Runder" }, { id: "spillere", label: "👥 Spillere" }, { id: "profiler", label: "🪪 Profiler" }, { id: "meldinger", label: "💬 Meldinger" }, { id: "test", label: "🧪 Test" }].map(t => (
+                <button key={t.id} onClick={() => { setAdminTab(t.id); if (t.id === "meldinger") loadFeedback(); }} style={{ flex: 1, padding: "8px 6px", border: "none", borderRadius: 8, background: adminTab === t.id ? "#fff" : "transparent", color: adminTab === t.id ? "#4a8a10" : "#6b7a58", fontWeight: adminTab === t.id ? 700 : 500, fontSize: 11, cursor: "pointer", transition: "all 0.2s", boxShadow: adminTab === t.id ? "0 1px 4px rgba(0,0,0,0.1)" : "none" }}>{t.label}</button>
               ))}
             </div>
 
@@ -1276,6 +1285,37 @@ export default function DiscGolfLeague() {
                     </div>
                   );
                 })}
+              </div>
+            )}
+
+            {/* Tilbakemeldinger */}
+            {adminTab === "meldinger" && (
+              <div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12" }}>Tilbakemeldinger ({adminFeedback.length})</div>
+                  <button onClick={loadFeedback} style={{ fontSize: 11, padding: "4px 10px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.1)", background: "rgba(0,0,0,0.04)", color: "#4a5a38", fontWeight: 600, cursor: "pointer" }}>
+                    {adminFeedbackLoading ? "Laster..." : "↻ Oppdater"}
+                  </button>
+                </div>
+                {adminFeedback.length === 0 && !adminFeedbackLoading && (
+                  <div style={{ fontSize: 13, color: "#6b7a58", textAlign: "center", padding: 24 }}>
+                    {adminFeedback.length === 0 && adminFeedbackLoading === false ? "Ingen tilbakemeldinger ennå — trykk Oppdater" : "Ingen tilbakemeldinger ennå"}
+                  </div>
+                )}
+                {adminFeedback.map(f => (
+                  <div key={f.id} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "12px 14px", marginBottom: 8 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#1c2b12" }}>{f.user_name || "Ukjent"}</div>
+                      <div style={{ fontSize: 10, color: "#8a9a70" }}>{new Date(f.created_at).toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</div>
+                    </div>
+                    <div style={{ fontSize: 13, color: "#4a5a38", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{f.message}</div>
+                    <button onClick={async () => {
+                      if (!confirm("Slett denne tilbakemeldingen?")) return;
+                      await supabase.from("feedback").delete().eq("id", f.id);
+                      setAdminFeedback(prev => prev.filter(x => x.id !== f.id));
+                    }} style={{ marginTop: 8, padding: "3px 10px", borderRadius: 6, border: "1px solid rgba(239,68,68,0.2)", background: "rgba(239,68,68,0.06)", color: "#dc2626", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Slett</button>
+                  </div>
+                ))}
               </div>
             )}
 
