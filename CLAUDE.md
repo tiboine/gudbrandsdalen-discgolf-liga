@@ -49,6 +49,8 @@ Målgruppe: Lokale discgolfspillere i Gudbrandsdalen (Lillehammer, Øyer, Ringeb
 - Major-baner (Skogen, Lalm, Jørstadmoen) gir 1,5× poeng (avrundes opp)
 - 12 baner, 1 runde vår + 1 runde høst = 24 runder totalt, alle teller
 - Ingen oppmøtepoeng — man må prestere for å klatre
+- **Vår-sesong:** mai–juli (`SPRING_MONTHS = [5, 6, 7]`)
+- **Høst-sesong:** august–oktober (`FALL_MONTHS = [8, 9, 10]`)
 
 ### 5. Registrer runde (modal)
 - Velg bane (dropdown med hull/par/rating)

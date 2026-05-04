@@ -587,7 +587,7 @@ export default function DiscGolfLeague() {
         <div style={{ maxWidth: 600, margin: "0 auto" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <img src="/GDG.png" alt="GDG logo" style={{ width: 44, height: 44, objectFit: "contain" }} />
+              <img src="/gdliga.png" alt="GDG logo" style={{ width: 44, height: 44, objectFit: "cover", borderRadius: "50%" }} />
               <div>
                 <div style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: theme.accent, fontWeight: 700 }}>Gudbrandsdalen</div>
                 <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.02em", lineHeight: 1.1 }}>Discgolf Liga</div>
