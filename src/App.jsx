@@ -28,6 +28,21 @@ const COURSES = [
 const LEAGUE_COURSE_IDS = ["skogen", "lalm", "jorstadmoen", "sandbumoen", "lundesetra", "mosetertoppen", "gaala", "fossen-kvitfjell", "kvam", "oyer", "ringebu-u", "vingarparken"];
 const MAJOR_COURSE_IDS = new Set(["skogen", "lalm", "jorstadmoen"]);
 
+const SPRING_MONTHS = [5, 6, 7];   // mai–juli
+const FALL_MONTHS   = [8, 9, 10];  // august–oktober
+
+function getCurrentSeason(date = new Date()) {
+  const m = date.getMonth() + 1;
+  if (SPRING_MONTHS.includes(m)) return "Vår";
+  if (FALL_MONTHS.includes(m)) return "Høst";
+  return null;
+}
+
+function getSeasonLabel(date = new Date()) {
+  const s = getCurrentSeason(date);
+  return s ? `${s} ${date.getFullYear()}` : `${date.getFullYear()}`;
+}
+
 function scoreToPoints(score, isMajor) {
   let pts;
   if (score <= -4) pts = 10;
@@ -81,6 +96,46 @@ const BADGE_DEFS = [
   }},
   { id: "dedikert", name: "Dedikert", desc: "Fullfør 10 runder", check: (p, rounds) => rounds.length >= 10 },
   { id: "lagspiller", name: "Lagspiller", desc: "Legg til 5 venner", check: () => false },
+  { id: "ace", name: "Hull-i-ett!", desc: "Score ditt første ace", check: (p, rounds) => rounds.some(r => r.aces >= 1) },
+  { id: "arets_kast", name: "Årets kast", desc: "Score et ace i inneværende år", check: (p, rounds) => { const year = new Date().getFullYear(); return rounds.some(r => r.aces >= 1 && (r.date || "").startsWith(String(year))); } },
+  { id: "ace_club", name: "Ace-klubben", desc: "Score 2+ aces totalt", check: (p, rounds) => rounds.reduce((s, r) => s + (r.aces || 0), 0) >= 2 },
+  { id: "eagle_hunter", name: "Ørnejeger", desc: "Score din første eagle", check: (p, rounds) => rounds.some(r => r.eagles >= 1) },
+  { id: "double_eagle", name: "Dobbeltørn", desc: "To eagles i én runde", check: (p, rounds) => rounds.some(r => r.eagles >= 2) },
+  { id: "eagle_sesong", name: "Ørnesesong", desc: "5+ eagles i en sesong", check: (p, rounds) => {
+    const seasons = {};
+    rounds.filter(r => r.eagles != null).forEach(r => {
+      const d = new Date(r.date || r.created_at);
+      const mo = d.getMonth() + 1;
+      const season = SPRING_MONTHS.includes(mo) ? "Vår" : FALL_MONTHS.includes(mo) ? "Høst" : null;
+      if (!season) return;
+      const key = `${d.getFullYear()}-${season}`;
+      seasons[key] = (seasons[key] || 0) + r.eagles;
+    });
+    return Object.values(seasons).some(v => v >= 5);
+  }},
+  { id: "birdie_runde", name: "Birdie-runde", desc: "3+ birdies i én runde", check: (p, rounds) => rounds.some(r => r.birdies != null && r.birdies >= 3) },
+  { id: "birdie_maskin", name: "Birdie-maskin", desc: "5+ birdies i én runde", check: (p, rounds) => rounds.some(r => r.birdies != null && r.birdies >= 5) },
+  { id: "birdie_strek", name: "Birdie-strek", desc: "Birdies i 3 runder på rad", check: (p, rounds) => {
+    const sorted = [...rounds].filter(r => r.birdies != null).sort((a, b) => new Date(a.date) - new Date(b.date));
+    let streak = 0, max = 0;
+    sorted.forEach(r => { if (r.birdies >= 1) { streak++; max = Math.max(max, streak); } else { streak = 0; } });
+    return max >= 3;
+  }},
+  { id: "birdie_sesong", name: "Birdie-sesong", desc: "10+ birdies i en sesong", check: (p, rounds) => {
+    const seasons = {};
+    rounds.filter(r => r.birdies != null).forEach(r => {
+      const d = new Date(r.date || r.created_at);
+      const mo = d.getMonth() + 1;
+      const season = SPRING_MONTHS.includes(mo) ? "Vår" : FALL_MONTHS.includes(mo) ? "Høst" : null;
+      if (!season) return;
+      const key = `${d.getFullYear()}-${season}`;
+      seasons[key] = (seasons[key] || 0) + r.birdies;
+    });
+    return Object.values(seasons).some(v => v >= 10);
+  }},
+  { id: "birdie_mester", name: "Birdie-mester", desc: "25+ birdies totalt", check: (p, rounds) => rounds.reduce((s, r) => s + (r.birdies || 0), 0) >= 25 },
+  { id: "bogey_fri", name: "Bogey-fri", desc: "En runde uten bogeys", check: (p, rounds) => rounds.some(r => r.bogeys === 0) },
+  { id: "ren_runde", name: "Rent kort", desc: "Under par uten noen bogeys", check: (p, rounds) => rounds.some(r => r.bogeys === 0 && r.score < 0) },
 ];
 
 function getDistance(lat1, lng1, lat2, lng2) {
@@ -134,7 +189,7 @@ export default function DiscGolfLeague() {
   const [showRegister, setShowRegister] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [selectedCourse, setSelectedCourse] = useState(null);
-  const [regForm, setRegForm] = useState({ course: "", score: "", date: "" });
+  const [regForm, setRegForm] = useState({ course: "", score: "", date: "", aces: null, eagles: null, birdies: null, bogeys: null });
   const [regSuccess, setRegSuccess] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [userDivision, setUserDivision] = useState("Åpen");
@@ -270,7 +325,7 @@ export default function DiscGolfLeague() {
 
   const signInWithGoogle = () => supabase.auth.signInWithOAuth({
     provider: "google",
-    options: { redirectTo: "https://gudbrandsdalen-discgolf-liga.vercel.app" }
+    options: { redirectTo: "https://gdliga.no" }
   });
 
   const signInWithEmail = async () => {
@@ -536,7 +591,7 @@ export default function DiscGolfLeague() {
               <div>
                 <div style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: theme.accent, fontWeight: 700 }}>Gudbrandsdalen</div>
                 <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.02em", lineHeight: 1.1 }}>Discgolf Liga</div>
-                <div style={{ fontSize: 10, color: "#6b7a58", fontWeight: 600, marginTop: 2 }}>Sesong: Vår 2026</div>
+                <div style={{ fontSize: 10, color: "#6b7a58", fontWeight: 600, marginTop: 2 }}>Sesong: {getSeasonLabel()}</div>
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -810,7 +865,7 @@ export default function DiscGolfLeague() {
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
               <div style={{ fontSize: 16, fontWeight: 800 }}>Baner i ligaen</div>
-              <div style={{ fontSize: 11, color: "#6b7a58" }}>Data fra <span style={{ color: "#4a8a10", fontWeight: 700 }}>UDisc</span></div>
+              <div style={{ fontSize: 11, color: "#6b7a58" }}>Banedata fra <span style={{ color: "#4a8a10", fontWeight: 700 }}>UDisc</span> · scorer manuelt</div>
             </div>
             <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
               {[
@@ -1386,7 +1441,12 @@ export default function DiscGolfLeague() {
             ) : (
               <>
                 <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 4, color: "#1c2b12" }}>{editRound ? "Rediger runde" : "Registrer runde"}</div>
-                <div style={{ fontSize: 12, color: "#6b7a58", marginBottom: 20 }}>{editRound ? "Korriger scoren din" : "Legg inn scoren din for å få ligapoeng"}</div>
+                <div style={{ fontSize: 12, color: "#6b7a58", marginBottom: editRound ? 20 : 12 }}>{editRound ? "Korriger scoren din" : "Legg inn scoren din for å få ligapoeng"}</div>
+                {!editRound && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderRadius: 10, background: "rgba(101,163,13,0.07)", border: "1px solid rgba(101,163,13,0.15)", marginBottom: 16, fontSize: 11, color: "#4a5a38", lineHeight: 1.5 }}>
+                    ℹ️ Scorer registreres manuelt — appen er ikke synkronisert med UDisc.
+                  </div>
+                )}
                 <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                   <div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
@@ -1467,6 +1527,30 @@ export default function DiscGolfLeague() {
                         </div>
                       );
                     })()}
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#5a7040", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.1em" }}>Hullstatistikk <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(valgfritt — brukes til badges)</span></label>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
+                      {[
+                        { key: "aces", label: "Aces", color: "#f59e0b" },
+                        { key: "eagles", label: "Eagles", color: "#8b5cf6" },
+                        { key: "birdies", label: "Birdies", color: "#3b82f6" },
+                        { key: "bogeys", label: "Bogeys", color: "#ef4444" },
+                      ].map(({ key, label, color }) => (
+                        <div key={key} style={{ textAlign: "center" }}>
+                          <div style={{ fontSize: 10, fontWeight: 700, color, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</div>
+                          <input
+                            type="number"
+                            min="0"
+                            max="30"
+                            placeholder="0"
+                            value={regForm[key] ?? ""}
+                            onChange={e => setRegForm({ ...regForm, [key]: e.target.value === "" ? null : Math.max(0, parseInt(e.target.value) || 0) })}
+                            style={{ width: "100%", padding: "8px 6px", borderRadius: 10, background: "rgba(0,0,0,0.04)", border: `1px solid ${regForm[key] != null ? color + "55" : "rgba(0,0,0,0.1)"}`, color: "#1c2b12", fontSize: 16, fontWeight: 700, outline: "none", textAlign: "center", boxSizing: "border-box" }}
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                   <div>
                     <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#5a7040", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.1em" }}>Notat <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(valgfritt)</span></label>
@@ -1579,6 +1663,10 @@ export default function DiscGolfLeague() {
                           total_score: totalScore,
                           date: regForm.date,
                           note: regNote || null,
+                          aces: regForm.aces,
+                          eagles: regForm.eagles,
+                          birdies: regForm.birdies,
+                          bogeys: regForm.bogeys,
                         }).eq("id", editRound.id);
                       } else {
                         // Generate group_id if registering with friends
@@ -1592,6 +1680,10 @@ export default function DiscGolfLeague() {
                           date: regForm.date,
                           note: regNote || null,
                           group_id: groupId,
+                          aces: regForm.aces,
+                          eagles: regForm.eagles,
+                          birdies: regForm.birdies,
+                          bogeys: regForm.bogeys,
                         }).select().single();
 
                         // Register friends' rounds with same group_id
@@ -1671,7 +1763,7 @@ export default function DiscGolfLeague() {
                     setSelectedFriendPlayers([]);
                     setFriendScores({});
                     setRegSuccess(true);
-                    setTimeout(() => { setRegSuccess(false); setShowRegister(false); setRegForm({ course: "", score: "", date: "" }); setEditRound(null); setRegError(""); setRegNote(""); setFriendSearch(""); setShowFriendScores(false); }, 2000);
+                    setTimeout(() => { setRegSuccess(false); setShowRegister(false); setRegForm({ course: "", score: "", date: "", aces: null, eagles: null, birdies: null, bogeys: null }); setEditRound(null); setRegError(""); setRegNote(""); setFriendSearch(""); setShowFriendScores(false); }, 2000);
                   }} style={{ width: "100%", padding: 14, border: "none", borderRadius: 14, background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 24px rgba(101,163,13,0.25)", marginTop: 4 }}>{editRound ? "Lagre endring ✓" : "Registrer 🥏"}</button>
                   <button onClick={() => { setShowRegister(false); setEditRound(null); setRegError(""); }} style={{ width: "100%", padding: 12, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#6b7a58", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Avbryt</button>
                 </div>
@@ -1875,7 +1967,7 @@ export default function DiscGolfLeague() {
               const totalCourses = LEAGUE_COURSE_IDS.length;
               return (
                 <div style={{ marginBottom: 20 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Min sesong · Vår 2026</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Min sesong · {getSeasonLabel()}</div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
                     {[
                       { label: "Runder", value: myRounds.length || "—", icon: "🥏" },
@@ -2077,7 +2169,7 @@ export default function DiscGolfLeague() {
                         setSelectedRound(null);
                         setEditRound(r);
                         const coursePar = course?.par ?? 0;
-                        setRegForm({ course: r.course_id, score: r.total_score ? String(r.total_score) : String(r.score + coursePar), date: r.date });
+                        setRegForm({ course: r.course_id, score: r.total_score ? String(r.total_score) : String(r.score + coursePar), date: r.date, aces: r.aces ?? null, eagles: r.eagles ?? null, birdies: r.birdies ?? null, bogeys: r.bogeys ?? null });
                         setRegNote(r.note || "");
                         setShowRegister(true);
                       }} style={{ flex: 1, padding: "10px 0", borderRadius: 10, border: "1px solid rgba(0,0,0,0.1)", background: "rgba(0,0,0,0.03)", color: "#4a5a38", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>✏️ Rediger</button>
