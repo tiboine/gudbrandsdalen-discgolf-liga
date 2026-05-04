@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { BADGE_ICONS } from "./components/BadgeIcons";
 import { TAB_ICONS, STAT_ICONS, LogoIcon, BellIcon } from "./components/TabIcons";
-import { INCLUDE_MOCKS, MOCK_PROFILES, getMockRounds } from "./data/mockData";
 import { THEMES, BG_IMAGES, applyTheme } from "./themes";
 
 const supabase = createClient(
@@ -143,16 +142,22 @@ export default function DiscGolfLeague() {
   const [authForm, setAuthForm] = useState({ email: "", password: "", name: "" });
   const [authError, setAuthError] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
-  const [realRounds, setRealRounds] = useState([]);
+  const [realRounds, setRealRounds] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("cache_rounds") || "[]"); } catch { return []; }
+  });
   const [roundsLoading, setRoundsLoading] = useState(false);
   const [editRound, setEditRound] = useState(null); // null or round object being edited
-  const [players, setPlayers] = useState([]);
+  const [players, setPlayers] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("cache_players") || "[]"); } catch { return []; }
+  });
   const [regError, setRegError] = useState("");
   const [signupEmailSent, setSignupEmailSent] = useState(false);
   const [courseSort, setCourseSort] = useState("avstand"); // avstand | populær | stjerner
   const [roundFilter, setRoundFilter] = useState("alle"); // "alle" or course_id
   const [regNote, setRegNote] = useState("");
-  const [allProfiles, setAllProfiles] = useState([]);
+  const [allProfiles, setAllProfiles] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("cache_profiles") || "[]"); } catch { return []; }
+  });
   const [friends, setFriends] = useState([]); // accepted friends list [{id, user_id, friend_id, status}]
   const [pendingFriendRequests, setPendingFriendRequests] = useState([]); // incoming pending friend requests
   const [friendScores, setFriendScores] = useState({}); // {profileId: score string} for registering friends' rounds
@@ -292,17 +297,17 @@ export default function DiscGolfLeague() {
       .order("created_at", { ascending: false })
       .limit(50);
     const real = data || [];
-    const mocks = INCLUDE_MOCKS ? getMockRounds(COURSES) : [];
-    const merged = [...real, ...mocks].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 50);
+    const merged = real.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 50);
     setRealRounds(merged);
+    try { localStorage.setItem("cache_rounds", JSON.stringify(merged)); } catch {}
   };
 
   const loadPlayers = async () => {
     const { data: profilesData } = await supabase.from("profiles").select("*");
     const { data: roundsData } = await supabase.from("rounds").select("*");
     if (!profilesData) return;
-    const profiles = INCLUDE_MOCKS ? [...profilesData, ...MOCK_PROFILES] : profilesData;
-    const rounds = INCLUDE_MOCKS ? [...(roundsData || []), ...getMockRounds(COURSES)] : (roundsData || []);
+    const profiles = profilesData;
+    const rounds = roundsData || [];
 
     const result = profiles.map(p => {
       const pr = rounds.filter(r => r.user_id === p.id);
@@ -343,15 +348,16 @@ export default function DiscGolfLeague() {
     });
 
     setPlayers(result);
+    try { localStorage.setItem("cache_players", JSON.stringify(result)); } catch {}
     return result;
   };
 
   const loadAllProfiles = async () => {
     const { data, error } = await supabase.from("profiles").select("id, full_name, avatar_url, hometown, disabled");
     console.log("loadAllProfiles:", data?.length, "profiles", error);
-    const real = data || [];
-    const merged = INCLUDE_MOCKS ? [...real, ...MOCK_PROFILES] : real;
-    setAllProfiles(merged);
+    const profiles = data || [];
+    setAllProfiles(profiles);
+    try { localStorage.setItem("cache_profiles", JSON.stringify(profiles)); } catch {}
   };
 
   const loadNotifications = async () => {
