@@ -189,7 +189,11 @@ export default function DiscGolfLeague() {
   const [showRegister, setShowRegister] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [selectedCourse, setSelectedCourse] = useState(null);
-  const [regForm, setRegForm] = useState({ course: "", score: "", date: "", aces: null, eagles: null, birdies: null, bogeys: null });
+  const [regForm, setRegForm] = useState({ course: "", score: "", date: new Date().toISOString().split("T")[0], aces: null, eagles: null, birdies: null, bogeys: null });
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackText, setFeedbackText] = useState("");
+  const [feedbackSending, setFeedbackSending] = useState(false);
+  const [feedbackSent, setFeedbackSent] = useState(false);
   const [regSuccess, setRegSuccess] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [userDivision, setUserDivision] = useState("Åpen");
@@ -623,7 +627,7 @@ export default function DiscGolfLeague() {
             </div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, margin: "16px 0" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, margin: "16px 0" }}>
             {[{ label: "Spillere", value: players.length, iconKey: "players", tab: "tabell", anim: true }, { label: "Runder spilt", value: realRounds.length, iconKey: "rounds", tab: "runder", anim: true }, { label: "Baner", value: COURSES.length, iconKey: "courses", tab: "baner", anim: false }].map(s => (
               <div key={s.label} onClick={() => setTab(s.tab)} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "12px 10px", textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", cursor: "pointer", transition: "transform 0.15s, box-shadow 0.15s" }}
                 onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)"; }}
@@ -633,6 +637,14 @@ export default function DiscGolfLeague() {
                 <div style={{ fontSize: 10, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>{s.label}</div>
               </div>
             ))}
+            {user && (
+              <div onClick={() => setShowFeedback(true)} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "12px 10px", textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", cursor: "pointer", transition: "transform 0.15s, box-shadow 0.15s" }}
+                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)"; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.06)"; }}>
+                <div style={{ fontSize: 26, marginBottom: 4 }}>💬</div>
+                <div style={{ fontSize: 10, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>Tilbakemelding</div>
+              </div>
+            )}
           </div>
 
           <button onClick={() => setShowRegister(true)} style={{ width: "100%", padding: "14px", border: "none", borderRadius: 14, background: "linear-gradient(135deg, #A3E635 0%, #65A30D 100%)", color: "#0a0f0a", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 24px rgba(163,230,53,0.25), inset 0 1px 0 rgba(255,255,255,0.2)", transition: "transform 0.15s", marginBottom: 16 }}
@@ -1435,7 +1447,7 @@ export default function DiscGolfLeague() {
 
       {showRegister && (
         <div onClick={() => { setShowRegister(false); setRegSuccess(false); setLocationStatus("idle"); setUserLocation(null); setEditRound(null); setRegError(""); setSelectedFriendPlayers([]); setFriendScores({}); setFriendSearch(""); setShowFriendScores(false); }} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, background: "linear-gradient(180deg, #ffffff, #f0f9e8)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 24, animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, maxHeight: "85vh", overflowY: "auto", background: "linear-gradient(180deg, #ffffff, #f0f9e8)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 24, animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
             {regSuccess ? (
               <div style={{ textAlign: "center", padding: "30px 0" }}>
                 <div style={{ fontSize: 48, marginBottom: 12 }}>🎉</div>
@@ -1498,9 +1510,8 @@ export default function DiscGolfLeague() {
                     })()}
                   </div>
                   <div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                    <div style={{ marginBottom: 6 }}>
                       <label style={{ fontSize: 11, fontWeight: 700, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em" }}>Dato</label>
-                      <button onClick={() => setRegForm({ ...regForm, date: today })} style={{ fontSize: 11, fontWeight: 700, color: regForm.date === today ? "#4a8a10" : "#6b7a58", background: regForm.date === today ? "rgba(101,163,13,0.12)" : "rgba(0,0,0,0.05)", border: "1px solid", borderColor: regForm.date === today ? "rgba(101,163,13,0.3)" : "rgba(0,0,0,0.1)", borderRadius: 8, padding: "3px 10px", cursor: "pointer" }}>I dag</button>
                     </div>
                     {(() => {
                       const [y, m, d] = (regForm.date || "----").split("-");
@@ -2298,6 +2309,48 @@ export default function DiscGolfLeague() {
             </div>
             {deferredPrompt && (
               <button onClick={async () => { deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; if (outcome === "accepted") setDeferredPrompt(null); setShowInstallTip(false); }} style={{ width: "100%", padding: "8px 0", marginTop: 10, borderRadius: 10, border: "none", background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>Installer</button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Tilbakemelding */}
+      {showFeedback && (
+        <div onClick={() => { setShowFeedback(false); setFeedbackText(""); setFeedbackSent(false); }} style={{ position: "fixed", inset: 0, zIndex: 210, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, background: "#fff", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 24, animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
+            {feedbackSent ? (
+              <div style={{ textAlign: "center", padding: "24px 0" }}>
+                <div style={{ fontSize: 44, marginBottom: 12 }}>🙏</div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: "#1c2b12", marginBottom: 6 }}>Takk for tilbakemeldingen!</div>
+                <div style={{ fontSize: 13, color: "#6b7a58" }}>Admin vil lese den snart.</div>
+                <button onClick={() => { setShowFeedback(false); setFeedbackText(""); setFeedbackSent(false); }} style={{ marginTop: 20, padding: "10px 28px", background: "#65A30D", color: "#fff", border: "none", borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Lukk</button>
+              </div>
+            ) : (
+              <>
+                <div style={{ fontSize: 18, fontWeight: 800, color: "#1c2b12", marginBottom: 4 }}>💬 Gi tilbakemelding</div>
+                <div style={{ fontSize: 13, color: "#6b7a58", marginBottom: 16 }}>Hva synes du om appen? Tips, bugs, ønsker?</div>
+                <textarea
+                  value={feedbackText}
+                  onChange={e => setFeedbackText(e.target.value)}
+                  placeholder="Skriv tilbakemeldingen din her..."
+                  rows={5}
+                  style={{ width: "100%", padding: 12, borderRadius: 12, border: "1px solid rgba(0,0,0,0.15)", fontSize: 14, fontFamily: "inherit", resize: "vertical", boxSizing: "border-box", outline: "none" }}
+                />
+                <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                  <button onClick={() => { setShowFeedback(false); setFeedbackText(""); }} style={{ flex: 1, padding: 13, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#4a5a38", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Avbryt</button>
+                  <button
+                    disabled={!feedbackText.trim() || feedbackSending}
+                    onClick={async () => {
+                      if (!feedbackText.trim()) return;
+                      setFeedbackSending(true);
+                      await supabase.from("feedback").insert({ user_id: user.id, user_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email, message: feedbackText.trim() });
+                      setFeedbackSending(false);
+                      setFeedbackSent(true);
+                    }}
+                    style={{ flex: 2, padding: 13, background: feedbackText.trim() ? "#65A30D" : "#ccc", color: "#fff", border: "none", borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: feedbackText.trim() ? "pointer" : "not-allowed" }}
+                  >{feedbackSending ? "Sender..." : "Send"}</button>
+                </div>
+              </>
             )}
           </div>
         </div>
