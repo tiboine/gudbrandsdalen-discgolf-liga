@@ -184,7 +184,7 @@ function Stars({ rating }) {
 }
 
 export default function DiscGolfLeague() {
-  const [tab, setTab] = useState("tabell");
+  const [tab, setTab] = useState(() => sessionStorage.getItem("activeTab") || "tabell");
   const [division, setDivision] = useState("Alle");
   const [showRegister, setShowRegister] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
@@ -249,6 +249,10 @@ export default function DiscGolfLeague() {
     applyTheme(themeId);
     try { localStorage.setItem("themeId", themeId); } catch {}
   }, [themeId]);
+
+  useEffect(() => {
+    sessionStorage.setItem("activeTab", tab);
+  }, [tab]);
   const theme = THEMES[themeId] || THEMES.skog;
 
   useEffect(() => {
