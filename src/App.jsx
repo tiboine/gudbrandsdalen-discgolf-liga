@@ -105,10 +105,14 @@ function Sparkline({ data, color = "#A3E635" }) {
 }
 
 function AnimNum({ value }) {
-  const [d, setD] = useState(0);
+  const [d, setD] = useState(value);
   useEffect(() => {
-    let s = 0;
-    const t = setInterval(() => { s += value > s ? 1 : -1; setD(s); if (s === value) clearInterval(t); }, Math.max(Math.ceil(900 / Math.abs(value || 1)), 15));
+    const t = setInterval(() => {
+      setD(cur => {
+        if (cur === value) { clearInterval(t); return cur; }
+        return cur + (value > cur ? 1 : -1);
+      });
+    }, Math.max(Math.ceil(900 / Math.abs(value || 1)), 15));
     return () => clearInterval(t);
   }, [value]);
   return <span>{d}</span>;
@@ -561,12 +565,12 @@ export default function DiscGolfLeague() {
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, margin: "16px 0" }}>
-            {[{ label: "Spillere", value: players.length, iconKey: "players", tab: "tabell" }, { label: "Runder spilt", value: realRounds.length, iconKey: "rounds", tab: "runder" }, { label: "Baner", value: COURSES.length, iconKey: "courses", tab: "baner" }].map(s => (
+            {[{ label: "Spillere", value: players.length, iconKey: "players", tab: "tabell", anim: true }, { label: "Runder spilt", value: realRounds.length, iconKey: "rounds", tab: "runder", anim: true }, { label: "Baner", value: COURSES.length, iconKey: "courses", tab: "baner", anim: false }].map(s => (
               <div key={s.label} onClick={() => setTab(s.tab)} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "12px 10px", textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", cursor: "pointer", transition: "transform 0.15s, box-shadow 0.15s" }}
                 onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)"; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.06)"; }}>
                 <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}>{STAT_ICONS[s.iconKey]({ size: 30, color: "#6b34a3" })}</div>
-                <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.1 }}><AnimNum value={s.value} /></div>
+                <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.1 }}>{s.anim ? <AnimNum value={s.value} /> : s.value}</div>
                 <div style={{ fontSize: 10, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>{s.label}</div>
               </div>
             ))}
