@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { useRegisterSW } from "virtual:pwa-register/react";
 import { BADGE_ICONS } from "./components/BadgeIcons";
 import { TAB_ICONS, STAT_ICONS, LogoIcon, BellIcon } from "./components/TabIcons";
 import { THEMES, BG_IMAGES, applyTheme } from "./themes";
@@ -192,14 +191,7 @@ export default function DiscGolfLeague() {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [regForm, setRegForm] = useState({ course: "", score: "", date: new Date().toISOString().split("T")[0], aces: null, eagles: null, birdies: null, bogeys: null });
   const [statTooltip, setStatTooltip] = useState(null);
-  const {
-    needRefresh: [needRefresh, setNeedRefresh],
-    updateServiceWorker,
-  } = useRegisterSW({
-    onRegisteredSW(swUrl, r) {
-      if (r) setInterval(() => { r.update(); }, 60 * 60 * 1000);
-    },
-  });
+  const [updatedToast, setUpdatedToast] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
   const [feedbackSending, setFeedbackSending] = useState(false);
@@ -267,6 +259,18 @@ export default function DiscGolfLeague() {
   useEffect(() => {
     sessionStorage.setItem("activeTab", tab);
   }, [tab]);
+
+  useEffect(() => {
+    try {
+      const prev = localStorage.getItem("lastSeenVersion");
+      if (prev && prev !== __COMMIT_HASH__) {
+        setUpdatedToast(true);
+        setTimeout(() => setUpdatedToast(false), 4000);
+      }
+      localStorage.setItem("lastSeenVersion", __COMMIT_HASH__);
+    } catch {}
+  }, []);
+
   const theme = THEMES[themeId] || THEMES.skog;
 
   useEffect(() => {
@@ -2608,15 +2612,10 @@ export default function DiscGolfLeague() {
         </div>
       )}
 
-      {needRefresh && (
-        <div style={{ position: "fixed", top: 12, left: 12, right: 12, zIndex: 300, maxWidth: 500, margin: "0 auto", background: "linear-gradient(135deg, #1c3a0a, #2a4a16)", borderRadius: 14, padding: "12px 14px", boxShadow: "0 6px 30px rgba(0,0,0,0.35)", display: "flex", alignItems: "center", gap: 10, animation: "slideDown 0.3s ease" }}>
-          <div style={{ fontSize: 22, flexShrink: 0 }}>🔄</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#e8e8e0", marginBottom: 2 }}>Ny versjon tilgjengelig</div>
-            <div style={{ fontSize: 11, color: "#a0b090", lineHeight: 1.4 }}>Trykk Oppdater for å hente siste versjon</div>
-          </div>
-          <button onClick={() => updateServiceWorker(true)} style={{ padding: "8px 14px", borderRadius: 10, border: "none", background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 800, fontSize: 12, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>Oppdater</button>
-          <button onClick={() => setNeedRefresh(false)} style={{ background: "none", border: "none", color: "#6b7a58", fontSize: 18, cursor: "pointer", padding: "0 4px", flexShrink: 0, lineHeight: 1 }}>×</button>
+      {updatedToast && (
+        <div onClick={() => setUpdatedToast(false)} style={{ position: "fixed", top: 16, left: 16, right: 16, zIndex: 300, maxWidth: 380, margin: "0 auto", background: "rgba(28,58,10,0.95)", backdropFilter: "blur(12px)", borderRadius: 12, padding: "10px 14px", boxShadow: "0 6px 24px rgba(0,0,0,0.3)", display: "flex", alignItems: "center", gap: 10, animation: "slideDown 0.3s ease", cursor: "pointer" }}>
+          <div style={{ fontSize: 18, flexShrink: 0 }}>✨</div>
+          <div style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 600, color: "#e8e8e0" }}>Appen er oppdatert til v{__APP_VERSION__} <span style={{ opacity: 0.6, fontWeight: 400 }}>({__COMMIT_HASH__})</span></div>
         </div>
       )}
 
