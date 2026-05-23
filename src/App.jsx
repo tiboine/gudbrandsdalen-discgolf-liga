@@ -194,6 +194,8 @@ export default function DiscGolfLeague() {
   const [updatedToast, setUpdatedToast] = useState(false);
   const [news, setNews] = useState([]);
   const [popupNews, setPopupNews] = useState(null);
+  const [showMer, setShowMer] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
   const [feedbackSending, setFeedbackSending] = useState(false);
@@ -666,7 +668,7 @@ export default function DiscGolfLeague() {
                     <div style={{ position: "absolute", top: -2, right: -2, width: 16, height: 16, borderRadius: "50%", background: "#ef4444", color: "#fff", fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{notifications.filter(n => !n.read).length + pendingFriendRequests.length}</div>
                   )}
                 </button>
-                <button onClick={() => setShowProfile(true)} style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(101,163,13,0.1)", border: "1px solid rgba(101,163,13,0.25)", borderRadius: "50%", width: 34, height: 34, cursor: "pointer", overflow: "hidden", padding: 0 }}>
+                <button onClick={() => setShowProfileMenu(true)} style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(101,163,13,0.1)", border: "1px solid rgba(101,163,13,0.25)", borderRadius: "50%", width: 34, height: 34, cursor: "pointer", overflow: "hidden", padding: 0 }}>
                   {user.user_metadata?.avatar_url
                     ? <img src={user.user_metadata.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     : <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #A3E635, #65A30D)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "#0a0f0a", fontWeight: 800 }}>{user.user_metadata?.full_name?.[0] ?? "?"}</div>
@@ -697,29 +699,25 @@ export default function DiscGolfLeague() {
           >+ Registrer runde</button>
 
           {(() => {
-            const allTabs = [{ id: "tabell", label: "Ligatabell" }, { id: "nytt", label: "Siste nytt" }, { id: "runder", label: "Runder" }, { id: "baner", label: "Baner" }, { id: "regler", label: "Poeng" }, { id: "rekorder", label: "Rekorder" }, ...(user && friends.length > 0 ? [{ id: "venner", label: "Venner" }] : []), { id: "badges", label: "Badges" }, { id: "intro", label: "Ny her?" }, ...(user ? [{ id: "tilbakemelding", label: "Tilbakemelding" }] : []), ...(isAdmin ? [{ id: "admin", label: "Admin" }] : [])];
-            const mid = Math.ceil(allTabs.length / 2);
-            const row1 = allTabs.slice(0, mid);
-            const row2 = allTabs.slice(mid);
-            const tabBtnStyle = (t, rowLen) => ({ flex: `1 1 ${100/rowLen}%`, minWidth: 0, padding: "8px 4px 6px", border: "none", borderRadius: 10, background: tab === t.id ? "#ffffff" : "transparent", color: tab === t.id ? "#4a8a10" : "#6b7a58", fontWeight: tab === t.id ? 700 : 500, fontSize: 11, cursor: "pointer", transition: "all 0.2s", boxShadow: tab === t.id ? "0 1px 4px rgba(0,0,0,0.1)" : "none", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 });
+            const MORE_TAB_IDS = ["rekorder", "regler", "badges", "venner", "intro"];
+            const allTabs = [
+              { id: "tabell", label: "Ligatabell" },
+              { id: "runder", label: "Runder" },
+              { id: "baner", label: "Baner" },
+              { id: "nytt", label: "Siste nytt" },
+              { id: "mer", label: "Mer" },
+            ];
+            const isTabActive = (t) => tab === t.id || (t.id === "mer" && MORE_TAB_IDS.includes(tab));
+            const tabBtnStyle = (t, rowLen) => { const active = isTabActive(t); return { flex: `1 1 ${100/rowLen}%`, minWidth: 0, padding: "8px 4px 6px", border: "none", borderRadius: 10, background: active ? "#ffffff" : "transparent", color: active ? "#4a8a10" : "#6b7a58", fontWeight: active ? 700 : 500, fontSize: 11, cursor: "pointer", transition: "all 0.2s", boxShadow: active ? "0 1px 4px rgba(0,0,0,0.1)" : "none", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }; };
             return (
-              <div style={{ background: "rgba(0,0,0,0.06)", borderRadius: 12, padding: 4, display: "flex", flexDirection: "column", gap: 2 }}>
+              <div style={{ background: "rgba(0,0,0,0.06)", borderRadius: 12, padding: 4 }}>
                 <div style={{ display: "flex", gap: 4 }}>
-                  {row1.map(t => (
-                    <button key={t.id} onClick={() => t.id === "tilbakemelding" ? setShowFeedback(true) : setTab(t.id)} style={tabBtnStyle(t, row1.length)}>
-                      {TAB_ICONS[t.id] ? TAB_ICONS[t.id]({ size: 22, color: tab === t.id ? "#4a8a10" : "#6b34a3" }) : null}{t.label}
+                  {allTabs.map(t => (
+                    <button key={t.id} onClick={() => t.id === "mer" ? setShowMer(true) : setTab(t.id)} style={tabBtnStyle(t, allTabs.length)}>
+                      {TAB_ICONS[t.id] ? TAB_ICONS[t.id]({ size: 22, color: isTabActive(t) ? "#4a8a10" : "#6b34a3" }) : null}{t.label}
                     </button>
                   ))}
                 </div>
-                {row2.length > 0 && (
-                  <div style={{ display: "flex", gap: 4 }}>
-                    {row2.map(t => (
-                      <button key={t.id} onClick={() => t.id === "tilbakemelding" ? setShowFeedback(true) : setTab(t.id)} style={tabBtnStyle(t, row2.length)}>
-                        {TAB_ICONS[t.id] ? TAB_ICONS[t.id]({ size: 22, color: tab === t.id ? "#4a8a10" : "#6b34a3" }) : null}{t.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
               </div>
             );
           })()}
@@ -2598,6 +2596,80 @@ export default function DiscGolfLeague() {
             {deferredPrompt && (
               <button onClick={async () => { deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; if (outcome === "accepted") setDeferredPrompt(null); setShowInstallTip(false); }} style={{ width: "100%", padding: "8px 0", marginTop: 10, borderRadius: 10, border: "none", background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>Installer</button>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Mer-sheet */}
+      {showMer && (() => {
+        const merItems = [
+          { id: "rekorder", label: "Rekorder", desc: "Alle-tiders + banerekorder" },
+          { id: "regler", label: "Poeng", desc: "Forklaring av Stableford-systemet" },
+          { id: "badges", label: "Badges", desc: "Prestasjoner du kan låse opp" },
+          ...(user && friends.length > 0 ? [{ id: "venner", label: "Venner", desc: "Spill med venner og se deres runder" }] : []),
+          { id: "intro", label: "Ny her?", desc: "Discgolf-introduksjon for nybegynnere" },
+        ];
+        return (
+          <div onClick={() => setShowMer(false)} style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 16, animation: "fadeIn 0.2s ease" }}>
+            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, background: "linear-gradient(180deg, #ffffff, #f0f9e8)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 20, animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "#1c2b12", marginBottom: 4 }}>Mer</div>
+              <div style={{ fontSize: 12, color: "#6b7a58", marginBottom: 16 }}>Velg en seksjon</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {merItems.map(it => {
+                  const Icon = TAB_ICONS[it.id];
+                  const active = tab === it.id;
+                  return (
+                    <button key={it.id} onClick={() => { setTab(it.id); setShowMer(false); }} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 12, background: active ? "rgba(101,163,13,0.12)" : "rgba(255,255,255,0.7)", border: `1px solid ${active ? "rgba(101,163,13,0.3)" : "rgba(0,0,0,0.08)"}`, cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}>
+                      {Icon && <div style={{ flexShrink: 0 }}>{Icon({ size: 26, color: active ? "#4a8a10" : "#6b34a3" })}</div>}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: active ? "#4a8a10" : "#1c2b12" }}>{it.label}</div>
+                        <div style={{ fontSize: 11, color: "#6b7a58", marginTop: 1 }}>{it.desc}</div>
+                      </div>
+                      <div style={{ fontSize: 18, color: "#8a9a70", flexShrink: 0 }}>›</div>
+                    </button>
+                  );
+                })}
+              </div>
+              <button onClick={() => setShowMer(false)} style={{ width: "100%", padding: 12, marginTop: 12, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#6b7a58", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Lukk</button>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Profil-meny-sheet */}
+      {showProfileMenu && user && (
+        <div onClick={() => setShowProfileMenu(false)} style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 16, animation: "fadeIn 0.2s ease" }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, background: "linear-gradient(180deg, #ffffff, #f0f9e8)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 20, animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, paddingBottom: 12, borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+              <div style={{ width: 44, height: 44, borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}>
+                {user.user_metadata?.avatar_url
+                  ? <img src={user.user_metadata.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  : <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #A3E635, #65A30D)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, color: "#0a0f0a", fontWeight: 800 }}>{user.user_metadata?.full_name?.[0] ?? "?"}</div>
+                }
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: "#1c2b12", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.user_metadata?.full_name ?? "Ukjent"}</div>
+                <div style={{ fontSize: 11, color: "#8a9a70", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.email}</div>
+              </div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <button onClick={() => { setShowProfile(true); setShowProfileMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 10, background: "transparent", border: "none", cursor: "pointer", textAlign: "left", fontSize: 14, fontWeight: 600, color: "#1c2b12" }}>
+                <span style={{ fontSize: 18, width: 24, textAlign: "center" }}>👤</span> Min profil
+              </button>
+              <button onClick={() => { setShowFeedback(true); setShowProfileMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 10, background: "transparent", border: "none", cursor: "pointer", textAlign: "left", fontSize: 14, fontWeight: 600, color: "#1c2b12" }}>
+                <span style={{ fontSize: 18, width: 24, textAlign: "center" }}>💬</span> Tilbakemelding
+              </button>
+              {isAdmin && (
+                <button onClick={() => { setTab("admin"); setShowProfileMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 10, background: "transparent", border: "none", cursor: "pointer", textAlign: "left", fontSize: 14, fontWeight: 600, color: "#1c2b12" }}>
+                  <span style={{ fontSize: 18, width: 24, textAlign: "center" }}>🔧</span> Admin
+                </button>
+              )}
+              <div style={{ height: 1, background: "rgba(0,0,0,0.06)", margin: "4px 0" }} />
+              <button onClick={() => { if (confirm("Er du sikker på at du vil logge ut?")) { signOut(); setShowProfileMenu(false); } }} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 10, background: "transparent", border: "none", cursor: "pointer", textAlign: "left", fontSize: 14, fontWeight: 600, color: "#dc2626" }}>
+                <span style={{ fontSize: 18, width: 24, textAlign: "center" }}>↪</span> Logg ut
+              </button>
+            </div>
+            <button onClick={() => setShowProfileMenu(false)} style={{ width: "100%", padding: 12, marginTop: 12, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#6b7a58", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Lukk</button>
           </div>
         </div>
       )}

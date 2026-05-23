@@ -400,6 +400,17 @@ function FeedbackIcon({ size = 32, color = "#6b34a3" } = {}) {
   );
 }
 
+// More / horizontal dots icon
+function MoreIcon({ size = 32, color = "#6b34a3" } = {}) {
+  return (
+    <svg viewBox="0 0 32 32" width={size} height={size} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="9" cy="16" r="2.2" fill={color} />
+      <circle cx="16" cy="16" r="2.2" fill={color} />
+      <circle cx="23" cy="16" r="2.2" fill={color} />
+    </svg>
+  );
+}
+
 // News / megaphone icon
 function NewsIcon({ size = 32, color = "#6b34a3" } = {}) {
   return (
@@ -423,6 +434,7 @@ export const TAB_ICONS = {
   intro: NewHereIcon,
   tilbakemelding: FeedbackIcon,
   nytt: NewsIcon,
+  mer: MoreIcon,
   admin: AdminIcon,
   venner: FriendsIcon,
 };
