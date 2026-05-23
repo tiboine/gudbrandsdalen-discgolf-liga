@@ -577,42 +577,36 @@ export const BADGE_ICONS = {
     <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg" style={{ filter: locked ? lockedFilter : "none", transition: "filter 0.3s" }}>
       <defs>
         <radialGradient id="ace_bg" cx="50%" cy="40%" r="55%">
-          <stop offset="0%" stopColor="#2a1600" />
-          <stop offset="100%" stopColor="#0c0500" />
+          <stop offset="0%" stopColor="#1a1200" />
+          <stop offset="100%" stopColor="#0a0800" />
         </radialGradient>
         <linearGradient id="ace_rim" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#fde68a" />
-          <stop offset="100%" stopColor="#d97706" />
+          <stop offset="0%" stopColor="#fef9c3" />
+          <stop offset="100%" stopColor="#fbbf24" />
         </linearGradient>
-        <radialGradient id="ace_glow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#fef3c7" stopOpacity="0.4" />
-          <stop offset="100%" stopColor="#f59e0b" stopOpacity="0" />
-        </radialGradient>
         <linearGradient id="ace_disc" x1="30%" y1="0%" x2="70%" y2="100%">
           <stop offset="0%" stopColor="#ffffff" />
-          <stop offset="100%" stopColor="#fde68a" />
+          <stop offset="100%" stopColor="#fef9c3" />
         </linearGradient>
       </defs>
       {/* Octagon medal */}
       <polygon points="32,2 52,12 62,32 52,52 32,62 12,52 2,32 12,12" fill="url(#ace_bg)" stroke="url(#ace_rim)" strokeWidth="2.5" />
-      <polygon points="32,7 48,15 57,32 48,49 32,57 16,49 7,32 16,15" fill="none" stroke="#fbbf24" strokeWidth="0.5" opacity="0.25" />
-      {/* Glow */}
-      <circle cx="32" cy="30" r="18" fill="url(#ace_glow)" />
-      {/* 8 burst rays — static */}
-      <line x1="32" y1="20" x2="32" y2="12" stroke="#f59e0b" strokeWidth="1.8" strokeLinecap="round" opacity="0.8" />
-      <line x1="39" y1="22" x2="44" y2="17" stroke="#f59e0b" strokeWidth="1.8" strokeLinecap="round" opacity="0.7" />
-      <line x1="42" y1="30" x2="50" y2="30" stroke="#f59e0b" strokeWidth="1.8" strokeLinecap="round" opacity="0.7" />
-      <line x1="39" y1="38" x2="44" y2="43" stroke="#f59e0b" strokeWidth="1.8" strokeLinecap="round" opacity="0.6" />
-      <line x1="32" y1="40" x2="32" y2="48" stroke="#f59e0b" strokeWidth="1.8" strokeLinecap="round" opacity="0.6" />
-      <line x1="25" y1="38" x2="20" y2="43" stroke="#f59e0b" strokeWidth="1.8" strokeLinecap="round" opacity="0.6" />
-      <line x1="22" y1="30" x2="14" y2="30" stroke="#f59e0b" strokeWidth="1.8" strokeLinecap="round" opacity="0.7" />
-      <line x1="25" y1="22" x2="20" y2="17" stroke="#f59e0b" strokeWidth="1.8" strokeLinecap="round" opacity="0.7" />
+      <polygon points="32,7 48,15 57,32 48,49 32,57 16,49 7,32 16,15" fill="none" stroke="#fef9c3" strokeWidth="0.5" opacity="0.3" />
+      {/* 8 burst rays */}
+      <line x1="32" y1="20" x2="32" y2="12" stroke="#fef08a" strokeWidth="1.8" strokeLinecap="round" opacity="0.9" />
+      <line x1="39" y1="22" x2="44" y2="17" stroke="#fef08a" strokeWidth="1.8" strokeLinecap="round" opacity="0.85" />
+      <line x1="42" y1="30" x2="50" y2="30" stroke="#fef08a" strokeWidth="1.8" strokeLinecap="round" opacity="0.85" />
+      <line x1="39" y1="38" x2="44" y2="43" stroke="#fef08a" strokeWidth="1.8" strokeLinecap="round" opacity="0.8" />
+      <line x1="32" y1="40" x2="32" y2="48" stroke="#fef08a" strokeWidth="1.8" strokeLinecap="round" opacity="0.8" />
+      <line x1="25" y1="38" x2="20" y2="43" stroke="#fef08a" strokeWidth="1.8" strokeLinecap="round" opacity="0.8" />
+      <line x1="22" y1="30" x2="14" y2="30" stroke="#fef08a" strokeWidth="1.8" strokeLinecap="round" opacity="0.85" />
+      <line x1="25" y1="22" x2="20" y2="17" stroke="#fef08a" strokeWidth="1.8" strokeLinecap="round" opacity="0.85" />
       {/* Flying disc */}
       <ellipse cx="32" cy="30" rx="10" ry="3.5" fill="url(#ace_disc)" transform="rotate(-12 32 30)" />
-      <ellipse cx="31.5" cy="29.5" rx="6" ry="1.8" fill="none" stroke="#f59e0b" strokeWidth="0.8" transform="rotate(-12 31.5 29.5)" opacity="0.6" />
+      <ellipse cx="31.5" cy="29.5" rx="6" ry="1.8" fill="none" stroke="#fef9c3" strokeWidth="0.8" transform="rotate(-12 31.5 29.5)" opacity="0.7" />
       {/* Sparkle */}
-      <path d="M48 14 L49 17 L52 18 L49 19 L48 22 L47 19 L44 18 L47 17 Z" fill="#fde68a" opacity="0.9" />
-      <text x="32" y="59" textAnchor="middle" fontSize="6.5" fill="#fbbf24" fontWeight="800" fontFamily="sans-serif">HULL-I-ETT</text>
+      <path d="M48 14 L49 17 L52 18 L49 19 L48 22 L47 19 L44 18 L47 17 Z" fill="#fef9c3" opacity="0.95" />
+      <text x="32" y="59" textAnchor="middle" fontSize="6.5" fill="#fef08a" fontWeight="800" fontFamily="sans-serif">HULL-I-ETT</text>
     </svg>
   ),
 
@@ -621,40 +615,40 @@ export const BADGE_ICONS = {
     <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg" style={{ filter: locked ? lockedFilter : "none", transition: "filter 0.3s" }}>
       <defs>
         <radialGradient id="ak_bg" cx="50%" cy="40%" r="55%">
-          <stop offset="0%" stopColor="#1c1000" />
+          <stop offset="0%" stopColor="#1a1000" />
           <stop offset="100%" stopColor="#080400" />
         </radialGradient>
         <linearGradient id="ak_rim" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#fef08a" />
-          <stop offset="50%" stopColor="#fbbf24" />
-          <stop offset="100%" stopColor="#d97706" />
+          <stop offset="0%" stopColor="#fef9c3" />
+          <stop offset="50%" stopColor="#fef08a" />
+          <stop offset="100%" stopColor="#fbbf24" />
         </linearGradient>
         <linearGradient id="ak_crown" x1="50%" y1="0%" x2="50%" y2="100%">
-          <stop offset="0%" stopColor="#fef3c7" />
-          <stop offset="60%" stopColor="#fbbf24" />
-          <stop offset="100%" stopColor="#d97706" />
+          <stop offset="0%" stopColor="#fef9c3" />
+          <stop offset="60%" stopColor="#fef08a" />
+          <stop offset="100%" stopColor="#fbbf24" />
         </linearGradient>
         <linearGradient id="ak_band" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#fbbf24" />
-          <stop offset="100%" stopColor="#92400e" />
+          <stop offset="0%" stopColor="#fef08a" />
+          <stop offset="100%" stopColor="#fbbf24" />
         </linearGradient>
       </defs>
       <circle cx="32" cy="32" r="30" fill="url(#ak_bg)" stroke="url(#ak_rim)" strokeWidth="3" />
-      <circle cx="32" cy="32" r="25" fill="none" stroke="#fbbf24" strokeWidth="0.5" opacity="0.2" />
+      <circle cx="32" cy="32" r="25" fill="none" stroke="#fef9c3" strokeWidth="0.5" opacity="0.25" />
       {/* Crown body */}
       <path d="M14 42 L14 27 L20 35 L26 22 L32 30 L38 22 L44 35 L50 27 L50 42 Z" fill="url(#ak_crown)" />
       {/* Crown band */}
       <rect x="14" y="42" width="36" height="6" rx="2" fill="url(#ak_band)" />
-      <rect x="14" y="42" width="36" height="2" rx="1" fill="#fef08a" opacity="0.5" />
+      <rect x="14" y="42" width="36" height="2" rx="1" fill="#fef9c3" opacity="0.6" />
       {/* Crown gems */}
       <circle cx="32" cy="31" r="3.5" fill="white" opacity="0.9" />
-      <circle cx="32" cy="31" r="2" fill="#fbbf24" />
-      <circle cx="20.5" cy="35.5" r="2.5" fill="white" opacity="0.8" />
-      <circle cx="43.5" cy="35.5" r="2.5" fill="white" opacity="0.8" />
-      <circle cx="20.5" cy="35.5" r="1.3" fill="#fbbf24" />
-      <circle cx="43.5" cy="35.5" r="1.3" fill="#fbbf24" />
+      <circle cx="32" cy="31" r="2" fill="#fef08a" />
+      <circle cx="20.5" cy="35.5" r="2.5" fill="white" opacity="0.85" />
+      <circle cx="43.5" cy="35.5" r="2.5" fill="white" opacity="0.85" />
+      <circle cx="20.5" cy="35.5" r="1.3" fill="#fef08a" />
+      <circle cx="43.5" cy="35.5" r="1.3" fill="#fef08a" />
       {/* Star sparkle top */}
-      <path d="M32 9 L33.2 12.6 L37 12.6 L34 14.8 L35.2 18.4 L32 16.2 L28.8 18.4 L30 14.8 L27 12.6 L30.8 12.6 Z" fill="#fef08a" opacity="0.95" />
+      <path d="M32 9 L33.2 12.6 L37 12.6 L34 14.8 L35.2 18.4 L32 16.2 L28.8 18.4 L30 14.8 L27 12.6 L30.8 12.6 Z" fill="#fef9c3" opacity="0.95" />
       <text x="32" y="57" textAnchor="middle" fontSize="6.5" fill="#fef08a" fontWeight="800" fontFamily="sans-serif">ÅRETS KAST</text>
     </svg>
   ),
@@ -664,28 +658,28 @@ export const BADGE_ICONS = {
     <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg" style={{ filter: locked ? lockedFilter : "none", transition: "filter 0.3s" }}>
       <defs>
         <linearGradient id="acl_bg" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#251400" />
-          <stop offset="100%" stopColor="#0a0500" />
+          <stop offset="0%" stopColor="#1c1200" />
+          <stop offset="100%" stopColor="#0a0600" />
         </linearGradient>
         <linearGradient id="acl_rim" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#fde68a" />
-          <stop offset="100%" stopColor="#d97706" />
+          <stop offset="0%" stopColor="#fef9c3" />
+          <stop offset="100%" stopColor="#fbbf24" />
         </linearGradient>
       </defs>
       <polygon points="32,3 56,17 56,47 32,61 8,47 8,17" fill="url(#acl_bg)" stroke="url(#acl_rim)" strokeWidth="2.5" />
-      <polygon points="32,8 51,19.5 51,44.5 32,56 13,44.5 13,19.5" fill="none" stroke="#fbbf24" strokeWidth="0.5" opacity="0.2" />
+      <polygon points="32,8 51,19.5 51,44.5 32,56 13,44.5 13,19.5" fill="none" stroke="#fef9c3" strokeWidth="0.5" opacity="0.25" />
       {/* Left target */}
-      <circle cx="21" cy="29" r="9" fill="none" stroke="#fbbf24" strokeWidth="1.5" opacity="0.5" />
-      <circle cx="21" cy="29" r="5.5" fill="none" stroke="#f59e0b" strokeWidth="1.5" />
-      <circle cx="21" cy="29" r="2.5" fill="#f59e0b" />
-      <circle cx="21" cy="29" r="1" fill="#fef3c7" />
+      <circle cx="21" cy="29" r="9" fill="none" stroke="#fef9c3" strokeWidth="1.5" opacity="0.6" />
+      <circle cx="21" cy="29" r="5.5" fill="none" stroke="#fef08a" strokeWidth="1.5" />
+      <circle cx="21" cy="29" r="2.5" fill="#fef08a" />
+      <circle cx="21" cy="29" r="1" fill="#ffffff" />
       {/* Right target */}
-      <circle cx="43" cy="29" r="9" fill="none" stroke="#fbbf24" strokeWidth="1.5" opacity="0.5" />
-      <circle cx="43" cy="29" r="5.5" fill="none" stroke="#f59e0b" strokeWidth="1.5" />
-      <circle cx="43" cy="29" r="2.5" fill="#f59e0b" />
-      <circle cx="43" cy="29" r="1" fill="#fef3c7" />
+      <circle cx="43" cy="29" r="9" fill="none" stroke="#fef9c3" strokeWidth="1.5" opacity="0.6" />
+      <circle cx="43" cy="29" r="5.5" fill="none" stroke="#fef08a" strokeWidth="1.5" />
+      <circle cx="43" cy="29" r="2.5" fill="#fef08a" />
+      <circle cx="43" cy="29" r="1" fill="#ffffff" />
       {/* "×2" badge */}
-      <text x="32" y="50" textAnchor="middle" fontSize="8.5" fill="#fde68a" fontWeight="900" fontFamily="sans-serif">×2 ACE</text>
+      <text x="32" y="50" textAnchor="middle" fontSize="8.5" fill="#fef9c3" fontWeight="900" fontFamily="sans-serif">×2 ACE</text>
     </svg>
   ),
 
@@ -694,31 +688,31 @@ export const BADGE_ICONS = {
     <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg" style={{ filter: locked ? lockedFilter : "none", transition: "filter 0.3s" }}>
       <defs>
         <radialGradient id="eh_bg" cx="50%" cy="40%" r="55%">
-          <stop offset="0%" stopColor="#1a0a2e" />
-          <stop offset="100%" stopColor="#060210" />
+          <stop offset="0%" stopColor="#180a26" />
+          <stop offset="100%" stopColor="#0a0412" />
         </radialGradient>
         <linearGradient id="eh_rim" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#c4b5fd" />
-          <stop offset="100%" stopColor="#6d28d9" />
+          <stop offset="0%" stopColor="#f5f3ff" />
+          <stop offset="100%" stopColor="#c4b5fd" />
         </linearGradient>
         <linearGradient id="eh_body" x1="50%" y1="0%" x2="50%" y2="100%">
-          <stop offset="0%" stopColor="#ddd6fe" />
-          <stop offset="100%" stopColor="#7c3aed" />
+          <stop offset="0%" stopColor="#f5f3ff" />
+          <stop offset="100%" stopColor="#ddd6fe" />
         </linearGradient>
         <linearGradient id="eh_wing" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#c4b5fd" />
-          <stop offset="100%" stopColor="#5b21b6" />
+          <stop offset="0%" stopColor="#f5f3ff" />
+          <stop offset="100%" stopColor="#c4b5fd" />
         </linearGradient>
       </defs>
       <circle cx="32" cy="32" r="30" fill="url(#eh_bg)" stroke="url(#eh_rim)" strokeWidth="2.5" />
-      <circle cx="32" cy="32" r="25" fill="none" stroke="#a78bfa" strokeWidth="0.5" opacity="0.2" />
+      <circle cx="32" cy="32" r="25" fill="none" stroke="#f5f3ff" strokeWidth="0.5" opacity="0.2" />
       {/* Left wing — swept back */}
       <path d="M32 34 C26 30 16 32 8 38 C14 32 22 28 32 30 Z" fill="url(#eh_wing)" />
       {/* Right wing — swept back */}
       <path d="M32 34 C38 30 48 32 56 38 C50 32 42 28 32 30 Z" fill="url(#eh_wing)" />
       {/* Wing detail lines */}
-      <path d="M32 32 C26 30 18 34 12 40" fill="none" stroke="#ddd6fe" strokeWidth="0.8" opacity="0.4" />
-      <path d="M32 32 C38 30 46 34 52 40" fill="none" stroke="#ddd6fe" strokeWidth="0.8" opacity="0.4" />
+      <path d="M32 32 C26 30 18 34 12 40" fill="none" stroke="#f5f3ff" strokeWidth="0.8" opacity="0.5" />
+      <path d="M32 32 C38 30 46 34 52 40" fill="none" stroke="#f5f3ff" strokeWidth="0.8" opacity="0.5" />
       {/* Body */}
       <ellipse cx="32" cy="36" rx="5" ry="9" fill="url(#eh_body)" />
       {/* Tail feathers */}
@@ -726,13 +720,13 @@ export const BADGE_ICONS = {
       {/* Head */}
       <circle cx="32" cy="24" r="6" fill="url(#eh_body)" />
       {/* White head marking */}
-      <path d="M27 22 C28 19 36 19 37 22 C35 20 29 20 27 22 Z" fill="#e9d5ff" opacity="0.7" />
+      <path d="M27 22 C28 19 36 19 37 22 C35 20 29 20 27 22 Z" fill="#ffffff" opacity="0.8" />
       {/* Beak */}
-      <path d="M38 24 L44 26 L38 27.5 Z" fill="#fde68a" />
+      <path d="M38 24 L44 26 L38 27.5 Z" fill="#fef08a" />
       {/* Eye */}
-      <circle cx="35" cy="23" r="2" fill="#1a0a2e" />
-      <circle cx="35.5" cy="22.5" r="0.7" fill="#e9d5ff" />
-      <text x="32" y="58" textAnchor="middle" fontSize="6.5" fill="#c4b5fd" fontWeight="800" fontFamily="sans-serif">ØRNEJEGER</text>
+      <circle cx="35" cy="23" r="2" fill="#180a26" />
+      <circle cx="35.5" cy="22.5" r="0.7" fill="#f5f3ff" />
+      <text x="32" y="58" textAnchor="middle" fontSize="6.5" fill="#f5f3ff" fontWeight="800" fontFamily="sans-serif">ØRNEJEGER</text>
     </svg>
   ),
 
@@ -745,37 +739,37 @@ export const BADGE_ICONS = {
           <stop offset="100%" stopColor="#06020f" />
         </linearGradient>
         <linearGradient id="de_rim" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#ddd6fe" />
-          <stop offset="100%" stopColor="#6d28d9" />
+          <stop offset="0%" stopColor="#f5f3ff" />
+          <stop offset="100%" stopColor="#c4b5fd" />
         </linearGradient>
         <linearGradient id="de_b1" x1="50%" y1="0%" x2="50%" y2="100%">
-          <stop offset="0%" stopColor="#e9d5ff" />
-          <stop offset="100%" stopColor="#a78bfa" />
+          <stop offset="0%" stopColor="#f5f3ff" />
+          <stop offset="100%" stopColor="#ede9fe" />
         </linearGradient>
         <linearGradient id="de_b2" x1="50%" y1="0%" x2="50%" y2="100%">
-          <stop offset="0%" stopColor="#ddd6fe" />
-          <stop offset="100%" stopColor="#7c3aed" />
+          <stop offset="0%" stopColor="#f5f3ff" />
+          <stop offset="100%" stopColor="#ddd6fe" />
         </linearGradient>
       </defs>
       <polygon points="32,3 56,17 56,47 32,61 8,47 8,17" fill="url(#de_bg)" stroke="url(#de_rim)" strokeWidth="2.5" />
-      <polygon points="32,8 51,19.5 51,44.5 32,56 13,44.5 13,19.5" fill="none" stroke="#a78bfa" strokeWidth="0.5" opacity="0.2" />
+      <polygon points="32,8 51,19.5 51,44.5 32,56 13,44.5 13,19.5" fill="none" stroke="#f5f3ff" strokeWidth="0.5" opacity="0.2" />
       {/* Left eagle */}
       <path d="M20 26 C14 22 8 24 6 29 C11 25 16 24 20 27 Z" fill="url(#de_b1)" />
       <path d="M20 26 C26 22 28 22 28 27 C26 24 22 24 20 27 Z" fill="url(#de_b1)" />
       <ellipse cx="20" cy="29" rx="4" ry="5.5" fill="url(#de_b1)" />
       <circle cx="20" cy="22" r="4" fill="url(#de_b1)" />
-      <path d="M24 21 L28 22.5 L24 23.5 Z" fill="#fde68a" />
+      <path d="M24 21 L28 22.5 L24 23.5 Z" fill="#fef08a" />
       <circle cx="22" cy="21" r="1.2" fill="#160a2a" />
       {/* Right eagle */}
       <path d="M44 26 C50 22 56 24 58 29 C53 25 48 24 44 27 Z" fill="url(#de_b2)" />
       <path d="M44 26 C38 22 36 22 36 27 C38 24 42 24 44 27 Z" fill="url(#de_b2)" />
       <ellipse cx="44" cy="29" rx="4" ry="5.5" fill="url(#de_b2)" />
       <circle cx="44" cy="22" r="4" fill="url(#de_b2)" />
-      <path d="M40 21 L36 22.5 L40 23.5 Z" fill="#fde68a" />
+      <path d="M40 21 L36 22.5 L40 23.5 Z" fill="#fef08a" />
       <circle cx="42" cy="21" r="1.2" fill="#160a2a" />
       {/* "×2" center */}
-      <text x="32" y="46" textAnchor="middle" fontSize="11" fill="#ddd6fe" fontWeight="900" fontFamily="sans-serif">×2</text>
-      <text x="32" y="55" textAnchor="middle" fontSize="6.5" fill="#a78bfa" fontWeight="800" fontFamily="sans-serif">DOBBELTØRN</text>
+      <text x="32" y="46" textAnchor="middle" fontSize="11" fill="#f5f3ff" fontWeight="900" fontFamily="sans-serif">×2</text>
+      <text x="32" y="55" textAnchor="middle" fontSize="6.5" fill="#ede9fe" fontWeight="800" fontFamily="sans-serif">DOBBELTØRN</text>
     </svg>
   ),
 
@@ -784,44 +778,44 @@ export const BADGE_ICONS = {
     <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg" style={{ filter: locked ? lockedFilter : "none", transition: "filter 0.3s" }}>
       <defs>
         <radialGradient id="es_bg" cx="50%" cy="40%" r="55%">
-          <stop offset="0%" stopColor="#1a0a2e" />
-          <stop offset="100%" stopColor="#060210" />
+          <stop offset="0%" stopColor="#1a0820" />
+          <stop offset="100%" stopColor="#0a040e" />
         </radialGradient>
         <linearGradient id="es_rim" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#e879f9" />
-          <stop offset="100%" stopColor="#86198f" />
+          <stop offset="0%" stopColor="#fdf4ff" />
+          <stop offset="100%" stopColor="#f0abfc" />
         </linearGradient>
         <linearGradient id="es_wing" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#f0abfc" />
-          <stop offset="100%" stopColor="#a21caf" />
+          <stop offset="0%" stopColor="#fdf4ff" />
+          <stop offset="100%" stopColor="#f5d0fe" />
         </linearGradient>
         <linearGradient id="es_body" x1="50%" y1="0%" x2="50%" y2="100%">
-          <stop offset="0%" stopColor="#f5d0fe" />
-          <stop offset="100%" stopColor="#c026d3" />
+          <stop offset="0%" stopColor="#fdf4ff" />
+          <stop offset="100%" stopColor="#f5d0fe" />
         </linearGradient>
       </defs>
       <circle cx="32" cy="32" r="30" fill="url(#es_bg)" stroke="url(#es_rim)" strokeWidth="2.5" />
-      <circle cx="32" cy="32" r="25" fill="none" stroke="#e879f9" strokeWidth="0.5" opacity="0.2" />
+      <circle cx="32" cy="32" r="25" fill="none" stroke="#fdf4ff" strokeWidth="0.5" opacity="0.2" />
       {/* Eagle — wings spread wide */}
       <path d="M22 28 C14 22 6 25 4 32 C10 27 17 26 22 30 Z" fill="url(#es_wing)" />
       <path d="M42 28 C50 22 58 25 60 32 C54 27 47 26 42 30 Z" fill="url(#es_wing)" />
       {/* Wing secondaries */}
-      <path d="M22 30 C18 28 12 32 10 37 C14 32 18 30 22 32 Z" fill="#e879f9" opacity="0.6" />
-      <path d="M42 30 C46 28 52 32 54 37 C50 32 46 30 42 32 Z" fill="#e879f9" opacity="0.6" />
+      <path d="M22 30 C18 28 12 32 10 37 C14 32 18 30 22 32 Z" fill="#fdf4ff" opacity="0.6" />
+      <path d="M42 30 C46 28 52 32 54 37 C50 32 46 30 42 32 Z" fill="#fdf4ff" opacity="0.6" />
       {/* Body */}
       <ellipse cx="32" cy="31" rx="5" ry="8" fill="url(#es_body)" />
       {/* Head */}
       <circle cx="32" cy="21" r="5.5" fill="url(#es_body)" />
-      <path d="M27 19 C28 16 36 16 37 19 C35 17.5 29 17.5 27 19 Z" fill="#f5d0fe" opacity="0.7" />
+      <path d="M27 19 C28 16 36 16 37 19 C35 17.5 29 17.5 27 19 Z" fill="#ffffff" opacity="0.7" />
       {/* Beak */}
-      <path d="M37 21 L43 23 L37 24.5 Z" fill="#fde68a" />
+      <path d="M37 21 L43 23 L37 24.5 Z" fill="#fef08a" />
       {/* Eye */}
-      <circle cx="34.5" cy="20" r="2" fill="#1a0a2e" />
-      <circle cx="35" cy="19.5" r="0.7" fill="#f5d0fe" />
+      <circle cx="34.5" cy="20" r="2" fill="#1a0820" />
+      <circle cx="35" cy="19.5" r="0.7" fill="#fdf4ff" />
       {/* Season "5" badge */}
-      <circle cx="50" cy="46" r="9" fill="#86198f" stroke="#f0abfc" strokeWidth="1.5" />
-      <text x="50" y="50" textAnchor="middle" fontSize="11" fill="#f5d0fe" fontWeight="900" fontFamily="sans-serif">5</text>
-      <text x="25" y="56" textAnchor="middle" fontSize="6.5" fill="#e879f9" fontWeight="800" fontFamily="sans-serif">ØRNESESONG</text>
+      <circle cx="50" cy="46" r="9" fill="#86198f" stroke="#fdf4ff" strokeWidth="1.5" />
+      <text x="50" y="50" textAnchor="middle" fontSize="11" fill="#fdf4ff" fontWeight="900" fontFamily="sans-serif">5</text>
+      <text x="25" y="56" textAnchor="middle" fontSize="6.5" fill="#fdf4ff" fontWeight="800" fontFamily="sans-serif">ØRNESESONG</text>
     </svg>
   ),
 
@@ -830,45 +824,45 @@ export const BADGE_ICONS = {
     <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg" style={{ filter: locked ? lockedFilter : "none", transition: "filter 0.3s" }}>
       <defs>
         <radialGradient id="br_bg" cx="50%" cy="40%" r="55%">
-          <stop offset="0%" stopColor="#081a2e" />
-          <stop offset="100%" stopColor="#020810" />
+          <stop offset="0%" stopColor="#071426" />
+          <stop offset="100%" stopColor="#030a14" />
         </radialGradient>
         <linearGradient id="br_rim" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#93c5fd" />
-          <stop offset="100%" stopColor="#1d4ed8" />
+          <stop offset="0%" stopColor="#eff6ff" />
+          <stop offset="100%" stopColor="#bae6fd" />
         </linearGradient>
         <linearGradient id="br_body" x1="50%" y1="0%" x2="50%" y2="100%">
-          <stop offset="0%" stopColor="#bfdbfe" />
-          <stop offset="100%" stopColor="#3b82f6" />
+          <stop offset="0%" stopColor="#eff6ff" />
+          <stop offset="100%" stopColor="#bae6fd" />
         </linearGradient>
         <linearGradient id="br_wing" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#93c5fd" />
-          <stop offset="100%" stopColor="#1d4ed8" />
+          <stop offset="0%" stopColor="#eff6ff" />
+          <stop offset="100%" stopColor="#bae6fd" />
         </linearGradient>
       </defs>
       <circle cx="32" cy="32" r="30" fill="url(#br_bg)" stroke="url(#br_rim)" strokeWidth="2.5" />
-      <circle cx="32" cy="32" r="25" fill="none" stroke="#60a5fa" strokeWidth="0.5" opacity="0.2" />
+      <circle cx="32" cy="32" r="25" fill="none" stroke="#eff6ff" strokeWidth="0.5" opacity="0.2" />
       {/* Bird body */}
       <ellipse cx="30" cy="28" rx="8" ry="5.5" fill="url(#br_body)" />
       {/* Head */}
       <circle cx="38" cy="23" r="5.5" fill="url(#br_body)" />
       {/* Beak */}
-      <path d="M43 22 L50 24 L43 25.5 Z" fill="#fde68a" />
+      <path d="M43 22 L50 24 L43 25.5 Z" fill="#fef08a" />
       {/* Upper wing */}
       <path d="M22 26 C16 18 20 12 28 17 C24 16 20 18 22 26 Z" fill="url(#br_wing)" />
       {/* Lower wing fold */}
-      <path d="M22 28 C16 30 14 36 20 38 C18 34 19 30 22 28 Z" fill="#60a5fa" opacity="0.7" />
+      <path d="M22 28 C16 30 14 36 20 38 C18 34 19 30 22 28 Z" fill="#eff6ff" opacity="0.7" />
       {/* Tail */}
       <path d="M22 30 C16 33 12 38 16 41 C18 37 20 34 22 30 Z" fill="url(#br_body)" opacity="0.8" />
       {/* Eye */}
-      <circle cx="40" cy="22" r="2" fill="#081a2e" />
-      <circle cx="40.5" cy="21.5" r="0.7" fill="#bfdbfe" />
+      <circle cx="40" cy="22" r="2" fill="#071426" />
+      <circle cx="40.5" cy="21.5" r="0.7" fill="#eff6ff" />
       {/* Wing highlight */}
-      <path d="M24 22 C20 18 23 14 28 18" fill="none" stroke="#bfdbfe" strokeWidth="1" opacity="0.5" />
+      <path d="M24 22 C20 18 23 14 28 18" fill="none" stroke="#eff6ff" strokeWidth="1" opacity="0.6" />
       {/* ×3 badge bottom-left */}
-      <circle cx="16" cy="47" r="10" fill="#1d4ed8" stroke="#93c5fd" strokeWidth="1.5" />
-      <text x="16" y="51" textAnchor="middle" fontSize="11" fill="#bfdbfe" fontWeight="900" fontFamily="sans-serif">×3</text>
-      <text x="43" y="52" textAnchor="middle" fontSize="7" fill="#93c5fd" fontWeight="800" fontFamily="sans-serif">RUNDE</text>
+      <circle cx="16" cy="47" r="10" fill="#1d4ed8" stroke="#eff6ff" strokeWidth="1.5" />
+      <text x="16" y="51" textAnchor="middle" fontSize="11" fill="#eff6ff" fontWeight="900" fontFamily="sans-serif">×3</text>
+      <text x="43" y="52" textAnchor="middle" fontSize="7" fill="#bae6fd" fontWeight="800" fontFamily="sans-serif">RUNDE</text>
     </svg>
   ),
 
@@ -877,40 +871,40 @@ export const BADGE_ICONS = {
     <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg" style={{ filter: locked ? lockedFilter : "none", transition: "filter 0.3s" }}>
       <defs>
         <linearGradient id="bm_bg" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#061e14" />
-          <stop offset="100%" stopColor="#020a07" />
+          <stop offset="0%" stopColor="#061e10" />
+          <stop offset="100%" stopColor="#020a06" />
         </linearGradient>
         <linearGradient id="bm_rim" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#6ee7b7" />
-          <stop offset="100%" stopColor="#047857" />
+          <stop offset="0%" stopColor="#ecfdf5" />
+          <stop offset="100%" stopColor="#a7f3d0" />
         </linearGradient>
         <linearGradient id="bm_body" x1="50%" y1="0%" x2="50%" y2="100%">
-          <stop offset="0%" stopColor="#a7f3d0" />
-          <stop offset="100%" stopColor="#059669" />
+          <stop offset="0%" stopColor="#ecfdf5" />
+          <stop offset="100%" stopColor="#a7f3d0" />
         </linearGradient>
         <linearGradient id="bm_wing" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#6ee7b7" />
-          <stop offset="100%" stopColor="#065f46" />
+          <stop offset="0%" stopColor="#ecfdf5" />
+          <stop offset="100%" stopColor="#a7f3d0" />
         </linearGradient>
       </defs>
       <polygon points="32,3 56,17 56,47 32,61 8,47 8,17" fill="url(#bm_bg)" stroke="url(#bm_rim)" strokeWidth="2.5" />
-      <polygon points="32,8 51,19.5 51,44.5 32,56 13,44.5 13,19.5" fill="none" stroke="#34d399" strokeWidth="0.5" opacity="0.2" />
+      <polygon points="32,8 51,19.5 51,44.5 32,56 13,44.5 13,19.5" fill="none" stroke="#ecfdf5" strokeWidth="0.5" opacity="0.2" />
       {/* Bird body */}
       <ellipse cx="26" cy="26" rx="7" ry="5" fill="url(#bm_body)" />
       {/* Head */}
       <circle cx="33" cy="21" r="5" fill="url(#bm_body)" />
       {/* Beak */}
-      <path d="M38 20 L44 22 L38 23.5 Z" fill="#fde68a" />
+      <path d="M38 20 L44 22 L38 23.5 Z" fill="#fef08a" />
       {/* Wing */}
       <path d="M19 24 C13 16 18 10 26 16 C21 15 17 17 19 24 Z" fill="url(#bm_wing)" />
       {/* Tail */}
       <path d="M19 27 C13 30 11 36 16 38 C17 34 18 30 19 27 Z" fill="url(#bm_body)" opacity="0.8" />
       {/* Eye */}
-      <circle cx="35" cy="20" r="1.8" fill="#061e14" />
-      <circle cx="35.5" cy="19.5" r="0.6" fill="#a7f3d0" />
+      <circle cx="35" cy="20" r="1.8" fill="#061e10" />
+      <circle cx="35.5" cy="19.5" r="0.6" fill="#ecfdf5" />
       {/* ×5 prominent */}
-      <text x="47" y="42" textAnchor="middle" fontSize="18" fill="#6ee7b7" fontWeight="900" fontFamily="sans-serif">×5</text>
-      <text x="28" y="51" textAnchor="middle" fontSize="7.5" fill="#6ee7b7" fontWeight="800" fontFamily="sans-serif">BIRDIE-MASKIN</text>
+      <text x="47" y="42" textAnchor="middle" fontSize="18" fill="#ecfdf5" fontWeight="900" fontFamily="sans-serif">×5</text>
+      <text x="28" y="51" textAnchor="middle" fontSize="7.5" fill="#d1fae5" fontWeight="800" fontFamily="sans-serif">BIRDIE-MASKIN</text>
     </svg>
   ),
 
@@ -919,48 +913,48 @@ export const BADGE_ICONS = {
     <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg" style={{ filter: locked ? lockedFilter : "none", transition: "filter 0.3s" }}>
       <defs>
         <radialGradient id="bs_bg" cx="50%" cy="40%" r="55%">
-          <stop offset="0%" stopColor="#0d1236" />
-          <stop offset="100%" stopColor="#030514" />
+          <stop offset="0%" stopColor="#0e1230" />
+          <stop offset="100%" stopColor="#060818" />
         </radialGradient>
         <linearGradient id="bs_rim" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#a5b4fc" />
-          <stop offset="100%" stopColor="#3730a3" />
+          <stop offset="0%" stopColor="#eef2ff" />
+          <stop offset="100%" stopColor="#c7d2fe" />
         </linearGradient>
         <linearGradient id="bs_b1" x1="50%" y1="0%" x2="50%" y2="100%">
-          <stop offset="0%" stopColor="#c7d2fe" />
-          <stop offset="100%" stopColor="#6366f1" />
+          <stop offset="0%" stopColor="#eef2ff" />
+          <stop offset="100%" stopColor="#e0e7ff" />
         </linearGradient>
         <linearGradient id="bs_b2" x1="50%" y1="0%" x2="50%" y2="100%">
-          <stop offset="0%" stopColor="#a5b4fc" />
-          <stop offset="100%" stopColor="#4f46e5" />
+          <stop offset="0%" stopColor="#eef2ff" />
+          <stop offset="100%" stopColor="#c7d2fe" />
         </linearGradient>
         <linearGradient id="bs_b3" x1="50%" y1="0%" x2="50%" y2="100%">
-          <stop offset="0%" stopColor="#818cf8" />
-          <stop offset="100%" stopColor="#3730a3" />
+          <stop offset="0%" stopColor="#eef2ff" />
+          <stop offset="100%" stopColor="#c7d2fe" />
         </linearGradient>
       </defs>
       <circle cx="32" cy="32" r="30" fill="url(#bs_bg)" stroke="url(#bs_rim)" strokeWidth="2.5" />
-      <circle cx="32" cy="32" r="25" fill="none" stroke="#6366f1" strokeWidth="0.5" opacity="0.2" />
+      <circle cx="32" cy="32" r="25" fill="none" stroke="#eef2ff" strokeWidth="0.5" opacity="0.2" />
       {/* Bird 1 — left, smallest */}
-      <ellipse cx="11" cy="26" rx="5" ry="3.5" fill="url(#bs_b1)" opacity="0.7" />
-      <circle cx="15.5" cy="22.5" r="3.5" fill="url(#bs_b1)" opacity="0.7" />
-      <path d="M18.5 21.5 L22 23 L18.5 24 Z" fill="#fde68a" opacity="0.8" />
-      <path d="M6 24 C3 19 8 16 11 20" fill="#6366f1" opacity="0.5" />
+      <ellipse cx="11" cy="26" rx="5" ry="3.5" fill="url(#bs_b1)" opacity="0.75" />
+      <circle cx="15.5" cy="22.5" r="3.5" fill="url(#bs_b1)" opacity="0.75" />
+      <path d="M18.5 21.5 L22 23 L18.5 24 Z" fill="#fef08a" opacity="0.85" />
+      <path d="M6 24 C3 19 8 16 11 20" fill="none" stroke="#eef2ff" strokeWidth="1" opacity="0.5" />
       {/* Bird 2 — middle */}
-      <ellipse cx="29" cy="22" rx="6" ry="4" fill="url(#bs_b2)" opacity="0.85" />
-      <circle cx="34.5" cy="18" r="4" fill="url(#bs_b2)" opacity="0.85" />
-      <path d="M38 17 L42 18.5 L38 19.5 Z" fill="#fde68a" opacity="0.9" />
-      <path d="M23 20 C19 14 25 11 29 16" fill="#4f46e5" opacity="0.65" />
+      <ellipse cx="29" cy="22" rx="6" ry="4" fill="url(#bs_b2)" opacity="0.88" />
+      <circle cx="34.5" cy="18" r="4" fill="url(#bs_b2)" opacity="0.88" />
+      <path d="M38 17 L42 18.5 L38 19.5 Z" fill="#fef08a" opacity="0.9" />
+      <path d="M23 20 C19 14 25 11 29 16" fill="none" stroke="#eef2ff" strokeWidth="1.2" opacity="0.65" />
       {/* Bird 3 — right, biggest/brightest */}
       <ellipse cx="49" cy="16" rx="7" ry="5" fill="url(#bs_b3)" />
       <circle cx="55.5" cy="12" r="5" fill="url(#bs_b3)" />
-      <path d="M60 11 L62 12.5 L60 13.5 Z" fill="#fde68a" />
-      <path d="M42 14 C37 7 44 4 49 10" fill="#3730a3" opacity="0.8" />
-      <circle cx="56.5" cy="11" r="1.5" fill="#0d1236" />
-      <circle cx="57" cy="10.5" r="0.5" fill="#c7d2fe" />
+      <path d="M60 11 L62 12.5 L60 13.5 Z" fill="#fef08a" />
+      <path d="M42 14 C37 7 44 4 49 10" fill="none" stroke="#eef2ff" strokeWidth="1.5" opacity="0.8" />
+      <circle cx="56.5" cy="11" r="1.5" fill="#0e1230" />
+      <circle cx="57" cy="10.5" r="0.5" fill="#eef2ff" />
       {/* Trailing dashes — streak line */}
-      <path d="M8 36 L56 36" stroke="#6366f1" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="5 4" opacity="0.5" />
-      <text x="32" y="50" textAnchor="middle" fontSize="7.5" fill="#a5b4fc" fontWeight="800" fontFamily="sans-serif">BIRDIE-STREK</text>
+      <path d="M8 36 L56 36" stroke="#eef2ff" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="5 4" opacity="0.5" />
+      <text x="32" y="50" textAnchor="middle" fontSize="7.5" fill="#c7d2fe" fontWeight="800" fontFamily="sans-serif">BIRDIE-STREK</text>
     </svg>
   ),
 
@@ -969,35 +963,35 @@ export const BADGE_ICONS = {
     <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg" style={{ filter: locked ? lockedFilter : "none", transition: "filter 0.3s" }}>
       <defs>
         <linearGradient id="bse_bg" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#071a36" />
-          <stop offset="100%" stopColor="#020810" />
+          <stop offset="0%" stopColor="#061828" />
+          <stop offset="100%" stopColor="#020c16" />
         </linearGradient>
         <linearGradient id="bse_rim" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#7dd3fc" />
-          <stop offset="100%" stopColor="#0369a1" />
+          <stop offset="0%" stopColor="#f0f9ff" />
+          <stop offset="100%" stopColor="#bae6fd" />
         </linearGradient>
         <linearGradient id="bse_body" x1="50%" y1="0%" x2="50%" y2="100%">
-          <stop offset="0%" stopColor="#bae6fd" />
-          <stop offset="100%" stopColor="#0284c7" />
+          <stop offset="0%" stopColor="#f0f9ff" />
+          <stop offset="100%" stopColor="#bae6fd" />
         </linearGradient>
       </defs>
       <polygon points="32,3 56,17 56,47 32,61 8,47 8,17" fill="url(#bse_bg)" stroke="url(#bse_rim)" strokeWidth="2.5" />
-      <polygon points="32,8 51,19.5 51,44.5 32,56 13,44.5 13,19.5" fill="none" stroke="#38bdf8" strokeWidth="0.5" opacity="0.2" />
+      <polygon points="32,8 51,19.5 51,44.5 32,56 13,44.5 13,19.5" fill="none" stroke="#f0f9ff" strokeWidth="0.5" opacity="0.2" />
       {/* Seasonal arc — represents a full season */}
-      <path d="M10 35 Q32 10 54 35" fill="none" stroke="#38bdf8" strokeWidth="2" strokeDasharray="4 3" opacity="0.6" />
+      <path d="M10 35 Q32 10 54 35" fill="none" stroke="#f0f9ff" strokeWidth="2" strokeDasharray="4 3" opacity="0.6" />
       {/* Bird flying along arc */}
       <ellipse cx="32" cy="22" rx="6" ry="4" fill="url(#bse_body)" />
       <circle cx="37.5" cy="18" r="4.5" fill="url(#bse_body)" />
-      <path d="M41.5 17 L47 19 L41.5 20.5 Z" fill="#fde68a" />
-      <path d="M26 20 C21 13 27 9 32 15" fill="#38bdf8" opacity="0.7" />
+      <path d="M41.5 17 L47 19 L41.5 20.5 Z" fill="#fef08a" />
+      <path d="M26 20 C21 13 27 9 32 15" fill="none" stroke="#f0f9ff" strokeWidth="1.2" opacity="0.7" />
       <path d="M26 23 C20 26 18 32 23 35 C22 30 23 26 26 23 Z" fill="url(#bse_body)" opacity="0.7" />
-      <circle cx="39" cy="17" r="2" fill="#071a36" />
-      <circle cx="39.5" cy="16.5" r="0.7" fill="#bae6fd" />
+      <circle cx="39" cy="17" r="2" fill="#061828" />
+      <circle cx="39.5" cy="16.5" r="0.7" fill="#f0f9ff" />
       {/* Season "10" counter */}
-      <rect x="14" y="38" width="20" height="14" rx="4" fill="#0369a1" stroke="#7dd3fc" strokeWidth="1.2" />
-      <text x="24" y="49" textAnchor="middle" fontSize="10" fill="#bae6fd" fontWeight="900" fontFamily="sans-serif">10</text>
-      <text x="44" y="45" textAnchor="middle" fontSize="6" fill="#7dd3fc" fontWeight="800" fontFamily="sans-serif">BIRDIES</text>
-      <text x="44" y="52" textAnchor="middle" fontSize="6" fill="#38bdf8" fontWeight="800" fontFamily="sans-serif">SESONG</text>
+      <rect x="14" y="38" width="20" height="14" rx="4" fill="#0369a1" stroke="#f0f9ff" strokeWidth="1.2" />
+      <text x="24" y="49" textAnchor="middle" fontSize="10" fill="#f0f9ff" fontWeight="900" fontFamily="sans-serif">10</text>
+      <text x="44" y="45" textAnchor="middle" fontSize="6" fill="#bae6fd" fontWeight="800" fontFamily="sans-serif">BIRDIES</text>
+      <text x="44" y="52" textAnchor="middle" fontSize="6" fill="#f0f9ff" fontWeight="800" fontFamily="sans-serif">SESONG</text>
     </svg>
   ),
 
@@ -1006,26 +1000,25 @@ export const BADGE_ICONS = {
     <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg" style={{ filter: locked ? lockedFilter : "none", transition: "filter 0.3s" }}>
       <defs>
         <radialGradient id="bme_bg" cx="50%" cy="40%" r="55%">
-          <stop offset="0%" stopColor="#0c1430" />
-          <stop offset="100%" stopColor="#030710" />
+          <stop offset="0%" stopColor="#0c1028" />
+          <stop offset="100%" stopColor="#060810" />
         </radialGradient>
         <linearGradient id="bme_rim" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#fde68a" />
-          <stop offset="50%" stopColor="#60a5fa" />
-          <stop offset="100%" stopColor="#1d4ed8" />
+          <stop offset="0%" stopColor="#fef9c3" />
+          <stop offset="50%" stopColor="#bae6fd" />
+          <stop offset="100%" stopColor="#93c5fd" />
         </linearGradient>
         <linearGradient id="bme_star" x1="30%" y1="0%" x2="70%" y2="100%">
-          <stop offset="0%" stopColor="#fef3c7" />
-          <stop offset="50%" stopColor="#fbbf24" />
-          <stop offset="100%" stopColor="#d97706" />
+          <stop offset="0%" stopColor="#fef9c3" />
+          <stop offset="100%" stopColor="#fef08a" />
         </linearGradient>
         <linearGradient id="bme_body" x1="50%" y1="0%" x2="50%" y2="100%">
-          <stop offset="0%" stopColor="#bfdbfe" />
-          <stop offset="100%" stopColor="#3b82f6" />
+          <stop offset="0%" stopColor="#eff6ff" />
+          <stop offset="100%" stopColor="#bae6fd" />
         </linearGradient>
       </defs>
       <circle cx="32" cy="32" r="30" fill="url(#bme_bg)" stroke="url(#bme_rim)" strokeWidth="2.5" />
-      <circle cx="32" cy="32" r="25" fill="none" stroke="#3b82f6" strokeWidth="0.5" opacity="0.2" />
+      <circle cx="32" cy="32" r="25" fill="none" stroke="#fef9c3" strokeWidth="0.5" opacity="0.2" />
       {/* 5-point star */}
       <path d="M32 8 L36 20 L49 20 L39 28 L43 40 L32 32 L21 40 L25 28 L15 20 L28 20 Z" fill="url(#bme_star)" opacity="0.9" />
       {/* Star face highlights */}
@@ -1034,14 +1027,14 @@ export const BADGE_ICONS = {
       {/* Bird on star */}
       <ellipse cx="30" cy="25" rx="5" ry="3.5" fill="url(#bme_body)" />
       <circle cx="34.5" cy="21.5" r="4" fill="url(#bme_body)" />
-      <path d="M38.5 20.5 L43 22 L38.5 23.5 Z" fill="#fde68a" />
-      <path d="M25 23 C21 17 26 14 30 19" fill="#60a5fa" opacity="0.7" />
-      <circle cx="36" cy="20.5" r="1.5" fill="#0c1430" />
-      <circle cx="36.5" cy="20" r="0.5" fill="#bfdbfe" />
+      <path d="M38.5 20.5 L43 22 L38.5 23.5 Z" fill="#fef08a" />
+      <path d="M25 23 C21 17 26 14 30 19" fill="none" stroke="#eff6ff" strokeWidth="1.2" opacity="0.7" />
+      <circle cx="36" cy="20.5" r="1.5" fill="#0c1028" />
+      <circle cx="36.5" cy="20" r="0.5" fill="#eff6ff" />
       {/* "25" counter */}
-      <circle cx="46" cy="48" r="9" fill="#1d4ed8" stroke="#fde68a" strokeWidth="1.5" />
-      <text x="46" y="52" textAnchor="middle" fontSize="10" fill="#fef3c7" fontWeight="900" fontFamily="sans-serif">25</text>
-      <text x="24" y="56" textAnchor="middle" fontSize="6.5" fill="#93c5fd" fontWeight="800" fontFamily="sans-serif">BIRDIE-MESTER</text>
+      <circle cx="46" cy="48" r="9" fill="#1d4ed8" stroke="#fef9c3" strokeWidth="1.5" />
+      <text x="46" y="52" textAnchor="middle" fontSize="10" fill="#fef9c3" fontWeight="900" fontFamily="sans-serif">25</text>
+      <text x="24" y="56" textAnchor="middle" fontSize="6.5" fill="#bae6fd" fontWeight="800" fontFamily="sans-serif">BIRDIE-MESTER</text>
     </svg>
   ),
 
@@ -1050,30 +1043,25 @@ export const BADGE_ICONS = {
     <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg" style={{ filter: locked ? lockedFilter : "none", transition: "filter 0.3s" }}>
       <defs>
         <linearGradient id="bf_bg" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#0d2410" />
-          <stop offset="100%" stopColor="#040f06" />
+          <stop offset="0%" stopColor="#0a1e0e" />
+          <stop offset="100%" stopColor="#040e06" />
         </linearGradient>
         <linearGradient id="bf_rim" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#86efac" />
-          <stop offset="100%" stopColor="#15803d" />
-        </linearGradient>
-        <linearGradient id="bf_shield" x1="50%" y1="0%" x2="50%" y2="100%">
-          <stop offset="0%" stopColor="#1a3d22" />
-          <stop offset="100%" stopColor="#052e0e" />
+          <stop offset="0%" stopColor="#d1fae5" />
+          <stop offset="100%" stopColor="#86efac" />
         </linearGradient>
       </defs>
       <polygon points="32,3 56,17 56,47 32,61 8,47 8,17" fill="url(#bf_bg)" stroke="url(#bf_rim)" strokeWidth="2.5" />
-      <polygon points="32,8 51,19.5 51,44.5 32,56 13,44.5 13,19.5" fill="none" stroke="#4ade80" strokeWidth="0.5" opacity="0.2" />
-      {/* Shield shape */}
-      <path d="M32 14 L47 21 L47 34 Q47 46 32 52 Q17 46 17 34 L17 21 Z" fill="url(#bf_shield)" stroke="#4ade80" strokeWidth="1.2" />
-      {/* Shield sheen */}
-      <path d="M32 14 L47 21 L44 18 L32 14 L20 18 L17 21 L32 14 Z" fill="#86efac" opacity="0.15" />
-      {/* Crossed-out bogey — red circle + slash */}
-      <circle cx="32" cy="33" r="10" fill="none" stroke="#ef4444" strokeWidth="2.2" />
-      <line x1="25" y1="26" x2="39" y2="40" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" />
+      <polygon points="32,8 51,19.5 51,44.5 32,56 13,44.5 13,19.5" fill="none" stroke="#d1fae5" strokeWidth="0.5" opacity="0.2" />
+      {/* Shield outline */}
+      <path d="M32 14 L47 21 L47 34 Q47 46 32 52 Q17 46 17 34 L17 21 Z" fill="none" stroke="#d1fae5" strokeWidth="1.8" />
+      <path d="M32 17 L44 23 L44 34 Q44 44 32 49 Q20 44 20 34 L20 23 Z" fill="#d1fae5" opacity="0.12" />
+      {/* Crossed-out bogey — light red circle + slash */}
+      <circle cx="32" cy="33" r="10" fill="none" stroke="#fee2e2" strokeWidth="2.2" />
+      <line x1="25" y1="26" x2="39" y2="40" stroke="#fee2e2" strokeWidth="2.5" strokeLinecap="round" />
       {/* Green checkmark — victory over bogey */}
-      <path d="M24 41 L30 47 L43 28" stroke="#4ade80" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-      <text x="32" y="58" textAnchor="middle" fontSize="7.5" fill="#86efac" fontWeight="800" fontFamily="sans-serif">BOGEY-FRI</text>
+      <path d="M24 41 L30 47 L43 28" stroke="#d1fae5" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      <text x="32" y="58" textAnchor="middle" fontSize="7.5" fill="#d1fae5" fontWeight="800" fontFamily="sans-serif">BOGEY-FRI</text>
     </svg>
   ),
 
@@ -1082,41 +1070,41 @@ export const BADGE_ICONS = {
     <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg" style={{ filter: locked ? lockedFilter : "none", transition: "filter 0.3s" }}>
       <defs>
         <radialGradient id="rr_bg" cx="50%" cy="40%" r="55%">
-          <stop offset="0%" stopColor="#0d2a10" />
-          <stop offset="100%" stopColor="#030f05" />
+          <stop offset="0%" stopColor="#0e200a" />
+          <stop offset="100%" stopColor="#060e04" />
         </radialGradient>
         <linearGradient id="rr_rim" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#A3E635" />
-          <stop offset="100%" stopColor="#4ade80" />
+          <stop offset="0%" stopColor="#d9f99d" />
+          <stop offset="100%" stopColor="#a3e635" />
         </linearGradient>
         <linearGradient id="rr_card" x1="0%" y1="0%" x2="0%" y2="100%">
           <stop offset="0%" stopColor="#1c3d22" />
           <stop offset="100%" stopColor="#0a2210" />
         </linearGradient>
         <linearGradient id="rr_score" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#A3E635" />
-          <stop offset="100%" stopColor="#4ade80" />
+          <stop offset="0%" stopColor="#d9f99d" />
+          <stop offset="100%" stopColor="#ecfccb" />
         </linearGradient>
       </defs>
       <circle cx="32" cy="32" r="30" fill="url(#rr_bg)" stroke="url(#rr_rim)" strokeWidth="2.5" />
-      <circle cx="32" cy="32" r="25" fill="none" stroke="#A3E635" strokeWidth="0.5" opacity="0.2" />
+      <circle cx="32" cy="32" r="25" fill="none" stroke="#d9f99d" strokeWidth="0.5" opacity="0.2" />
       {/* Scorecard */}
-      <rect x="14" y="16" width="36" height="28" rx="4" fill="url(#rr_card)" stroke="#A3E635" strokeWidth="1" />
+      <rect x="14" y="16" width="36" height="28" rx="4" fill="url(#rr_card)" stroke="#d9f99d" strokeWidth="1.2" />
       {/* Card header */}
-      <rect x="14" y="16" width="36" height="6" rx="4" fill="#A3E635" opacity="0.2" />
-      <line x1="14" y1="22" x2="50" y2="22" stroke="#A3E635" strokeWidth="0.5" opacity="0.4" />
-      {/* Score rows — green = par or better */}
-      <rect x="18" y="25" width="8" height="3.5" rx="1.5" fill="#A3E635" opacity="0.6" />
-      <rect x="28" y="25" width="8" height="3.5" rx="1.5" fill="#4ade80" opacity="0.5" />
-      <rect x="38" y="25" width="8" height="3.5" rx="1.5" fill="#A3E635" opacity="0.6" />
-      <rect x="18" y="31" width="8" height="3.5" rx="1.5" fill="#4ade80" opacity="0.5" />
-      <rect x="28" y="31" width="8" height="3.5" rx="1.5" fill="#A3E635" opacity="0.6" />
-      <rect x="38" y="31" width="8" height="3.5" rx="1.5" fill="#4ade80" opacity="0.5" />
+      <rect x="14" y="16" width="36" height="6" rx="4" fill="#d9f99d" opacity="0.25" />
+      <line x1="14" y1="22" x2="50" y2="22" stroke="#d9f99d" strokeWidth="0.5" opacity="0.5" />
+      {/* Score rows — all green = clean round */}
+      <rect x="18" y="25" width="8" height="3.5" rx="1.5" fill="#d9f99d" opacity="0.7" />
+      <rect x="28" y="25" width="8" height="3.5" rx="1.5" fill="#ecfccb" opacity="0.6" />
+      <rect x="38" y="25" width="8" height="3.5" rx="1.5" fill="#d9f99d" opacity="0.7" />
+      <rect x="18" y="31" width="8" height="3.5" rx="1.5" fill="#ecfccb" opacity="0.6" />
+      <rect x="28" y="31" width="8" height="3.5" rx="1.5" fill="#d9f99d" opacity="0.7" />
+      <rect x="38" y="31" width="8" height="3.5" rx="1.5" fill="#ecfccb" opacity="0.6" />
       {/* Big checkmark overlay */}
       <path d="M19 38 L26 45 L43 24" stroke="url(#rr_score)" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
       {/* Star sparkle top right */}
-      <path d="M50 10 L51.2 13.6 L55 13.6 L52 15.8 L53.2 19.4 L50 17.2 L46.8 19.4 L48 15.8 L45 13.6 L48.8 13.6 Z" fill="#A3E635" opacity="0.9" />
-      <text x="32" y="57" textAnchor="middle" fontSize="7.5" fill="#A3E635" fontWeight="800" fontFamily="sans-serif">RENT KORT</text>
+      <path d="M50 10 L51.2 13.6 L55 13.6 L52 15.8 L53.2 19.4 L50 17.2 L46.8 19.4 L48 15.8 L45 13.6 L48.8 13.6 Z" fill="#d9f99d" opacity="0.9" />
+      <text x="32" y="57" textAnchor="middle" fontSize="7.5" fill="#d9f99d" fontWeight="800" fontFamily="sans-serif">RENT KORT</text>
     </svg>
   ),
 
