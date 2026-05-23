@@ -376,6 +376,30 @@ function FriendsIcon({ size = 32, color = "#6b34a3" } = {}) {
   );
 }
 
+// Records / trophy icon
+function RecordsIcon({ size = 32, color = "#6b34a3" } = {}) {
+  return (
+    <svg viewBox="0 0 32 32" width={size} height={size} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M10 4h12v10a6 6 0 01-12 0V4z" stroke={color} strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="M10 7H6a3 3 0 003 3h1" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M22 7h4a3 3 0 01-3 3h-1" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M16 20v5" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M11 25h10" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M13 13l1.5 2 1.5-3 1.5 3 1.5-2" stroke={color} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" opacity="0.7" />
+    </svg>
+  );
+}
+
+// Feedback / chat bubble icon
+function FeedbackIcon({ size = 32, color = "#6b34a3" } = {}) {
+  return (
+    <svg viewBox="0 0 32 32" width={size} height={size} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M6 8a2 2 0 012-2h16a2 2 0 012 2v11a2 2 0 01-2 2H18l-4 4v-4H8a2 2 0 01-2-2V8z" stroke={color} strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="M10 13h12M10 17h7" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 // ---- Exports: Tab and Stat icon mappings ----
 
 export const TAB_ICONS = {
@@ -383,8 +407,10 @@ export const TAB_ICONS = {
   runder: RoundsTabIcon,
   baner: CoursesTabIcon,
   regler: PointsIcon,
+  rekorder: RecordsIcon,
   badges: BadgesIcon,
   intro: NewHereIcon,
+  tilbakemelding: FeedbackIcon,
   admin: AdminIcon,
   venner: FriendsIcon,
 };

@@ -663,7 +663,7 @@ export default function DiscGolfLeague() {
           >+ Registrer runde</button>
 
           {(() => {
-            const allTabs = [{ id: "tabell", label: "Ligatabell" }, { id: "runder", label: "Runder" }, { id: "baner", label: "Baner" }, { id: "regler", label: "Poeng" }, ...(user && friends.length > 0 ? [{ id: "venner", label: "Venner" }] : []), { id: "badges", label: "Badges" }, { id: "intro", label: "Ny her?" }, ...(isAdmin ? [{ id: "admin", label: "Admin" }] : [])];
+            const allTabs = [{ id: "tabell", label: "Ligatabell" }, { id: "runder", label: "Runder" }, { id: "baner", label: "Baner" }, { id: "regler", label: "Poeng" }, { id: "rekorder", label: "Rekorder" }, ...(user && friends.length > 0 ? [{ id: "venner", label: "Venner" }] : []), { id: "badges", label: "Badges" }, { id: "intro", label: "Ny her?" }, ...(user ? [{ id: "tilbakemelding", label: "Tilbakemelding" }] : []), ...(isAdmin ? [{ id: "admin", label: "Admin" }] : [])];
             const mid = Math.ceil(allTabs.length / 2);
             const row1 = allTabs.slice(0, mid);
             const row2 = allTabs.slice(mid);
@@ -672,7 +672,7 @@ export default function DiscGolfLeague() {
               <div style={{ background: "rgba(0,0,0,0.06)", borderRadius: 12, padding: 4, display: "flex", flexDirection: "column", gap: 2 }}>
                 <div style={{ display: "flex", gap: 4 }}>
                   {row1.map(t => (
-                    <button key={t.id} onClick={() => setTab(t.id)} style={tabBtnStyle(t, row1.length)}>
+                    <button key={t.id} onClick={() => t.id === "tilbakemelding" ? setShowFeedback(true) : setTab(t.id)} style={tabBtnStyle(t, row1.length)}>
                       {TAB_ICONS[t.id] ? TAB_ICONS[t.id]({ size: 22, color: tab === t.id ? "#4a8a10" : "#6b34a3" }) : null}{t.label}
                     </button>
                   ))}
@@ -680,7 +680,7 @@ export default function DiscGolfLeague() {
                 {row2.length > 0 && (
                   <div style={{ display: "flex", gap: 4 }}>
                     {row2.map(t => (
-                      <button key={t.id} onClick={() => setTab(t.id)} style={tabBtnStyle(t, row2.length)}>
+                      <button key={t.id} onClick={() => t.id === "tilbakemelding" ? setShowFeedback(true) : setTab(t.id)} style={tabBtnStyle(t, row2.length)}>
                         {TAB_ICONS[t.id] ? TAB_ICONS[t.id]({ size: 22, color: tab === t.id ? "#4a8a10" : "#6b34a3" }) : null}{t.label}
                       </button>
                     ))}
@@ -1039,6 +1039,110 @@ export default function DiscGolfLeague() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {tab === "rekorder" && (
+          <div style={{ animation: "fadeSlideUp 0.4s ease" }}>
+            {realRounds.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "60px 20px", background: "rgba(255,255,255,0.6)", borderRadius: 16, border: "1px solid rgba(0,0,0,0.08)" }}>
+                <div style={{ fontSize: 44, marginBottom: 12 }}>🏆</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "#1c2b12", marginBottom: 6 }}>Ingen rekorder ennå</div>
+                <div style={{ fontSize: 13, color: "#6b7a58" }}>Registrer runder for å sette rekorder</div>
+              </div>
+            ) : (() => {
+              const fmtScore = s => s === 0 ? "E" : s > 0 ? `+${s}` : `${s}`;
+              const scoreColor = s => s < 0 ? "#16a34a" : s > 0 ? "#ef4444" : "#6b7a58";
+
+              // All-time records
+              const bestRound = realRounds.reduce((a, b) => b.score < a.score ? b : a);
+              const bestRoundProfile = allProfiles.find(p => p.id === bestRound.user_id);
+
+              const bestPtsRound = realRounds.reduce((a, b) => {
+                const pa = scoreToPoints(a.score, MAJOR_COURSE_IDS.has(a.course_id));
+                const pb = scoreToPoints(b.score, MAJOR_COURSE_IDS.has(b.course_id));
+                return pb > pa ? b : a;
+              });
+              const bestPtsProfile = allProfiles.find(p => p.id === bestPtsRound.user_id);
+              const bestPts = scoreToPoints(bestPtsRound.score, MAJOR_COURSE_IDS.has(bestPtsRound.course_id));
+
+              const acesByPlayer = {};
+              realRounds.forEach(r => { acesByPlayer[r.user_id] = (acesByPlayer[r.user_id] || 0) + (r.aces || 0); });
+              const topAceId = Object.entries(acesByPlayer).sort((a, b) => b[1] - a[1])[0];
+              const topAceProfile = topAceId && topAceId[1] > 0 ? allProfiles.find(p => p.id === topAceId[0]) : null;
+
+              const roundsByPlayer = {};
+              realRounds.forEach(r => { roundsByPlayer[r.user_id] = (roundsByPlayer[r.user_id] || 0) + 1; });
+              const topRoundsId = Object.entries(roundsByPlayer).sort((a, b) => b[1] - a[1])[0];
+              const topRoundsProfile = topRoundsId ? allProfiles.find(p => p.id === topRoundsId[0]) : null;
+
+              const avgByPlayer = {};
+              Object.entries(roundsByPlayer).forEach(([uid, cnt]) => {
+                if (cnt >= 3) {
+                  const sum = realRounds.filter(r => r.user_id === uid).reduce((s, r) => s + r.score, 0);
+                  avgByPlayer[uid] = sum / cnt;
+                }
+              });
+              const topAvgId = Object.entries(avgByPlayer).sort((a, b) => a[1] - b[1])[0];
+              const topAvgProfile = topAvgId ? allProfiles.find(p => p.id === topAvgId[0]) : null;
+
+              const allTimeCards = [
+                { label: "Beste enkeltRunde", icon: "🎯", holder: bestRoundProfile?.full_name, value: fmtScore(bestRound.score), valueColor: scoreColor(bestRound.score), sub: bestRound.date, course: COURSES.find(c => c.id === bestRound.course_id)?.name },
+                { label: "Høyeste Stableford", icon: "⚡", holder: bestPtsProfile?.full_name, value: `${bestPts} pts`, valueColor: "#4a8a10", sub: bestPtsRound.date, course: COURSES.find(c => c.id === bestPtsRound.course_id)?.name },
+                topAceProfile ? { label: "Flest aces", icon: "💥", holder: topAceProfile.full_name, value: `${topAceId[1]} ace${topAceId[1] !== 1 ? "s" : ""}`, valueColor: "#7c3aed", sub: null, course: null } : null,
+                { label: "Flest runder", icon: "🔄", holder: topRoundsProfile?.full_name, value: `${topRoundsId?.[1]} runder`, valueColor: "#0369a1", sub: null, course: null },
+                topAvgProfile ? { label: "Best snitt (min 3 runder)", icon: "📊", holder: topAvgProfile.full_name, value: fmtScore(Math.round(avgByPlayer[topAvgId[0]] * 10) / 10), valueColor: scoreColor(avgByPlayer[topAvgId[0]]), sub: `${roundsByPlayer[topAvgId[0]]} runder`, course: null } : null,
+              ].filter(Boolean);
+
+              // Course records
+              const courseRecords = COURSES.map(course => {
+                const cr = realRounds.filter(r => r.course_id === course.id);
+                if (cr.length === 0) return null;
+                const best = cr.reduce((a, b) => b.score < a.score ? b : a);
+                const holder = allProfiles.find(p => p.id === best.user_id);
+                return { course, best, holder };
+              }).filter(Boolean);
+
+              return (
+                <>
+                  <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 12 }}>Alle-tiders</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 24 }}>
+                    {allTimeCards.map((card, i) => (
+                      <div key={i} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "14px 16px", display: "flex", alignItems: "center", gap: 14, animation: `fadeSlideUp 0.4s ease ${i * 0.05}s both` }}>
+                        <div style={{ fontSize: 28, flexShrink: 0 }}>{card.icon}</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 11, fontWeight: 600, color: "#8a9a70", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>{card.label}</div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{card.holder ?? "—"}</div>
+                          {card.course && <div style={{ fontSize: 11, color: "#6b7a58", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{card.course}</div>}
+                          {card.sub && !card.course && <div style={{ fontSize: 11, color: "#6b7a58" }}>{card.sub}</div>}
+                        </div>
+                        <div style={{ fontSize: 22, fontWeight: 900, color: card.valueColor, flexShrink: 0 }}>{card.value}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 12 }}>Banerekorder</div>
+                  {courseRecords.length === 0 ? (
+                    <div style={{ fontSize: 13, color: "#8a9a70", textAlign: "center", padding: 24 }}>Ingen runder registrert på ligabanene ennå</div>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      {courseRecords.map(({ course, best, holder }, i) => {
+                        const isMajor = MAJOR_COURSE_IDS.has(course.id);
+                        return (
+                          <div key={course.id} style={{ background: "rgba(255,255,255,0.75)", border: `1px solid ${isMajor ? "rgba(250,204,21,0.3)" : "rgba(0,0,0,0.08)"}`, borderRadius: 12, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12, animation: `fadeSlideUp 0.4s ease ${i * 0.04}s both` }}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{isMajor ? "⭐ " : ""}{course.name}</div>
+                              <div style={{ fontSize: 11, color: "#6b7a58" }}>{holder?.full_name ?? "Ukjent"} · {best.date}</div>
+                            </div>
+                            <div style={{ fontSize: 20, fontWeight: 900, color: scoreColor(best.score), flexShrink: 0 }}>{fmtScore(best.score)}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         )}
 
