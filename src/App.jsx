@@ -17,7 +17,7 @@ const COURSES = [
   { id: "lundesetra", name: "Lundesetra Frisbeegolfbane", location: "Venabygd, Ringebu", holes: 18, par: 61, rating: 3.7, ratings: 105, difficulty: "Vanskelig", length: "2.2 km", time: "~1.5-2 timer", udisc: "https://udisc.com/courses/lundesetra-frisbeegolfbane-uNnB", googleMaps: "https://www.google.com/maps/place/Lundesetra+frisbeeGOLFBANE/@61.6729172,10.0846859,17z/data=!3m1!4b1!4m6!3m5!1s0x466ae500297b4b1d:0xd5f19e6687c68fd1!8m2!3d61.6729172!4d10.0872662!16s%2Fg%2F11ydkbw9dm?entry=ttu&g_ep=EgoyMDI2MDQyOS4wIKXMDSoASAFQAw%3D%3D", desc: "Flott fjellbane på 950 moh med panoramautsikt over Venabygdsfjellet. Etablert 2025. Familievennlig 9-hulls layout + krevende 18-hulls layout. Sesongbane.", free: true, lat: 61.856, lng: 10.183 },
   { id: "sandbumoen", name: "Sandbumoen Discgolfbane", location: "Sør-Fron", holes: 18, par: 55, rating: 3.9, ratings: 102, difficulty: "Moderat", length: "2.0 km", time: "~1.5 timer", udisc: "https://udisc.com/courses/sandbumoen-discgolfbane-LGPU", googleMaps: "https://www.google.com/maps/place/61.726307972190824,9.551310492924358", desc: "Flott bane i naturskjønt skogsterreng. Spillbar for alle nivåer. Etablert 2025. OBS: Partier med glatt underlag.", free: true, lat: 61.726, lng: 9.551 },
   { id: "gaala", name: "Gålå", location: "Gålå, Sør-Fron", holes: 18, par: 59, rating: 3.6, ratings: 412, difficulty: "Lett / Moderat", length: "2.4 km", time: "~1.5 timer", udisc: "https://udisc.com/courses/gala-3Ekm", googleMaps: "https://www.google.com/maps/place/Frisbeegolf+G%C3%A5l%C3%A5/@61.5010987,9.7898876,17z/data=!3m1!4b1!4m6!3m5!1s0x466ac4fb2c3022f7:0xca9e75927618e855!8m2!3d61.5010987!4d9.7924679!16s%2Fg%2F11hzxks6kk?entry=ttu&g_ep=EgoyMDI2MDQyOS4wIKXMDSoASAFQAw%3D%3D", desc: "Variert 18-hulls bane med store høydeforskjeller i alpint terreng. Fire layoutvalg: Pro, Amateur og to front-9-varianter. Sesongbane — stengt når skianlegget er åpent.", free: true, lat: 61.498, lng: 9.766 },
-  { id: "kvam", name: "Kvam Idrettspark", location: "Kvam, Nord-Fron", holes: 9, par: 27, rating: 3.8, ratings: 232, difficulty: "Lett", length: "1.2 km", time: "~35 min", udisc: "https://udisc.com/courses/kvam-idrettspark-eRuW", googleMaps: "https://www.google.com/maps/place/61.66734929756319,9.687201656882507", desc: "Etablert av Kvam Idrettslag i 2023. Fin trenings- og putbane. Startkit kan lånes ved klubbhuset.", free: true, lat: 61.667, lng: 9.687 },
+  { id: "kvam", name: "Kvam Idrettspark", location: "Kvam, Nord-Fron", holes: 9, par: 27, rating: 3.8, ratings: 232, difficulty: "Lett", length: "1.2 km", time: "~35 min", udisc: "https://udisc.com/courses/kvam-idrettspark-eRuW", googleMaps: "https://www.google.com/maps/place/61.66700705113708,9.688984497883279", desc: "Etablert av Kvam Idrettslag i 2023. Fin trenings- og putbane. Startkit kan lånes ved klubbhuset.", free: true, lat: 61.667, lng: 9.689 },
   { id: "lalm", name: "Lalm Discgolfbane", location: "Lalm, Sel", holes: 12, par: 36, rating: 4.2, ratings: 511, difficulty: "Moderat", length: "1.7 km", time: "~1 time", udisc: "https://udisc.com/courses/lalm-discgolfbane-nYVD", googleMaps: "https://www.google.com/maps/place/Lalm+Discgolfbane/@61.8128071,9.284686,17z/data=!3m1!4b1!4m6!3m5!1s0x4614d76c4874c149:0x58c42e0965ebf527!8m2!3d61.8128071!4d9.2872663!16s%2Fg%2F11sxkpd425?entry=ttu&g_ep=EgoyMDI2MDQyOS4wIKXMDSoASAFQAw%3D%3D", desc: "En av de beste banene i Innlandet med 4.2-rating. Varierte hull og flott skogsterreng. Anbefales på det sterkeste!", free: true, lat: 61.812, lng: 9.287 },
   { id: "vingarparken", name: "Vingarparken Diskgolfbane", location: "Lillehammer", holes: 9, par: 27, rating: 1.2, ratings: 25, difficulty: "Middels", length: "0.54 km", time: "~60 min", udisc: "https://udisc.com/courses/vingarparken-diskgolfbane-KDW7", googleMaps: "https://www.google.com/maps/place/61.10748204673479,10.427498069998876", desc: "Familievennlig bane i folkelig rekreasjonspark. Kortbane med gressteier, renovert i 2025.", free: true, lat: 61.107, lng: 10.427 },
   { id: "mosetertoppen", name: "Mosetertoppen Diskgolfpark", location: "Øyer", holes: 18, par: 58, rating: 3.7, ratings: 159, difficulty: "Krevende", length: "3.8 km", time: "~2 timer", udisc: "https://udisc.com/courses/oti-frisbee-mosetertoppen-diskgolf-park-D5nt", googleMaps: "https://www.google.com/maps/place/61.25397574849447,10.514558774034981", desc: "Utfordrende fjellbane på toppen av Mosetertoppen/Hafjell. Bratt og variert terreng med flotte utsikter. Etablert 2024.", free: true, lat: 61.254, lng: 10.515 },
@@ -190,6 +190,7 @@ export default function DiscGolfLeague() {
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [regForm, setRegForm] = useState({ course: "", score: "", date: new Date().toISOString().split("T")[0], aces: null, eagles: null, birdies: null, bogeys: null });
+  const [statTooltip, setStatTooltip] = useState(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
   const [feedbackSending, setFeedbackSending] = useState(false);
@@ -1587,13 +1588,24 @@ export default function DiscGolfLeague() {
                     <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#5a7040", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.1em" }}>Hullstatistikk <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(valgfritt — brukes til badges)</span></label>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
                       {[
-                        { key: "aces", label: "Aces", color: "#f59e0b" },
-                        { key: "eagles", label: "Eagles", color: "#8b5cf6" },
-                        { key: "birdies", label: "Birdies", color: "#3b82f6" },
-                        { key: "bogeys", label: "Bogeys", color: "#ef4444" },
-                      ].map(({ key, label, color }) => (
-                        <div key={key} style={{ textAlign: "center" }}>
-                          <div style={{ fontSize: 10, fontWeight: 700, color, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</div>
+                        { key: "aces", label: "Aces", num: "1", color: "#f59e0b", info: "Hull-i-ett — disken havner i kurven på første kast." },
+                        { key: "eagles", label: "Eagles", num: "-2", color: "#8b5cf6", info: "Eagle — to slag under par på et hull (f.eks. 2 kast på en par 4)." },
+                        { key: "birdies", label: "Birdies", num: "-1", color: "#3b82f6", info: "Birdie — ett slag under par på et hull (f.eks. 2 kast på en par 3)." },
+                        { key: "bogeys", label: "Bogeys", num: "+1", color: "#ef4444", info: "Bogey — ett slag over par på et hull (f.eks. 4 kast på en par 3)." },
+                      ].map(({ key, label, num, color, info }) => (
+                        <div key={key} style={{ textAlign: "center", position: "relative" }}>
+                          <div
+                            onClick={(e) => { e.stopPropagation(); setStatTooltip(statTooltip === key ? null : key); }}
+                            title={info}
+                            style={{ fontSize: 10, fontWeight: 700, color, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em", cursor: "help", userSelect: "none" }}
+                          >
+                            {label} <span style={{ opacity: 0.65, fontWeight: 600 }}>({num})</span>
+                          </div>
+                          {statTooltip === key && (
+                            <div onClick={() => setStatTooltip(null)} style={{ position: "absolute", bottom: "calc(100% + 2px)", left: "50%", transform: "translateX(-50%)", padding: "8px 10px", borderRadius: 8, background: "#1c2b12", color: "#e8e8e0", fontSize: 11, fontWeight: 500, letterSpacing: 0, lineHeight: 1.4, width: "max-content", maxWidth: 180, textAlign: "center", textTransform: "none", zIndex: 20, boxShadow: "0 6px 20px rgba(0,0,0,0.35)", cursor: "pointer" }}>
+                              {info}
+                            </div>
+                          )}
                           <input
                             type="number"
                             min="0"
