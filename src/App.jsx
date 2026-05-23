@@ -1696,17 +1696,23 @@ export default function DiscGolfLeague() {
                         { key: "eagles", label: "Eagles", num: "-2", color: "#8b5cf6", info: "Eagle — to slag under par på et hull (f.eks. 2 kast på en par 4)." },
                         { key: "birdies", label: "Birdies", num: "-1", color: "#3b82f6", info: "Birdie — ett slag under par på et hull (f.eks. 2 kast på en par 3)." },
                         { key: "bogeys", label: "Bogeys", num: "+1", color: "#ef4444", info: "Bogey — ett slag over par på et hull (f.eks. 4 kast på en par 3)." },
-                      ].map(({ key, label, num, color, info }) => (
+                      ].map(({ key, label, num, color, info }, idx, arr) => {
+                        const tipPos = idx === 0
+                          ? { left: 0, transform: "none" }
+                          : idx === arr.length - 1
+                          ? { right: 0, left: "auto", transform: "none" }
+                          : { left: "50%", transform: "translateX(-50%)" };
+                        return (
                         <div key={key} style={{ textAlign: "center", position: "relative" }}>
                           <div
                             onClick={(e) => { e.stopPropagation(); setStatTooltip(statTooltip === key ? null : key); }}
                             title={info}
-                            style={{ fontSize: 10, fontWeight: 700, color, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em", cursor: "help", userSelect: "none" }}
+                            style={{ fontSize: 10, fontWeight: 700, color, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em", cursor: "help", userSelect: "none", lineHeight: 1.3 }}
                           >
-                            {label} <span style={{ opacity: 0.65, fontWeight: 600 }}>({num})</span>
+                            {label}<br /><span style={{ opacity: 0.65, fontWeight: 600 }}>({num})</span>
                           </div>
                           {statTooltip === key && (
-                            <div onClick={() => setStatTooltip(null)} style={{ position: "absolute", bottom: "calc(100% + 2px)", left: "50%", transform: "translateX(-50%)", padding: "8px 10px", borderRadius: 8, background: "#1c2b12", color: "#e8e8e0", fontSize: 11, fontWeight: 500, letterSpacing: 0, lineHeight: 1.4, width: "max-content", maxWidth: 180, textAlign: "center", textTransform: "none", zIndex: 20, boxShadow: "0 6px 20px rgba(0,0,0,0.35)", cursor: "pointer" }}>
+                            <div onClick={() => setStatTooltip(null)} style={{ position: "absolute", bottom: "calc(100% + 2px)", ...tipPos, padding: "8px 10px", borderRadius: 8, background: "#1c2b12", color: "#e8e8e0", fontSize: 11, fontWeight: 500, letterSpacing: 0, lineHeight: 1.4, width: "max-content", maxWidth: 180, textAlign: "center", textTransform: "none", zIndex: 20, boxShadow: "0 6px 20px rgba(0,0,0,0.35)", cursor: "pointer" }}>
                               {info}
                             </div>
                           )}
@@ -1720,7 +1726,8 @@ export default function DiscGolfLeague() {
                             style={{ width: "100%", padding: "8px 6px", borderRadius: 10, background: "rgba(0,0,0,0.04)", border: `1px solid ${regForm[key] != null ? color + "55" : "rgba(0,0,0,0.1)"}`, color: "#1c2b12", fontSize: 16, fontWeight: 700, outline: "none", textAlign: "center", boxSizing: "border-box" }}
                           />
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                   <div>
