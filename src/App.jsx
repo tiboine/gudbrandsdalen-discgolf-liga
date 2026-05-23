@@ -718,11 +718,6 @@ export default function DiscGolfLeague() {
                     </button>
                   ))}
                 </div>
-                <div style={{ display: "flex", justifyContent: "center", marginTop: 4 }}>
-                  <button onClick={() => setShowMer(!showMer)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 18px", border: "none", borderRadius: 10, background: merActive || showMer ? "#ffffff" : "transparent", color: merActive ? "#4a8a10" : "#6b7a58", fontWeight: merActive ? 700 : 600, fontSize: 11, cursor: "pointer", transition: "all 0.2s", boxShadow: merActive || showMer ? "0 1px 4px rgba(0,0,0,0.1)" : "none" }}>
-                    Mer <span style={{ fontSize: 9, opacity: 0.7, display: "inline-block", transition: "transform 0.2s", transform: showMer ? "rotate(180deg)" : "rotate(0)" }}>▾</span>
-                  </button>
-                </div>
                 {showMer && (() => {
                   const secondaryTabs = [
                     { id: "rekorder", label: "Rekorder" },
@@ -734,13 +729,18 @@ export default function DiscGolfLeague() {
                   return (
                     <div style={{ display: "flex", gap: 4, marginTop: 4, animation: "slideDown 0.25s ease", overflow: "hidden" }}>
                       {secondaryTabs.map(t => (
-                        <button key={t.id} onClick={() => { setTab(t.id); setShowMer(false); }} style={tabBtnStyle(t, secondaryTabs.length)}>
+                        <button key={t.id} onClick={() => setTab(t.id)} style={tabBtnStyle(t, secondaryTabs.length)}>
                           {TAB_ICONS[t.id] ? TAB_ICONS[t.id]({ size: 22, color: tab === t.id ? "#4a8a10" : "#6b34a3" }) : null}{t.label}
                         </button>
                       ))}
                     </div>
                   );
                 })()}
+                <div style={{ display: "flex", justifyContent: "center", marginTop: 4 }}>
+                  <button onClick={() => setShowMer(!showMer)} aria-label={showMer ? "Lukk" : "Mer"} style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "4px 22px", border: "none", borderRadius: 8, background: merActive || showMer ? "rgba(255,255,255,0.8)" : "transparent", color: merActive ? "#4a8a10" : "#6b7a58", cursor: "pointer", transition: "all 0.2s", boxShadow: merActive || showMer ? "0 1px 4px rgba(0,0,0,0.08)" : "none" }}>
+                    <span style={{ fontSize: 14, lineHeight: 1, display: "inline-block", transition: "transform 0.2s", transform: showMer ? "rotate(180deg)" : "rotate(0)" }}>▾</span>
+                  </button>
+                </div>
               </div>
             );
           })()}
