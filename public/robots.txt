@@ -1,0 +1,5 @@
+# Gudbrandsdalen Discgolf Liga
+User-agent: *
+Allow: /
+
+Sitemap: https://gdliga.no/sitemap.xml

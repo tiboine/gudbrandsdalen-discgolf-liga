@@ -5,8 +5,10 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/favicon_small.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Gudbrandsdalen Discgolf Liga - Registrer runder, følg ligatabellen og konkurrér." />
+    <meta name="description" content="Gudbrandsdalen Discgolf Liga - Registrer runder, følg ligatabellen og konkurrér på 12 baner i Lillehammer, Øyer, Ringebu, Sør-Fron, Nord-Fron og Sel." />
+    <meta name="keywords" content="discgolf, frisbeegolf, Gudbrandsdalen, Innlandet, Lillehammer, Øyer, Ringebu, Sør-Fron, Nord-Fron, Sel, liga, Stableford, Skogen, Jørstadmoen, Lalm" />
     <meta name="theme-color" content="#0a0f0a" />
+    <link rel="canonical" href="https://gdliga.no/" />
     <title>Gudbrandsdalen Discgolf Liga</title>
 
     <!-- Open Graph / Facebook -->
@@ -26,6 +28,52 @@
     <meta name="twitter:title" content="Gudbrandsdalen Discgolf Liga" />
     <meta name="twitter:description" content="Registrer runder, samle Stableford-poeng og følg ligatabellen for discgolf i Gudbrandsdalen." />
     <meta name="twitter:image" content="https://gdliga.no/gdliga.png" />
+
+    <!-- Structured data for search engines (Schema.org) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "SportsOrganization",
+          "@id": "https://gdliga.no/#organization",
+          "name": "Gudbrandsdalen Discgolf Liga",
+          "alternateName": ["GD Liga", "Gudbrandsdalsligaen"],
+          "url": "https://gdliga.no/",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://gdliga.no/gdliga.png",
+            "width": 1024,
+            "height": 1024
+          },
+          "image": "https://gdliga.no/gdliga.png",
+          "sport": "Disc Golf",
+          "description": "Lokal discgolfliga for Gudbrandsdalen med Stableford-poengsystem fordelt over 12 baner og 24 runder per sesong (vår og høst).",
+          "areaServed": [
+            { "@type": "City", "name": "Lillehammer" },
+            { "@type": "City", "name": "Øyer" },
+            { "@type": "City", "name": "Ringebu" },
+            { "@type": "City", "name": "Sør-Fron" },
+            { "@type": "City", "name": "Nord-Fron" },
+            { "@type": "City", "name": "Sel" },
+            { "@type": "AdministrativeArea", "name": "Innlandet, Norge" }
+          ],
+          "memberOf": {
+            "@type": "SportsOrganization",
+            "name": "Norges Frisbeeforbund"
+          }
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://gdliga.no/#website",
+          "url": "https://gdliga.no/",
+          "name": "Gudbrandsdalen Discgolf Liga",
+          "inLanguage": "nb-NO",
+          "publisher": { "@id": "https://gdliga.no/#organization" }
+        }
+      ]
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>
