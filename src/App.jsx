@@ -705,18 +705,23 @@ export default function DiscGolfLeague() {
               { id: "runder", label: "Runder" },
               { id: "baner", label: "Baner" },
               { id: "nytt", label: "Siste nytt" },
-              { id: "mer", label: "Mer" },
             ];
-            const isTabActive = (t) => tab === t.id || (t.id === "mer" && MORE_TAB_IDS.includes(tab));
+            const merActive = MORE_TAB_IDS.includes(tab);
+            const isTabActive = (t) => tab === t.id;
             const tabBtnStyle = (t, rowLen) => { const active = isTabActive(t); return { flex: `1 1 ${100/rowLen}%`, minWidth: 0, padding: "8px 4px 6px", border: "none", borderRadius: 10, background: active ? "#ffffff" : "transparent", color: active ? "#4a8a10" : "#6b7a58", fontWeight: active ? 700 : 500, fontSize: 11, cursor: "pointer", transition: "all 0.2s", boxShadow: active ? "0 1px 4px rgba(0,0,0,0.1)" : "none", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }; };
             return (
               <div style={{ background: "rgba(0,0,0,0.06)", borderRadius: 12, padding: 4 }}>
                 <div style={{ display: "flex", gap: 4 }}>
                   {allTabs.map(t => (
-                    <button key={t.id} onClick={() => t.id === "mer" ? setShowMer(true) : setTab(t.id)} style={tabBtnStyle(t, allTabs.length)}>
+                    <button key={t.id} onClick={() => setTab(t.id)} style={tabBtnStyle(t, allTabs.length)}>
                       {TAB_ICONS[t.id] ? TAB_ICONS[t.id]({ size: 22, color: isTabActive(t) ? "#4a8a10" : "#6b34a3" }) : null}{t.label}
                     </button>
                   ))}
+                </div>
+                <div style={{ display: "flex", justifyContent: "center", marginTop: 4 }}>
+                  <button onClick={() => setShowMer(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 18px", border: "none", borderRadius: 10, background: merActive ? "#ffffff" : "transparent", color: merActive ? "#4a8a10" : "#6b7a58", fontWeight: merActive ? 700 : 600, fontSize: 11, cursor: "pointer", transition: "all 0.2s", boxShadow: merActive ? "0 1px 4px rgba(0,0,0,0.1)" : "none" }}>
+                    Mer <span style={{ fontSize: 9, opacity: 0.7 }}>▾</span>
+                  </button>
                 </div>
               </div>
             );
