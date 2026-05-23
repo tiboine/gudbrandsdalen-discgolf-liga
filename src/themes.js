@@ -61,19 +61,58 @@ export const THEMES = {
     isDark: false,
     bgImage: "basket_chains",
   },
-  natt: {
-    name: "Mørk turnering",
-    emoji: "⚡",
-    bg: "linear-gradient(175deg, #0c0d12 0%, #15161e 40%, #1a1c26 100%)",
-    accent: "#8B5CF6",
-    accentLight: "#A78BFA",
-    accentDark: "#6D28D9",
-    text: "#f1f0f7",
-    textMuted: "#9ea0b3",
-    mountain: "#7C3AED",
+  // High-contrast dark theme optimized for outdoor / sunlight use.
+  // Pure black bg + pure white text + brand-bright lime accent for maximum readability.
+  kontrast: {
+    name: "Sollys",
+    emoji: "☀️",
+    bg: "#000000",
+    accent: "#A3E635",
+    accentLight: "#BEF264",
+    accentDark: "#65A30D",
+    text: "#ffffff",
+    textMuted: "#d0d0d0",
+    mountain: "#A3E635",
     isDark: true,
-    bgImage: "player_throw",
+    bgImage: null,
   },
+};
+
+// CSS variable defaults (light mode) and dark overrides applied to :root.
+// Inline styles in App.jsx reference these via var(--name) — they stay identical
+// in light themes, but flip to dark equivalents when a dark theme is active.
+const LIGHT_VARS = {
+  "--c-bg-card": "rgba(255,255,255,0.75)",
+  "--c-bg-card-strong": "rgba(255,255,255,0.85)",
+  "--c-bg-card-solid": "#ffffff",
+  "--c-bg-input": "rgba(0,0,0,0.04)",
+  "--c-bg-subtle": "rgba(0,0,0,0.03)",
+  "--c-bg-muted": "rgba(0,0,0,0.06)",
+  "--c-text-primary": "#1c2b12",
+  "--c-text-secondary": "#4a5a38",
+  "--c-text-muted": "#6b7a58",
+  "--c-text-faint": "#8a9a70",
+  "--c-border": "rgba(0,0,0,0.08)",
+  "--c-border-light": "rgba(0,0,0,0.06)",
+  "--c-border-strong": "rgba(0,0,0,0.1)",
+  "--c-modal-bg": "linear-gradient(180deg, #ffffff, #f0f9e8)",
+};
+
+const DARK_VARS = {
+  "--c-bg-card": "rgba(255,255,255,0.06)",
+  "--c-bg-card-strong": "rgba(255,255,255,0.1)",
+  "--c-bg-card-solid": "#141414",
+  "--c-bg-input": "rgba(255,255,255,0.08)",
+  "--c-bg-subtle": "rgba(255,255,255,0.04)",
+  "--c-bg-muted": "rgba(255,255,255,0.08)",
+  "--c-text-primary": "#ffffff",
+  "--c-text-secondary": "#e5e5e5",
+  "--c-text-muted": "#c0c0c0",
+  "--c-text-faint": "#909090",
+  "--c-border": "rgba(255,255,255,0.18)",
+  "--c-border-light": "rgba(255,255,255,0.1)",
+  "--c-border-strong": "rgba(255,255,255,0.25)",
+  "--c-modal-bg": "linear-gradient(180deg, #1a1a1a, #0a0a0a)",
 };
 
 export function applyTheme(themeId) {
@@ -87,4 +126,10 @@ export function applyTheme(themeId) {
   root.style.setProperty("--theme-text-muted", t.textMuted);
   root.style.setProperty("--theme-mountain", t.mountain);
   root.style.setProperty("--theme-is-dark", t.isDark ? "1" : "0");
+
+  const vars = t.isDark ? DARK_VARS : LIGHT_VARS;
+  for (const [k, v] of Object.entries(vars)) {
+    root.style.setProperty(k, v);
+  }
+  root.setAttribute("data-theme-dark", t.isDark ? "true" : "false");
 }

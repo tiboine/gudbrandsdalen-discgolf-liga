@@ -275,7 +275,11 @@ export default function DiscGolfLeague() {
   const [selectedRound, setSelectedRound] = useState(null);
   const [showAvatarMenu, setShowAvatarMenu] = useState(false);
   const [themeId, setThemeId] = useState(() => {
-    try { return localStorage.getItem("themeId") || "skog"; } catch { return "skog"; }
+    try {
+      const stored = localStorage.getItem("themeId");
+      if (stored === "natt") return "kontrast"; // migrate old dark theme id
+      return stored && THEMES[stored] ? stored : "skog";
+    } catch { return "skog"; }
   });
   const [showThemePicker, setShowThemePicker] = useState(false);
   useEffect(() => {
@@ -676,7 +680,7 @@ export default function DiscGolfLeague() {
               <div>
                 <div style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: theme.accent, fontWeight: 700 }}>Gudbrandsdalen</div>
                 <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.02em", lineHeight: 1.1 }}>Discgolf Liga</div>
-                <div style={{ fontSize: 10, color: "#6b7a58", fontWeight: 600, marginTop: 2 }}>Sesong: {getSeasonLabel()}</div>
+                <div style={{ fontSize: 10, color: "var(--c-text-muted)", fontWeight: 600, marginTop: 2 }}>Sesong: {getSeasonLabel()}</div>
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -706,7 +710,7 @@ export default function DiscGolfLeague() {
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, margin: "16px 0" }}>
             {[{ label: "Spillere", value: players.length, iconKey: "players", tab: "tabell", anim: true }, { label: "Runder spilt", value: realRounds.length, iconKey: "rounds", tab: "runder", anim: true }, { label: "Baner", value: COURSES.length, iconKey: "courses", tab: "baner", anim: false }].map(s => (
-              <div key={s.label} onClick={() => setTab(s.tab)} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "12px 10px", textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", cursor: "pointer", transition: "transform 0.15s, box-shadow 0.15s" }}
+              <div key={s.label} onClick={() => setTab(s.tab)} style={{ background: "var(--c-bg-card)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "12px 10px", textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", cursor: "pointer", transition: "transform 0.15s, box-shadow 0.15s" }}
                 onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)"; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.06)"; }}>
                 <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}>{STAT_ICONS[s.iconKey]({ size: 30, color: "#6b34a3" })}</div>
@@ -731,9 +735,9 @@ export default function DiscGolfLeague() {
             ];
             const merActive = MORE_TAB_IDS.includes(tab);
             const isTabActive = (t) => tab === t.id;
-            const tabBtnStyle = (t, rowLen) => { const active = isTabActive(t); return { flex: `1 1 ${100/rowLen}%`, minWidth: 0, padding: "8px 4px 6px", border: "none", borderRadius: 10, background: active ? "#ffffff" : "transparent", color: active ? "#4a8a10" : "#6b7a58", fontWeight: active ? 700 : 500, fontSize: 11, cursor: "pointer", transition: "all 0.2s", boxShadow: active ? "0 1px 4px rgba(0,0,0,0.1)" : "none", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }; };
+            const tabBtnStyle = (t, rowLen) => { const active = isTabActive(t); return { flex: `1 1 ${100/rowLen}%`, minWidth: 0, padding: "8px 4px 6px", border: "none", borderRadius: 10, background: active ? "#ffffff" : "transparent", color: active ? "#4a8a10" : "var(--c-text-muted)", fontWeight: active ? 700 : 500, fontSize: 11, cursor: "pointer", transition: "all 0.2s", boxShadow: active ? "0 1px 4px rgba(0,0,0,0.1)" : "none", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }; };
             return (
-              <div style={{ background: "rgba(0,0,0,0.06)", borderRadius: 12, padding: 4 }}>
+              <div style={{ background: "var(--c-bg-muted)", borderRadius: 12, padding: 4 }}>
                 <div style={{ display: "flex", gap: 4 }}>
                   {allTabs.map(t => (
                     <button key={t.id} onClick={() => setTab(t.id)} style={tabBtnStyle(t, allTabs.length)}>
@@ -761,7 +765,7 @@ export default function DiscGolfLeague() {
                     </div>
                   );
                 })()}
-                <button onClick={() => setShowMer(!showMer)} aria-label={showMer ? "Lukk" : "Mer"} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", marginTop: 4, padding: "8px 0", border: "none", borderRadius: 8, background: merActive || showMer ? "rgba(255,255,255,0.8)" : "transparent", color: merActive ? "#4a8a10" : "#6b7a58", cursor: "pointer", transition: "all 0.2s", boxShadow: merActive || showMer ? "0 1px 4px rgba(0,0,0,0.08)" : "none" }}>
+                <button onClick={() => setShowMer(!showMer)} aria-label={showMer ? "Lukk" : "Mer"} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", marginTop: 4, padding: "8px 0", border: "none", borderRadius: 8, background: merActive || showMer ? "var(--c-bg-card-strong)" : "transparent", color: merActive ? "#4a8a10" : "var(--c-text-muted)", cursor: "pointer", transition: "all 0.2s", boxShadow: merActive || showMer ? "0 1px 4px rgba(0,0,0,0.08)" : "none" }}>
                   <span style={{ fontSize: 20, lineHeight: 1, display: "inline-block", transition: "transform 0.3s ease", transform: showMer ? "rotate(180deg)" : "rotate(0)" }}>▾</span>
                 </button>
               </div>
@@ -796,21 +800,21 @@ export default function DiscGolfLeague() {
                   <div style={{ fontSize: 24, flexShrink: 0 }}>⭐</div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: "#b07a00", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 2 }}>Ukens spiller</div>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: "#1c2b12" }}>{playerName} <span style={{ fontWeight: 600, color: "#6b7a58" }}>— {scoreStr} på {courseName.split(" ")[0]}</span></div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: "var(--c-text-primary)" }}>{playerName} <span style={{ fontWeight: 600, color: "var(--c-text-muted)" }}>— {scoreStr} på {courseName.split(" ")[0]}</span></div>
                   </div>
                 </div>
               );
             })()}
             <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
               {["Alle", "Åpen", "Rekreasjons", ...(friends.length > 0 ? ["Venner"] : [])].map(d => (
-                <button key={d} onClick={() => setDivision(d)} style={{ padding: "6px 14px", border: "1px solid", borderColor: division === d ? "#65A30D" : "rgba(0,0,0,0.1)", borderRadius: 20, background: division === d ? "rgba(101,163,13,0.12)" : "rgba(255,255,255,0.6)", color: division === d ? "#4a8a10" : "#6b7a58", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>{d}</button>
+                <button key={d} onClick={() => setDivision(d)} style={{ padding: "6px 14px", border: "1px solid", borderColor: division === d ? "#65A30D" : "var(--c-border-strong)", borderRadius: 20, background: division === d ? "rgba(101,163,13,0.12)" : "var(--c-bg-card)", color: division === d ? "#4a8a10" : "var(--c-text-muted)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>{d}</button>
               ))}
             </div>
             {filtered.length === 0 && (
-              <div style={{ textAlign: "center", padding: "48px 20px", background: "rgba(255,255,255,0.6)", borderRadius: 16, border: "1px solid rgba(0,0,0,0.08)" }}>
+              <div style={{ textAlign: "center", padding: "48px 20px", background: "var(--c-bg-card)", borderRadius: 16, border: "1px solid rgba(0,0,0,0.08)" }}>
                 <div style={{ fontSize: 40, marginBottom: 12 }}>🥏</div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: "#1c2b12", marginBottom: 6 }}>Ingen spillere ennå</div>
-                <div style={{ fontSize: 13, color: "#6b7a58", lineHeight: 1.6 }}>Registrer deg og spill en runde for å komme på tabellen!</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "var(--c-text-primary)", marginBottom: 6 }}>Ingen spillere ennå</div>
+                <div style={{ fontSize: 13, color: "var(--c-text-muted)", lineHeight: 1.6 }}>Registrer deg og spill en runde for å komme på tabellen!</div>
               </div>
             )}
             {qualifiedPlayers.length >= 3 && division !== "Rekreasjons" && (
@@ -819,14 +823,14 @@ export default function DiscGolfLeague() {
                   const h = [100, 130, 80], m = ["🥈", "🥇", "🥉"], sz = [44, 56, 40];
                   return (
                     <div key={p.id} onClick={() => setSelectedPlayer(p)} style={{ textAlign: "center", cursor: "pointer", flex: 1, animation: `fadeSlideUp 0.5s ease ${i * 0.1}s both` }}>
-                      <div style={{ width: sz[i], height: sz[i], minWidth: sz[i], minHeight: sz[i], borderRadius: "50%", margin: "0 auto 6px", overflow: "hidden", background: i === 1 ? "linear-gradient(135deg, #A3E635, #65A30D)" : "rgba(255,255,255,0.8)", border: i === 1 ? "2px solid #65A30D" : "2px solid rgba(0,0,0,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: sz[i] * 0.45, boxShadow: i === 1 ? "0 4px 20px rgba(101,163,13,0.3)" : "0 2px 8px rgba(0,0,0,0.1)" }}>
+                      <div style={{ width: sz[i], height: sz[i], minWidth: sz[i], minHeight: sz[i], borderRadius: "50%", margin: "0 auto 6px", overflow: "hidden", background: i === 1 ? "linear-gradient(135deg, #A3E635, #65A30D)" : "var(--c-bg-card-strong)", border: i === 1 ? "2px solid #65A30D" : "2px solid rgba(0,0,0,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: sz[i] * 0.45, boxShadow: i === 1 ? "0 4px 20px rgba(101,163,13,0.3)" : "0 2px 8px rgba(0,0,0,0.1)" }}>
                         {p.avatar?.startsWith("http") ? <img src={p.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (p.name?.[0] ?? "?")}
                       </div>
                       <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 2 }}>{p.name.split(" ")[0]}</div>
-                      <div style={{ height: h[i], borderRadius: "12px 12px 0 0", background: i === 1 ? "linear-gradient(180deg, rgba(101,163,13,0.15), rgba(101,163,13,0.04))" : "rgba(255,255,255,0.6)", border: i === 1 ? "1px solid rgba(101,163,13,0.2)" : "1px solid rgba(0,0,0,0.08)", borderBottom: "none", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                      <div style={{ height: h[i], borderRadius: "12px 12px 0 0", background: i === 1 ? "linear-gradient(180deg, rgba(101,163,13,0.15), rgba(101,163,13,0.04))" : "var(--c-bg-card)", border: i === 1 ? "1px solid rgba(101,163,13,0.2)" : "1px solid rgba(0,0,0,0.08)", borderBottom: "none", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
                         <div style={{ fontSize: 20 }}>{m[i]}</div>
                         <div style={{ fontSize: 22, fontWeight: 900, color: i === 1 ? "#4a8a10" : "#2a3a1a" }}>{p.pts}</div>
-                        <div style={{ fontSize: 9, color: "#6b7a58", textTransform: "uppercase", letterSpacing: "0.1em" }}>pts</div>
+                        <div style={{ fontSize: 9, color: "var(--c-text-muted)", textTransform: "uppercase", letterSpacing: "0.1em" }}>pts</div>
                       </div>
                     </div>
                   );
@@ -834,8 +838,8 @@ export default function DiscGolfLeague() {
               </div>
             )}
             {qualifiedPlayers.length > 0 && (
-            <div style={{ background: "rgba(255,255,255,0.7)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "22px 1fr 50px 50px 70px", padding: "10px 14px", fontSize: 10, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700, borderBottom: "1px solid rgba(0,0,0,0.06)", background: "rgba(255,255,255,0.5)" }}>
+            <div style={{ background: "var(--c-bg-card)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "22px 1fr 50px 50px 70px", padding: "10px 14px", fontSize: 10, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700, borderBottom: "1px solid rgba(0,0,0,0.06)", background: "var(--c-bg-card)" }}>
                 <div>#</div><div>Spiller</div><div style={{ textAlign: "right" }}>Snitt</div><div style={{ textAlign: "right" }}>Poeng</div><div style={{ textAlign: "right" }}>Trend</div>
               </div>
               {qualifiedPlayers.map((p, i) => (
@@ -847,11 +851,11 @@ export default function DiscGolfLeague() {
                     <div style={{ width: 30, height: 30, minWidth: 30, minHeight: 30, borderRadius: "50%", overflow: "hidden", background: "rgba(101,163,13,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, border: "1px solid rgba(0,0,0,0.08)", flexShrink: 0 }}>
                       {p.avatar?.startsWith("http") ? <img src={p.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (p.name?.[0] ?? "?")}
                     </div>
-                    <div style={{ minWidth: 0 }}><div style={{ fontSize: 13, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name.split(" ")[0]}</div><div style={{ fontSize: 10, color: "#6b7a58" }}>{p.rounds}r{p.hometown ? ` · ${p.hometown}` : ` · ${p.division}`}</div></div>
+                    <div style={{ minWidth: 0 }}><div style={{ fontSize: 13, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name.split(" ")[0]}</div><div style={{ fontSize: 10, color: "var(--c-text-muted)" }}>{p.rounds}r{p.hometown ? ` · ${p.hometown}` : ` · ${p.division}`}</div></div>
                   </div>
                   <div style={{ textAlign: "right", fontSize: 13, fontWeight: 600, color: p.avg <= 0 ? "#4a8a10" : "#ef4444" }}>{p.avg > 0 ? "+" : ""}{p.avg}</div>
                   <div style={{ textAlign: "right", fontSize: 15, fontWeight: 900 }}>{p.pts}</div>
-                  <div style={{ display: "flex", justifyContent: "flex-end" }}><Sparkline data={p.trend} color={i < 3 ? "#65A30D" : "#8a9a70"} /></div>
+                  <div style={{ display: "flex", justifyContent: "flex-end" }}><Sparkline data={p.trend} color={i < 3 ? "#65A30D" : "var(--c-text-faint)"} /></div>
                 </div>
               ))}
             </div>
@@ -860,10 +864,10 @@ export default function DiscGolfLeague() {
               <div style={{ marginTop: 20 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em" }}>Ingen ligarunder ennå</div>
-                  <div style={{ fontSize: 10, color: "#8a9a70" }}>Spill en av de {LEAGUE_COURSE_IDS.length} ligabanene</div>
+                  <div style={{ fontSize: 10, color: "var(--c-text-faint)" }}>Spill en av de {LEAGUE_COURSE_IDS.length} ligabanene</div>
                 </div>
-                <div style={{ background: "rgba(255,255,255,0.5)", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 16, overflow: "hidden" }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "22px 1fr 60px 70px", padding: "10px 14px", fontSize: 10, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700, borderBottom: "1px solid rgba(0,0,0,0.06)", background: "rgba(255,255,255,0.4)" }}>
+                <div style={{ background: "var(--c-bg-card)", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 16, overflow: "hidden" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "22px 1fr 60px 70px", padding: "10px 14px", fontSize: 10, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700, borderBottom: "1px solid rgba(0,0,0,0.06)", background: "var(--c-bg-subtle)" }}>
                     <div>#</div><div>Spiller</div><div style={{ textAlign: "right" }}>Baner</div><div style={{ textAlign: "right" }}>Trend</div>
                   </div>
                   {unqualifiedPlayers.map((p) => (
@@ -875,10 +879,10 @@ export default function DiscGolfLeague() {
                         <div style={{ width: 30, height: 30, minWidth: 30, minHeight: 30, borderRadius: "50%", overflow: "hidden", background: "rgba(101,163,13,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, border: "1px solid rgba(0,0,0,0.08)", flexShrink: 0 }}>
                           {p.avatar?.startsWith("http") ? <img src={p.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (p.name?.[0] ?? "?")}
                         </div>
-                        <div style={{ minWidth: 0 }}><div style={{ fontSize: 13, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name.split(" ")[0]}</div><div style={{ fontSize: 10, color: "#6b7a58" }}>{p.rounds}r{p.hometown ? ` · ${p.hometown}` : ` · ${p.division}`}</div></div>
+                        <div style={{ minWidth: 0 }}><div style={{ fontSize: 13, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name.split(" ")[0]}</div><div style={{ fontSize: 10, color: "var(--c-text-muted)" }}>{p.rounds}r{p.hometown ? ` · ${p.hometown}` : ` · ${p.division}`}</div></div>
                       </div>
                       <div style={{ textAlign: "right", fontSize: 12, fontWeight: 700, color: "#5a7040" }}>{p.coursesPlayed}/{LEAGUE_COURSE_IDS.length}</div>
-                      <div style={{ display: "flex", justifyContent: "flex-end" }}>{p.trend.length >= 2 ? <Sparkline data={p.trend} color="#8a9a70" /> : <span style={{ fontSize: 10, color: "#8a9a70" }}>—</span>}</div>
+                      <div style={{ display: "flex", justifyContent: "flex-end" }}>{p.trend.length >= 2 ? <Sparkline data={p.trend} color="var(--c-text-faint)" /> : <span style={{ fontSize: 10, color: "var(--c-text-faint)" }}>—</span>}</div>
                     </div>
                   ))}
                 </div>
@@ -896,24 +900,24 @@ export default function DiscGolfLeague() {
             {user && (
               <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
                 {[{ id: "alle", label: "Alle runder" }, { id: "mine", label: "Mine runder" }, ...(friends.length > 0 ? [{ id: "venner", label: "Venner" }] : [])].map(v => (
-                  <button key={v.id} onClick={() => setRoundsView(v.id)} style={{ flex: 1, padding: "10px 12px", border: "1px solid", borderColor: roundsView === v.id ? "#65A30D" : "rgba(0,0,0,0.1)", borderRadius: 14, background: roundsView === v.id ? "rgba(101,163,13,0.15)" : "rgba(255,255,255,0.6)", color: roundsView === v.id ? "#4a8a10" : "#6b7a58", fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.2s" }}>{v.label}</button>
+                  <button key={v.id} onClick={() => setRoundsView(v.id)} style={{ flex: 1, padding: "10px 12px", border: "1px solid", borderColor: roundsView === v.id ? "#65A30D" : "var(--c-border-strong)", borderRadius: 14, background: roundsView === v.id ? "rgba(101,163,13,0.15)" : "var(--c-bg-card)", color: roundsView === v.id ? "#4a8a10" : "var(--c-text-muted)", fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.2s" }}>{v.label}</button>
                 ))}
               </div>
             )}
             {realRounds.length > 0 && (
               <div style={{ display: "flex", gap: 6, marginBottom: 12, overflowX: "auto", paddingBottom: 4 }}>
-                <button onClick={() => setRoundFilter("alle")} style={{ padding: "5px 12px", border: "1px solid", borderColor: roundFilter === "alle" ? "#65A30D" : "rgba(0,0,0,0.1)", borderRadius: 20, background: roundFilter === "alle" ? "rgba(101,163,13,0.12)" : "rgba(255,255,255,0.6)", color: roundFilter === "alle" ? "#4a8a10" : "#6b7a58", fontSize: 11, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>Alle</button>
+                <button onClick={() => setRoundFilter("alle")} style={{ padding: "5px 12px", border: "1px solid", borderColor: roundFilter === "alle" ? "#65A30D" : "var(--c-border-strong)", borderRadius: 20, background: roundFilter === "alle" ? "rgba(101,163,13,0.12)" : "var(--c-bg-card)", color: roundFilter === "alle" ? "#4a8a10" : "var(--c-text-muted)", fontSize: 11, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>Alle</button>
                 {[...new Set(realRounds.map(r => r.course_id))].map(cid => {
                   const name = COURSES.find(c => c.id === cid)?.name || cid;
-                  return <button key={cid} onClick={() => setRoundFilter(cid)} style={{ padding: "5px 12px", border: "1px solid", borderColor: roundFilter === cid ? "#65A30D" : "rgba(0,0,0,0.1)", borderRadius: 20, background: roundFilter === cid ? "rgba(101,163,13,0.12)" : "rgba(255,255,255,0.6)", color: roundFilter === cid ? "#4a8a10" : "#6b7a58", fontSize: 11, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>{name.split(" ")[0]}</button>;
+                  return <button key={cid} onClick={() => setRoundFilter(cid)} style={{ padding: "5px 12px", border: "1px solid", borderColor: roundFilter === cid ? "#65A30D" : "var(--c-border-strong)", borderRadius: 20, background: roundFilter === cid ? "rgba(101,163,13,0.12)" : "var(--c-bg-card)", color: roundFilter === cid ? "#4a8a10" : "var(--c-text-muted)", fontSize: 11, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>{name.split(" ")[0]}</button>;
                 })}
               </div>
             )}
             {realRounds.length === 0 && (
-              <div style={{ textAlign: "center", padding: "48px 20px", background: "rgba(255,255,255,0.6)", borderRadius: 16, border: "1px solid rgba(0,0,0,0.08)" }}>
+              <div style={{ textAlign: "center", padding: "48px 20px", background: "var(--c-bg-card)", borderRadius: 16, border: "1px solid rgba(0,0,0,0.08)" }}>
                 <div style={{ fontSize: 40, marginBottom: 12 }}>📋</div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: "#1c2b12", marginBottom: 6 }}>Ingen runder ennå</div>
-                <div style={{ fontSize: 13, color: "#6b7a58" }}>Vær den første til å registrere en runde!</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "var(--c-text-primary)", marginBottom: 6 }}>Ingen runder ennå</div>
+                <div style={{ fontSize: 13, color: "var(--c-text-muted)" }}>Vær den første til å registrere en runde!</div>
               </div>
             )}
             {realRounds.filter(r => {
@@ -922,9 +926,9 @@ export default function DiscGolfLeague() {
               const viewOk = roundsView === "alle" ? true : roundsView === "mine" ? r.user_id === user?.id : friendIds.includes(r.user_id);
               return courseOk && viewOk;
             }).map((r, i) => (
-              <div key={r.id} onClick={() => setSelectedRound(r)} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "14px 16px", marginBottom: 8, animation: `fadeSlideUp 0.4s ease ${i * 0.06}s both`, boxShadow: "0 2px 8px rgba(0,0,0,0.05)", cursor: "pointer", transition: "background 0.2s" }}
+              <div key={r.id} onClick={() => setSelectedRound(r)} style={{ background: "var(--c-bg-card)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "14px 16px", marginBottom: 8, animation: `fadeSlideUp 0.4s ease ${i * 0.06}s both`, boxShadow: "0 2px 8px rgba(0,0,0,0.05)", cursor: "pointer", transition: "background 0.2s" }}
                 onMouseEnter={e => e.currentTarget.style.background = "rgba(101,163,13,0.06)"}
-                onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.75)"}>
+                onMouseLeave={e => e.currentTarget.style.background = "var(--c-bg-card)"}>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 12, alignItems: "center" }}>
                   <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
                     <div onClick={(e) => { e.stopPropagation(); const p = players.find(p => p.id === r.user_id); if (p) setSelectedPlayer(p); }} style={{ width: 32, height: 32, minWidth: 32, borderRadius: "50%", overflow: "hidden", background: "rgba(101,163,13,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, border: "1px solid rgba(0,0,0,0.08)", flexShrink: 0, cursor: "pointer" }}>
@@ -932,8 +936,8 @@ export default function DiscGolfLeague() {
                     </div>
                     <div>
                       <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 2 }}>{r.profiles?.full_name ?? "Ukjent spiller"}</div>
-                      <div style={{ fontSize: 11, color: "#6b7a58", marginBottom: 4 }}>{r.course_name}</div>
-                      <div style={{ fontSize: 11, color: "#8a9a70" }}>
+                      <div style={{ fontSize: 11, color: "var(--c-text-muted)", marginBottom: 4 }}>{r.course_name}</div>
+                      <div style={{ fontSize: 11, color: "var(--c-text-faint)" }}>
                         {new Date(r.date + "T12:00:00").toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", year: "numeric" })}
                       </div>
                       {r.note && <div style={{ fontSize: 11, color: "#5a7040", marginTop: 4, fontStyle: "italic", background: "rgba(101,163,13,0.06)", padding: "3px 8px", borderRadius: 6, display: "inline-block" }}>💬 {r.note}</div>}
@@ -941,7 +945,7 @@ export default function DiscGolfLeague() {
                         const groupMates = realRounds.filter(gr => gr.group_id === r.group_id && gr.id !== r.id);
                         if (groupMates.length === 0) return null;
                         return (
-                          <div style={{ fontSize: 11, color: "#6b7a58", marginTop: 4 }}>
+                          <div style={{ fontSize: 11, color: "var(--c-text-muted)", marginTop: 4 }}>
                             Spilt med: {groupMates.map((gm, gi) => (
                               <span key={gm.id}>
                                 {gi > 0 && ", "}
@@ -957,7 +961,7 @@ export default function DiscGolfLeague() {
                     <div style={{ fontSize: 22, fontWeight: 900, color: r.score <= 0 ? "#4a8a10" : "#ef4444", lineHeight: 1 }}>
                       {r.total_score ?? (r.score + (COURSES.find(c => c.id === r.course_id)?.par ?? 0))}
                     </div>
-                    <div style={{ fontSize: 11, color: "#6b7a58", marginTop: 2 }}>({r.score === 0 ? "E" : r.score > 0 ? `+${r.score}` : r.score})</div>
+                    <div style={{ fontSize: 11, color: "var(--c-text-muted)", marginTop: 2 }}>({r.score === 0 ? "E" : r.score > 0 ? `+${r.score}` : r.score})</div>
                   </div>
                 </div>
               </div>
@@ -969,7 +973,7 @@ export default function DiscGolfLeague() {
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
               <div style={{ fontSize: 16, fontWeight: 800 }}>Baner i ligaen</div>
-              <div style={{ fontSize: 11, color: "#6b7a58" }}>Banedata fra <span style={{ color: "#4a8a10", fontWeight: 700 }}>UDisc</span> · scorer manuelt</div>
+              <div style={{ fontSize: 11, color: "var(--c-text-muted)" }}>Banedata fra <span style={{ color: "#4a8a10", fontWeight: 700 }}>UDisc</span> · scorer manuelt</div>
             </div>
             <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
               {[
@@ -977,7 +981,7 @@ export default function DiscGolfLeague() {
                 { id: "populær", label: "🔥 Populær" },
                 { id: "stjerner", label: "⭐ Rating" },
               ].map(s => (
-                <button key={s.id} onClick={() => !s.disabled && setCourseSort(s.id)} style={{ padding: "6px 12px", border: "1px solid", borderColor: courseSort === s.id ? "#65A30D" : "rgba(0,0,0,0.1)", borderRadius: 20, background: courseSort === s.id ? "rgba(101,163,13,0.12)" : "rgba(255,255,255,0.6)", color: s.disabled ? "#b0b8a0" : courseSort === s.id ? "#4a8a10" : "#6b7a58", fontSize: 12, fontWeight: 600, cursor: s.disabled ? "default" : "pointer", opacity: s.disabled ? 0.5 : 1 }}>{s.label}</button>
+                <button key={s.id} onClick={() => !s.disabled && setCourseSort(s.id)} style={{ padding: "6px 12px", border: "1px solid", borderColor: courseSort === s.id ? "#65A30D" : "var(--c-border-strong)", borderRadius: 20, background: courseSort === s.id ? "rgba(101,163,13,0.12)" : "var(--c-bg-card)", color: s.disabled ? "#b0b8a0" : courseSort === s.id ? "#4a8a10" : "var(--c-text-muted)", fontSize: 12, fontWeight: 600, cursor: s.disabled ? "default" : "pointer", opacity: s.disabled ? 0.5 : 1 }}>{s.label}</button>
               ))}
             </div>
             {(() => {
@@ -992,24 +996,24 @@ export default function DiscGolfLeague() {
               const roundCount = realRounds.filter(r => r.course_id === c.id).length;
               const dist = userLocation ? getDistance(userLocation.lat, userLocation.lng, c.lat, c.lng) : null;
               return (
-              <div key={c.id} onClick={() => setSelectedCourse(selectedCourse?.id === c.id ? null : c)} style={{ background: selectedCourse?.id === c.id ? "rgba(101,163,13,0.08)" : "rgba(255,255,255,0.75)", border: selectedCourse?.id === c.id ? "1px solid rgba(101,163,13,0.25)" : "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "16px", cursor: "pointer", transition: "all 0.2s", marginBottom: 10, animation: `fadeSlideUp 0.4s ease ${i * 0.05}s both`, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+              <div key={c.id} onClick={() => setSelectedCourse(selectedCourse?.id === c.id ? null : c)} style={{ background: selectedCourse?.id === c.id ? "rgba(101,163,13,0.08)" : "var(--c-bg-card)", border: selectedCourse?.id === c.id ? "1px solid rgba(101,163,13,0.25)" : "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "16px", cursor: "pointer", transition: "all 0.2s", marginBottom: 10, animation: `fadeSlideUp 0.4s ease ${i * 0.05}s both`, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
                   <div>
                     <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 2 }}>{c.name}</div>
-                    <div style={{ fontSize: 11, color: "#6b7a58", marginBottom: 6 }}>{c.location}{dist !== null ? <span style={{ color: "#4a8a10", fontWeight: 700 }}> · {dist} km</span> : ""}</div>
+                    <div style={{ fontSize: 11, color: "var(--c-text-muted)", marginBottom: 6 }}>{c.location}{dist !== null ? <span style={{ color: "#4a8a10", fontWeight: 700 }}> · {dist} km</span> : ""}</div>
                     <Stars rating={c.rating} />
-                    {c.ratings && <span style={{ fontSize: 10, color: "#6b7a58", marginLeft: 4 }}>({c.ratings})</span>}
+                    {c.ratings && <span style={{ fontSize: 10, color: "var(--c-text-muted)", marginLeft: 4 }}>({c.ratings})</span>}
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
                     {MAJOR_COURSE_IDS.has(c.id) && <div style={{ padding: "3px 8px", borderRadius: 8, background: "rgba(251,191,36,0.15)", border: "1px solid rgba(251,191,36,0.35)", fontSize: 10, fontWeight: 700, color: "#b07a00" }}>⭐ Major</div>}
                     <div style={{ padding: "4px 10px", borderRadius: 10, background: "rgba(101,163,13,0.1)", border: "1px solid rgba(101,163,13,0.2)", fontSize: 11, fontWeight: 700, color: "#4a8a10" }}>{c.holes} hull</div>
-                    <div style={{ fontSize: 10, color: "#6b7a58" }}>Par {c.par}</div>
+                    <div style={{ fontSize: 10, color: "var(--c-text-muted)" }}>Par {c.par}</div>
                     {roundCount > 0 && <div style={{ fontSize: 10, color: "#4a8a10", fontWeight: 700 }}>🥏 {roundCount} runder</div>}
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                   {[{ label: c.difficulty, color: c.difficulty.includes("Vanskelig") ? "#e05000" : c.difficulty === "Moderat" ? "#b07a00" : "#4a8a10" }, { label: c.time }, { label: c.length }, { label: "Gratis", color: "#4a8a10" }].map((tag, j) => (
-                    <span key={j} style={{ fontSize: 10, padding: "3px 8px", borderRadius: 8, background: "rgba(0,0,0,0.05)", border: "1px solid rgba(0,0,0,0.08)", color: tag.color || "#6b7a58", fontWeight: 600 }}>{tag.label}</span>
+                    <span key={j} style={{ fontSize: 10, padding: "3px 8px", borderRadius: 8, background: "rgba(0,0,0,0.05)", border: "1px solid rgba(0,0,0,0.08)", color: tag.color || "var(--c-text-muted)", fontWeight: 600 }}>{tag.label}</span>
                   ))}
                 </div>
                 {(() => {
@@ -1024,7 +1028,7 @@ export default function DiscGolfLeague() {
                 })()}
                 {selectedCourse?.id === c.id && (
                   <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid rgba(0,0,0,0.08)", animation: "fadeSlideUp 0.3s ease" }}>
-                    <div style={{ fontSize: 12, color: "#4a5a38", lineHeight: 1.6, marginBottom: 12 }}>{c.desc}</div>
+                    <div style={{ fontSize: 12, color: "var(--c-text-secondary)", lineHeight: 1.6, marginBottom: 12 }}>{c.desc}</div>
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                       <a href={c.udisc} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 10, background: "rgba(101,163,13,0.12)", border: "1px solid rgba(101,163,13,0.25)", color: "#4a8a10", fontWeight: 700, fontSize: 12, textDecoration: "none" }}>
                         🔗 Se på UDisc
@@ -1044,7 +1048,7 @@ export default function DiscGolfLeague() {
         {tab === "regler" && (
           <div>
             <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 4 }}>Slik fungerer ligaen</div>
-            <div style={{ fontSize: 12, color: "#6b7a58", marginBottom: 16, lineHeight: 1.5 }}>12 baner · vår + høst · alle runder teller. Poeng etter score mot par — majors gir 1,5× poeng.</div>
+            <div style={{ fontSize: 12, color: "var(--c-text-muted)", marginBottom: 16, lineHeight: 1.5 }}>12 baner · vår + høst · alle runder teller. Poeng etter score mot par — majors gir 1,5× poeng.</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {[
                 { icon: "📍", title: "1. Spill ligabanene", body: `Ligaen har ${LEAGUE_COURSE_IDS.length} baner i Gudbrandsdalen. Én runde per bane på våren og én på høsten — totalt 24 runder i sesongen.` },
@@ -1052,7 +1056,7 @@ export default function DiscGolfLeague() {
                 { icon: "⭐", title: "3. Majors gir 1,5× poeng", body: "Skogen, Lalm og Jørstadmoen er major-baner. Poengene på disse banene rundes opp og multipliseres med 1,5. Eksempel: 8 pts → 12 pts på en major." },
                 { icon: "🏆", title: "4. Flest poeng vinner", body: "Alle registrerte runder på ligabanene teller. Ingen minimumsgrense — spill når du kan og samle poeng gjennom sesongen." },
               ].map((s, i) => (
-                <div key={i} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: 14, display: "flex", gap: 12 }}>
+                <div key={i} style={{ background: "var(--c-bg-card)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: 14, display: "flex", gap: 12 }}>
                   <div style={{ fontSize: 22, lineHeight: 1 }}>{s.icon}</div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 4 }}>{s.title}</div>
@@ -1061,7 +1065,7 @@ export default function DiscGolfLeague() {
                 </div>
               ))}
             </div>
-            <div style={{ marginTop: 16, padding: 16, borderRadius: 14, background: "rgba(101,163,13,0.07)", border: "1px solid rgba(101,163,13,0.15)", fontSize: 12, color: "#4a5a38", lineHeight: 1.6 }}>
+            <div style={{ marginTop: 16, padding: 16, borderRadius: 14, background: "rgba(101,163,13,0.07)", border: "1px solid rgba(101,163,13,0.15)", fontSize: 12, color: "var(--c-text-secondary)", lineHeight: 1.6 }}>
               <div style={{ fontWeight: 700, color: "#4a8a10", marginBottom: 4 }}>💡 Format: Score-Stableford</div>
               Du trenger ikke prestere for å delta — men du trenger å prestere for å vinne. Ingen oppmøtepoeng. Major-banene holder spenningen oppe gjennom hele sesongen.
             </div>
@@ -1074,10 +1078,10 @@ export default function DiscGolfLeague() {
               <div style={{ fontSize: 16, fontWeight: 800 }}>Venner ({friends.length})</div>
             </div>
             {friends.length === 0 && (
-              <div style={{ textAlign: "center", padding: "48px 20px", background: "rgba(255,255,255,0.6)", borderRadius: 16, border: "1px solid rgba(0,0,0,0.08)" }}>
+              <div style={{ textAlign: "center", padding: "48px 20px", background: "var(--c-bg-card)", borderRadius: 16, border: "1px solid rgba(0,0,0,0.08)" }}>
                 <div style={{ fontSize: 40, marginBottom: 12 }}>👥</div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: "#1c2b12", marginBottom: 6 }}>Ingen venner ennå</div>
-                <div style={{ fontSize: 13, color: "#6b7a58" }}>Trykk på en spiller i ligatabellen og legg til som venn</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "var(--c-text-primary)", marginBottom: 6 }}>Ingen venner ennå</div>
+                <div style={{ fontSize: 13, color: "var(--c-text-muted)" }}>Trykk på en spiller i ligatabellen og legg til som venn</div>
               </div>
             )}
             {friends.map((f, i) => {
@@ -1088,17 +1092,17 @@ export default function DiscGolfLeague() {
                 <div key={f.id} onClick={() => {
                   if (playerData) setSelectedPlayer(playerData);
                   else setSelectedPlayer({ id: profile.id, name: profile.full_name, avatar: profile.avatar_url, rounds: 0, best: null, avg: null, pts: 0, division: "Rekreasjons", trend: [], hometown: profile.hometown });
-                }} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "14px 16px", marginBottom: 8, display: "flex", alignItems: "center", gap: 12, cursor: "pointer", animation: `fadeSlideUp 0.4s ease ${i * 0.06}s both`, transition: "background 0.15s" }}
+                }} style={{ background: "var(--c-bg-card)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "14px 16px", marginBottom: 8, display: "flex", alignItems: "center", gap: 12, cursor: "pointer", animation: `fadeSlideUp 0.4s ease ${i * 0.06}s both`, transition: "background 0.15s" }}
                   onMouseEnter={e => e.currentTarget.style.background = "rgba(101,163,13,0.06)"}
-                  onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.75)"}>
+                  onMouseLeave={e => e.currentTarget.style.background = "var(--c-bg-card)"}>
                   <div style={{ width: 44, height: 44, borderRadius: "50%", overflow: "hidden", background: "rgba(101,163,13,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, border: "2px solid rgba(101,163,13,0.2)", flexShrink: 0 }}>
                     {profile.avatar_url ? <img src={profile.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (profile.full_name?.[0] ?? "?")}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: "#1c2b12" }}>{profile.full_name}</div>
-                    <div style={{ fontSize: 11, color: "#6b7a58" }}>{profile.hometown ? `📍 ${profile.hometown} · ` : ""}{playerData ? `${playerData.rounds} runder · ${playerData.pts} pts` : "Ingen runder"}</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "var(--c-text-primary)" }}>{profile.full_name}</div>
+                    <div style={{ fontSize: 11, color: "var(--c-text-muted)" }}>{profile.hometown ? `📍 ${profile.hometown} · ` : ""}{playerData ? `${playerData.rounds} runder · ${playerData.pts} pts` : "Ingen runder"}</div>
                   </div>
-                  <div style={{ fontSize: 18, color: "#8a9a70" }}>›</div>
+                  <div style={{ fontSize: 18, color: "var(--c-text-faint)" }}>›</div>
                 </div>
               );
             })}
@@ -1110,7 +1114,7 @@ export default function DiscGolfLeague() {
                     <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", background: "rgba(107,52,163,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>
                       {r.profiles?.avatar_url ? <img src={r.profiles.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (r.profiles?.full_name?.[0] ?? "?")}
                     </div>
-                    <div style={{ flex: 1, fontSize: 13, fontWeight: 600, color: "#1c2b12" }}>{r.profiles?.full_name || "Ukjent"}</div>
+                    <div style={{ flex: 1, fontSize: 13, fontWeight: 600, color: "var(--c-text-primary)" }}>{r.profiles?.full_name || "Ukjent"}</div>
                     <button onClick={async (e) => { e.stopPropagation(); await acceptFriendRequest(r); }} style={{ padding: "5px 12px", borderRadius: 8, border: "none", background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>Godkjenn</button>
                     <button onClick={async (e) => { e.stopPropagation(); await declineFriendRequest(r); }} style={{ padding: "5px 10px", borderRadius: 8, border: "1px solid rgba(239,68,68,0.25)", background: "rgba(239,68,68,0.05)", color: "#dc2626", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>✕</button>
                   </div>
@@ -1123,14 +1127,14 @@ export default function DiscGolfLeague() {
         {tab === "rekorder" && (
           <div style={{ animation: "fadeSlideUp 0.4s ease" }}>
             {realRounds.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "60px 20px", background: "rgba(255,255,255,0.6)", borderRadius: 16, border: "1px solid rgba(0,0,0,0.08)" }}>
+              <div style={{ textAlign: "center", padding: "60px 20px", background: "var(--c-bg-card)", borderRadius: 16, border: "1px solid rgba(0,0,0,0.08)" }}>
                 <div style={{ fontSize: 44, marginBottom: 12 }}>🏆</div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: "#1c2b12", marginBottom: 6 }}>Ingen rekorder ennå</div>
-                <div style={{ fontSize: 13, color: "#6b7a58" }}>Registrer runder for å sette rekorder</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "var(--c-text-primary)", marginBottom: 6 }}>Ingen rekorder ennå</div>
+                <div style={{ fontSize: 13, color: "var(--c-text-muted)" }}>Registrer runder for å sette rekorder</div>
               </div>
             ) : (() => {
               const fmtScore = s => s === 0 ? "E" : s > 0 ? `+${s}` : `${s}`;
-              const scoreColor = s => s < 0 ? "#16a34a" : s > 0 ? "#ef4444" : "#6b7a58";
+              const scoreColor = s => s < 0 ? "#16a34a" : s > 0 ? "#ef4444" : "var(--c-text-muted)";
 
               // All-time records
               const bestRound = realRounds.reduce((a, b) => b.score < a.score ? b : a);
@@ -1186,13 +1190,13 @@ export default function DiscGolfLeague() {
                   <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 12 }}>Alle-tiders</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 24 }}>
                     {allTimeCards.map((card, i) => (
-                      <div key={i} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "14px 16px", display: "flex", alignItems: "center", gap: 14, animation: `fadeSlideUp 0.4s ease ${i * 0.05}s both` }}>
+                      <div key={i} style={{ background: "var(--c-bg-card)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "14px 16px", display: "flex", alignItems: "center", gap: 14, animation: `fadeSlideUp 0.4s ease ${i * 0.05}s both` }}>
                         <div style={{ fontSize: 28, flexShrink: 0 }}>{card.icon}</div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 11, fontWeight: 600, color: "#8a9a70", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>{card.label}</div>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{card.holder ?? "—"}</div>
-                          {card.course && <div style={{ fontSize: 11, color: "#6b7a58", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{card.course}</div>}
-                          {card.sub && !card.course && <div style={{ fontSize: 11, color: "#6b7a58" }}>{card.sub}</div>}
+                          <div style={{ fontSize: 11, fontWeight: 600, color: "var(--c-text-faint)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>{card.label}</div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--c-text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{card.holder ?? "—"}</div>
+                          {card.course && <div style={{ fontSize: 11, color: "var(--c-text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{card.course}</div>}
+                          {card.sub && !card.course && <div style={{ fontSize: 11, color: "var(--c-text-muted)" }}>{card.sub}</div>}
                         </div>
                         <div style={{ fontSize: 22, fontWeight: 900, color: card.valueColor, flexShrink: 0 }}>{card.value}</div>
                       </div>
@@ -1201,16 +1205,16 @@ export default function DiscGolfLeague() {
 
                   <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 12 }}>Banerekorder</div>
                   {courseRecords.length === 0 ? (
-                    <div style={{ fontSize: 13, color: "#8a9a70", textAlign: "center", padding: 24 }}>Ingen runder registrert på ligabanene ennå</div>
+                    <div style={{ fontSize: 13, color: "var(--c-text-faint)", textAlign: "center", padding: 24 }}>Ingen runder registrert på ligabanene ennå</div>
                   ) : (
                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                       {courseRecords.map(({ course, best, holder }, i) => {
                         const isMajor = MAJOR_COURSE_IDS.has(course.id);
                         return (
-                          <div key={course.id} style={{ background: "rgba(255,255,255,0.75)", border: `1px solid ${isMajor ? "rgba(250,204,21,0.3)" : "rgba(0,0,0,0.08)"}`, borderRadius: 12, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12, animation: `fadeSlideUp 0.4s ease ${i * 0.04}s both` }}>
+                          <div key={course.id} style={{ background: "var(--c-bg-card)", border: `1px solid ${isMajor ? "rgba(250,204,21,0.3)" : "var(--c-border)"}`, borderRadius: 12, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12, animation: `fadeSlideUp 0.4s ease ${i * 0.04}s both` }}>
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{isMajor ? "⭐ " : ""}{course.name}</div>
-                              <div style={{ fontSize: 11, color: "#6b7a58" }}>{holder?.full_name ?? "Ukjent"} · {best.date}</div>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--c-text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{isMajor ? "⭐ " : ""}{course.name}</div>
+                              <div style={{ fontSize: 11, color: "var(--c-text-muted)" }}>{holder?.full_name ?? "Ukjent"} · {best.date}</div>
                             </div>
                             <div style={{ fontSize: 20, fontWeight: 900, color: scoreColor(best.score), flexShrink: 0 }}>{fmtScore(best.score)}</div>
                           </div>
@@ -1237,18 +1241,18 @@ export default function DiscGolfLeague() {
                     <div style={{ fontSize: 13, color: "#4a8a10", fontWeight: 700 }}>{earnedCount} av {BADGE_DEFS.length} oppnådd</div>
                   </div>
                   {!user && (
-                    <div style={{ textAlign: "center", padding: "16px", background: "rgba(101,163,13,0.07)", border: "1px solid rgba(101,163,13,0.15)", borderRadius: 14, marginBottom: 16, fontSize: 13, color: "#4a5a38" }}>Logg inn for å se dine badges!</div>
+                    <div style={{ textAlign: "center", padding: "16px", background: "rgba(101,163,13,0.07)", border: "1px solid rgba(101,163,13,0.15)", borderRadius: 14, marginBottom: 16, fontSize: 13, color: "var(--c-text-secondary)" }}>Logg inn for å se dine badges!</div>
                   )}
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
                     {BADGE_DEFS.map((badge) => {
                       const earned = user ? badge.check(myProfile, myRounds, COURSES, realRounds, players) : false;
                       return (
-                        <div key={badge.id} style={{ background: earned ? "rgba(101,163,13,0.08)" : "rgba(255,255,255,0.7)", border: earned ? "1px solid rgba(101,163,13,0.3)" : "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "14px 8px", textAlign: "center", boxShadow: earned ? "0 0 16px rgba(101,163,13,0.15)" : "0 2px 8px rgba(0,0,0,0.05)", transition: "all 0.3s" }}>
+                        <div key={badge.id} style={{ background: earned ? "rgba(101,163,13,0.08)" : "var(--c-bg-card)", border: earned ? "1px solid rgba(101,163,13,0.3)" : "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "14px 8px", textAlign: "center", boxShadow: earned ? "0 0 16px rgba(101,163,13,0.15)" : "0 2px 8px rgba(0,0,0,0.05)", transition: "all 0.3s" }}>
                           <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
                             {BADGE_ICONS[badge.id] ? BADGE_ICONS[badge.id]({ locked: !earned }) : <div style={{ width: 64, height: 64, background: "#eee", borderRadius: "50%" }} />}
                           </div>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: earned ? "#4a8a10" : "#6b7a58", marginBottom: 2 }}>{badge.name}</div>
-                          <div style={{ fontSize: 10, color: "#8a9a70", lineHeight: 1.4 }}>{badge.desc}</div>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: earned ? "#4a8a10" : "var(--c-text-muted)", marginBottom: 2 }}>{badge.name}</div>
+                          <div style={{ fontSize: 10, color: "var(--c-text-faint)", lineHeight: 1.4 }}>{badge.desc}</div>
                         </div>
                       );
                     })}
@@ -1263,21 +1267,21 @@ export default function DiscGolfLeague() {
           <div style={{ animation: "fadeSlideUp 0.4s ease" }}>
             <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 12 }}>📰 Siste nytt</div>
             {news.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "40px 20px", background: "rgba(255,255,255,0.6)", borderRadius: 16, border: "1px solid rgba(0,0,0,0.08)" }}>
+              <div style={{ textAlign: "center", padding: "40px 20px", background: "var(--c-bg-card)", borderRadius: 16, border: "1px solid rgba(0,0,0,0.08)" }}>
                 <div style={{ fontSize: 36, marginBottom: 8 }}>📭</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#1c2b12", marginBottom: 4 }}>Ingen nyheter ennå</div>
-                <div style={{ fontSize: 12, color: "#6b7a58" }}>Sjekk tilbake senere</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--c-text-primary)", marginBottom: 4 }}>Ingen nyheter ennå</div>
+                <div style={{ fontSize: 12, color: "var(--c-text-muted)" }}>Sjekk tilbake senere</div>
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {news.map((n, i) => (
-                  <div key={n.id} style={{ background: "rgba(255,255,255,0.85)", border: `1px solid ${n.important ? "rgba(239,168,68,0.35)" : "rgba(0,0,0,0.08)"}`, borderRadius: 14, padding: "14px 16px", boxShadow: n.important ? "0 2px 12px rgba(239,168,68,0.12)" : "0 2px 8px rgba(0,0,0,0.04)", animation: `fadeSlideUp 0.4s ease ${i * 0.04}s both` }}>
+                  <div key={n.id} style={{ background: "var(--c-bg-card-strong)", border: `1px solid ${n.important ? "rgba(239,168,68,0.35)" : "var(--c-border)"}`, borderRadius: 14, padding: "14px 16px", boxShadow: n.important ? "0 2px 12px rgba(239,168,68,0.12)" : "0 2px 8px rgba(0,0,0,0.04)", animation: `fadeSlideUp 0.4s ease ${i * 0.04}s both` }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                       {n.important && <span style={{ fontSize: 10, fontWeight: 700, color: "#b45309", background: "rgba(239,168,68,0.15)", padding: "2px 8px", borderRadius: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>Viktig</span>}
-                      <span style={{ fontSize: 11, color: "#8a9a70", fontWeight: 500 }}>{new Date(n.created_at).toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", year: "numeric" })}</span>
+                      <span style={{ fontSize: 11, color: "var(--c-text-faint)", fontWeight: 500 }}>{new Date(n.created_at).toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", year: "numeric" })}</span>
                     </div>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: "#1c2b12", marginBottom: 6 }}>{n.title}</div>
-                    <div style={{ fontSize: 13, color: "#4a5a38", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{n.body}</div>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: "var(--c-text-primary)", marginBottom: 6 }}>{n.title}</div>
+                    <div style={{ fontSize: 13, color: "var(--c-text-secondary)", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{n.body}</div>
                   </div>
                 ))}
               </div>
@@ -1290,14 +1294,14 @@ export default function DiscGolfLeague() {
             {/* Hero */}
             <div style={{ background: "linear-gradient(135deg, rgba(101,163,13,0.12), rgba(101,163,13,0.04))", border: "1px solid rgba(101,163,13,0.2)", borderRadius: 18, padding: 24, marginBottom: 16, textAlign: "center" }}>
               <div style={{ fontSize: 48, marginBottom: 12 }}>🥏</div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: "#1c2b12", marginBottom: 8 }}>Velkommen til discgolf!</div>
-              <div style={{ fontSize: 14, color: "#4a5a38", lineHeight: 1.7 }}>Ny i sporten? Ingen stress. Her er alt du trenger å vite for å komme i gang med Gudbrandsdalen Discgolf Liga.</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "var(--c-text-primary)", marginBottom: 8 }}>Velkommen til discgolf!</div>
+              <div style={{ fontSize: 14, color: "var(--c-text-secondary)", lineHeight: 1.7 }}>Ny i sporten? Ingen stress. Her er alt du trenger å vite for å komme i gang med Gudbrandsdalen Discgolf Liga.</div>
             </div>
 
             {/* Hva er discgolf */}
-            <div style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20, marginBottom: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-              <div style={{ fontSize: 16, fontWeight: 800, color: "#1c2b12", marginBottom: 10 }}>🌲 Hva er discgolf?</div>
-              <div style={{ fontSize: 13, color: "#4a5a38", lineHeight: 1.8 }}>
+            <div style={{ background: "var(--c-bg-card)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20, marginBottom: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "var(--c-text-primary)", marginBottom: 10 }}>🌲 Hva er discgolf?</div>
+              <div style={{ fontSize: 13, color: "var(--c-text-secondary)", lineHeight: 1.8 }}>
                 Discgolf er akkurat som vanlig golf — men i stedet for køller og baller bruker du <strong>frisbeeskiver</strong>, og i stedet for hull har du <strong>metallkurver</strong> du skal treffe.<br /><br />
                 Du starter ved en tee-pad, kaster mot kurven, og fortsetter å kaste fra der disken landet. Målet er å nå kurven på <strong>færrest mulig kast</strong>.<br /><br />
                 Hver bane har en <strong>par</strong>-verdi — det antall kast en god spiller forventes å bruke. Klarer du det på færre kast er du <em>under par</em>, og det er bra!
@@ -1305,26 +1309,26 @@ export default function DiscGolfLeague() {
             </div>
 
             {/* Score-forklaring */}
-            <div style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20, marginBottom: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-              <div style={{ fontSize: 16, fontWeight: 800, color: "#1c2b12", marginBottom: 10 }}>📊 Hva betyr scoren?</div>
+            <div style={{ background: "var(--c-bg-card)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20, marginBottom: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "var(--c-text-primary)", marginBottom: 10 }}>📊 Hva betyr scoren?</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {[
                   { score: "-5", label: "5 under par", desc: "Veldig bra runde!", color: "#4a8a10", bg: "rgba(101,163,13,0.1)" },
                   { score: "-1", label: "1 under par", desc: "Bra spilt!", color: "#4a8a10", bg: "rgba(101,163,13,0.07)" },
-                  { score: "E", label: "Even — på par", desc: "Akkurat som forventet", color: "#5a7040", bg: "rgba(0,0,0,0.04)" },
+                  { score: "E", label: "Even — på par", desc: "Akkurat som forventet", color: "#5a7040", bg: "var(--c-bg-input)" },
                   { score: "+3", label: "3 over par", desc: "Helt vanlig for nybegynnere", color: "#b07a00", bg: "rgba(251,191,36,0.1)" },
                 ].map(s => (
                   <div key={s.score} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 10, background: s.bg }}>
                     <div style={{ fontSize: 18, fontWeight: 900, color: s.color, minWidth: 36, textAlign: "center" }}>{s.score}</div>
-                    <div><div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12" }}>{s.label}</div><div style={{ fontSize: 11, color: "#6b7a58" }}>{s.desc}</div></div>
+                    <div><div style={{ fontSize: 13, fontWeight: 700, color: "var(--c-text-primary)" }}>{s.label}</div><div style={{ fontSize: 11, color: "var(--c-text-muted)" }}>{s.desc}</div></div>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Ligaen forklart */}
-            <div style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20, marginBottom: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-              <div style={{ fontSize: 16, fontWeight: 800, color: "#1c2b12", marginBottom: 10 }}>🏆 Slik fungerer ligaen</div>
+            <div style={{ background: "var(--c-bg-card)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20, marginBottom: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "var(--c-text-primary)", marginBottom: 10 }}>🏆 Slik fungerer ligaen</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {[
                   { num: "1", title: "Spill en runde", text: "Dra til en av de 12 banene i Gudbrandsdalen og spill en runde. Du velger selv når og hvor!" },
@@ -1334,26 +1338,26 @@ export default function DiscGolfLeague() {
                 ].map(s => (
                   <div key={s.num} style={{ display: "flex", gap: 12 }}>
                     <div style={{ width: 28, height: 28, borderRadius: "50%", background: "linear-gradient(135deg, #A3E635, #65A30D)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800, color: "#0a0f0a", flexShrink: 0 }}>{s.num}</div>
-                    <div><div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12", marginBottom: 2 }}>{s.title}</div><div style={{ fontSize: 12, color: "#4a5a38", lineHeight: 1.6 }}>{s.text}</div></div>
+                    <div><div style={{ fontSize: 13, fontWeight: 700, color: "var(--c-text-primary)", marginBottom: 2 }}>{s.title}</div><div style={{ fontSize: 12, color: "var(--c-text-secondary)", lineHeight: 1.6 }}>{s.text}</div></div>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Divisjoner */}
-            <div style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20, marginBottom: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-              <div style={{ fontSize: 16, fontWeight: 800, color: "#1c2b12", marginBottom: 10 }}>👥 To divisjoner</div>
+            <div style={{ background: "var(--c-bg-card)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20, marginBottom: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "var(--c-text-primary)", marginBottom: 10 }}>👥 To divisjoner</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 <div style={{ padding: 14, borderRadius: 12, background: "rgba(101,163,13,0.08)", border: "1px solid rgba(101,163,13,0.2)" }}>
                   <div style={{ fontSize: 14, fontWeight: 800, color: "#4a8a10", marginBottom: 4 }}>🎯 Åpen</div>
-                  <div style={{ fontSize: 11, color: "#4a5a38", lineHeight: 1.6 }}>For erfarne spillere som vil konkurrere seriøst</div>
+                  <div style={{ fontSize: 11, color: "var(--c-text-secondary)", lineHeight: 1.6 }}>For erfarne spillere som vil konkurrere seriøst</div>
                 </div>
                 <div style={{ padding: 14, borderRadius: 12, background: "rgba(101,163,13,0.05)", border: "1px solid rgba(0,0,0,0.08)" }}>
                   <div style={{ fontSize: 14, fontWeight: 800, color: "#5a7040", marginBottom: 4 }}>😊 Rekreasjons</div>
-                  <div style={{ fontSize: 11, color: "#4a5a38", lineHeight: 1.6 }}>For nybegynnere og de som spiller for moro skyld</div>
+                  <div style={{ fontSize: 11, color: "var(--c-text-secondary)", lineHeight: 1.6 }}>For nybegynnere og de som spiller for moro skyld</div>
                 </div>
               </div>
-              <div style={{ marginTop: 10, fontSize: 12, color: "#6b7a58", fontStyle: "italic" }}>Du velger divisjon i profilen din etter innlogging.</div>
+              <div style={{ marginTop: 10, fontSize: 12, color: "var(--c-text-muted)", fontStyle: "italic" }}>Du velger divisjon i profilen din etter innlogging.</div>
             </div>
 
             {/* CTA */}
@@ -1366,12 +1370,12 @@ export default function DiscGolfLeague() {
         {tab === "admin" && isAdmin && (
           <div style={{ animation: "fadeSlideUp 0.4s ease" }}>
             <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 4 }}>🔧 Adminpanel</div>
-            <div style={{ fontSize: 12, color: "#6b7a58", marginBottom: 12 }}>Kun synlig for administratorer</div>
+            <div style={{ fontSize: 12, color: "var(--c-text-muted)", marginBottom: 12 }}>Kun synlig for administratorer</div>
 
             {/* Admin tabs */}
-            <div style={{ display: "flex", gap: 4, background: "rgba(0,0,0,0.06)", borderRadius: 10, padding: 3, marginBottom: 16 }}>
+            <div style={{ display: "flex", gap: 4, background: "var(--c-bg-muted)", borderRadius: 10, padding: 3, marginBottom: 16 }}>
               {[{ id: "oversikt", label: "📊 Oversikt" }, { id: "runder", label: "🥏 Runder" }, { id: "spillere", label: "👥 Spillere" }, { id: "profiler", label: "🪪 Profiler" }, { id: "meldinger", label: "💬 Meldinger" }, { id: "nyheter", label: "📰 Nyheter" }, { id: "test", label: "🧪 Test" }].map(t => (
-                <button key={t.id} onClick={() => { setAdminTab(t.id); if (t.id === "meldinger") loadFeedback(); }} style={{ flex: 1, padding: "8px 6px", border: "none", borderRadius: 8, background: adminTab === t.id ? "#fff" : "transparent", color: adminTab === t.id ? "#4a8a10" : "#6b7a58", fontWeight: adminTab === t.id ? 700 : 500, fontSize: 11, cursor: "pointer", transition: "all 0.2s", boxShadow: adminTab === t.id ? "0 1px 4px rgba(0,0,0,0.1)" : "none" }}>{t.label}</button>
+                <button key={t.id} onClick={() => { setAdminTab(t.id); if (t.id === "meldinger") loadFeedback(); }} style={{ flex: 1, padding: "8px 6px", border: "none", borderRadius: 8, background: adminTab === t.id ? "#fff" : "transparent", color: adminTab === t.id ? "#4a8a10" : "var(--c-text-muted)", fontWeight: adminTab === t.id ? 700 : 500, fontSize: 11, cursor: "pointer", transition: "all 0.2s", boxShadow: adminTab === t.id ? "0 1px 4px rgba(0,0,0,0.1)" : "none" }}>{t.label}</button>
               ))}
             </div>
 
@@ -1380,7 +1384,7 @@ export default function DiscGolfLeague() {
               <div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 16 }}>
                   {[{ label: "Brukere", value: players.length, icon: "👥" }, { label: "Runder totalt", value: realRounds.length, icon: "🥏" }, { label: "Baner brukt", value: [...new Set(realRounds.map(r => r.course_id))].length, icon: "🗺️" }].map(s => (
-                    <div key={s.label} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "12px 8px", textAlign: "center" }}>
+                    <div key={s.label} style={{ background: "var(--c-bg-card)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "12px 8px", textAlign: "center" }}>
                       <div style={{ fontSize: 16, marginBottom: 2 }}>{s.icon}</div>
                       <div style={{ fontSize: 22, fontWeight: 800 }}>{s.value}</div>
                       <div style={{ fontSize: 10, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>{s.label}</div>
@@ -1389,26 +1393,26 @@ export default function DiscGolfLeague() {
                 </div>
 
                 {/* Siste aktivitet */}
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12", marginBottom: 8 }}>Siste aktivitet</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--c-text-primary)", marginBottom: 8 }}>Siste aktivitet</div>
                 {realRounds.slice(0, 5).map(r => (
-                  <div key={r.id} style={{ background: "rgba(0,0,0,0.03)", borderRadius: 10, padding: "8px 12px", marginBottom: 4, fontSize: 12, color: "#4a5a38", border: "1px solid rgba(0,0,0,0.04)" }}>
+                  <div key={r.id} style={{ background: "var(--c-bg-subtle)", borderRadius: 10, padding: "8px 12px", marginBottom: 4, fontSize: 12, color: "var(--c-text-secondary)", border: "1px solid rgba(0,0,0,0.04)" }}>
                     <span style={{ fontWeight: 700 }}>{r.profiles?.full_name ?? "Ukjent"}</span> spilte {r.course_name} · <span style={{ color: r.score <= 0 ? "#4a8a10" : "#ef4444", fontWeight: 700 }}>{r.score > 0 ? "+" : ""}{r.score}</span> · {new Date(r.date + "T12:00:00").toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit" })}
                   </div>
                 ))}
-                {realRounds.length === 0 && <div style={{ fontSize: 12, color: "#8a9a70", textAlign: "center", padding: 16 }}>Ingen aktivitet ennå</div>}
+                {realRounds.length === 0 && <div style={{ fontSize: 12, color: "var(--c-text-faint)", textAlign: "center", padding: 16 }}>Ingen aktivitet ennå</div>}
               </div>
             )}
 
             {/* Runder */}
             {adminTab === "runder" && (
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12", marginBottom: 8 }}>Alle registrerte runder ({realRounds.length})</div>
-                {realRounds.length === 0 && <div style={{ fontSize: 13, color: "#6b7a58", textAlign: "center", padding: 20 }}>Ingen runder ennå</div>}
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--c-text-primary)", marginBottom: 8 }}>Alle registrerte runder ({realRounds.length})</div>
+                {realRounds.length === 0 && <div style={{ fontSize: 13, color: "var(--c-text-muted)", textAlign: "center", padding: 20 }}>Ingen runder ennå</div>}
                 {realRounds.map(r => (
-                  <div key={r.id} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "12px 14px", marginBottom: 8, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                  <div key={r.id} style={{ background: "var(--c-bg-card)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "12px 14px", marginBottom: 8, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 700 }}>{r.profiles?.full_name ?? "Ukjent"}</div>
-                      <div style={{ fontSize: 11, color: "#6b7a58" }}>{r.course_name} · {new Date(r.date + "T12:00:00").toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", year: "numeric" })}</div>
+                      <div style={{ fontSize: 11, color: "var(--c-text-muted)" }}>{r.course_name} · {new Date(r.date + "T12:00:00").toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", year: "numeric" })}</div>
                     </div>
                     <div style={{ fontSize: 16, fontWeight: 900, color: r.score <= 0 ? "#4a8a10" : "#ef4444", minWidth: 36, textAlign: "right" }}>{r.score > 0 ? "+" : ""}{r.score}</div>
                     <button onClick={async () => {
@@ -1425,16 +1429,16 @@ export default function DiscGolfLeague() {
             {/* Spillere */}
             {adminTab === "spillere" && (
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12", marginBottom: 8 }}>Alle spillere ({players.length})</div>
-                {players.length === 0 && <div style={{ fontSize: 13, color: "#6b7a58", textAlign: "center", padding: 20 }}>Ingen registrerte spillere ennå</div>}
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--c-text-primary)", marginBottom: 8 }}>Alle spillere ({players.length})</div>
+                {players.length === 0 && <div style={{ fontSize: 13, color: "var(--c-text-muted)", textAlign: "center", padding: 20 }}>Ingen registrerte spillere ennå</div>}
                 {players.map(p => (
-                  <div key={p.id} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "12px 14px", marginBottom: 8, display: "flex", alignItems: "center", gap: 10 }}>
+                  <div key={p.id} style={{ background: "var(--c-bg-card)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "12px 14px", marginBottom: 8, display: "flex", alignItems: "center", gap: 10 }}>
                     <div onClick={() => setSelectedPlayer(p)} style={{ width: 32, height: 32, borderRadius: "50%", overflow: "hidden", background: "rgba(101,163,13,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, border: "1px solid rgba(0,0,0,0.08)", flexShrink: 0, cursor: "pointer" }}>
                       {p.avatar?.startsWith("http") ? <img src={p.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (p.name?.[0] ?? "?")}
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 13, fontWeight: 700 }}>{p.name}</div>
-                      <div style={{ fontSize: 11, color: "#6b7a58" }}>{p.hometown ? `${p.hometown} · ` : ""}{p.division} · {p.rounds} runder · {p.pts} pts</div>
+                      <div style={{ fontSize: 11, color: "var(--c-text-muted)" }}>{p.hometown ? `${p.hometown} · ` : ""}{p.division} · {p.rounds} runder · {p.pts} pts</div>
                     </div>
                   </div>
                 ))}
@@ -1444,22 +1448,22 @@ export default function DiscGolfLeague() {
             {/* Profiler */}
             {adminTab === "profiler" && (
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12", marginBottom: 8 }}>Registrerte profiler ({allProfiles.length})</div>
-                {allProfiles.length === 0 && <div style={{ fontSize: 12, color: "#8a9a70", textAlign: "center", padding: 16 }}>Ingen profiler ennå</div>}
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--c-text-primary)", marginBottom: 8 }}>Registrerte profiler ({allProfiles.length})</div>
+                {allProfiles.length === 0 && <div style={{ fontSize: 12, color: "var(--c-text-faint)", textAlign: "center", padding: 16 }}>Ingen profiler ennå</div>}
                 {allProfiles.map(p => {
                   const playerData = players.find(pl => pl.id === p.id);
                   return (
-                    <div key={p.id} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "12px 14px", marginBottom: 8, display: "flex", alignItems: "center", gap: 10 }}>
+                    <div key={p.id} style={{ background: "var(--c-bg-card)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "12px 14px", marginBottom: 8, display: "flex", alignItems: "center", gap: 10 }}>
                       <div onClick={() => playerData && setSelectedPlayer(playerData)} style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", background: "rgba(101,163,13,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, border: "1px solid rgba(0,0,0,0.08)", flexShrink: 0, cursor: playerData ? "pointer" : "default" }}>
                         {p.avatar_url ? <img src={p.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (p.full_name?.[0] ?? "?")}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12" }}>{p.full_name || "Uten navn"}</div>
-                        <div style={{ fontSize: 11, color: "#6b7a58" }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "var(--c-text-primary)" }}>{p.full_name || "Uten navn"}</div>
+                        <div style={{ fontSize: 11, color: "var(--c-text-muted)" }}>
                           {p.hometown ? `📍 ${p.hometown}` : "Ingen hjemsted"}
                           {playerData ? ` · ${playerData.rounds} runder · ${playerData.pts} pts` : " · 0 runder"}
                         </div>
-                        <div style={{ fontSize: 10, color: "#8a9a70", marginTop: 2, fontFamily: "monospace" }}>{p.id.slice(0, 8)}…</div>
+                        <div style={{ fontSize: 10, color: "var(--c-text-faint)", marginTop: 2, fontFamily: "monospace" }}>{p.id.slice(0, 8)}…</div>
                       </div>
                       <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
                         {p.disabled ? (
@@ -1467,7 +1471,7 @@ export default function DiscGolfLeague() {
                         ) : playerData ? (
                           <div style={{ fontSize: 10, padding: "2px 8px", borderRadius: 10, background: "rgba(101,163,13,0.1)", color: "#4a8a10", fontWeight: 600 }}>Aktiv</div>
                         ) : (
-                          <div style={{ fontSize: 10, padding: "2px 8px", borderRadius: 10, background: "rgba(0,0,0,0.05)", color: "#8a9a70", fontWeight: 600 }}>Ingen runder</div>
+                          <div style={{ fontSize: 10, padding: "2px 8px", borderRadius: 10, background: "rgba(0,0,0,0.05)", color: "var(--c-text-faint)", fontWeight: 600 }}>Ingen runder</div>
                         )}
                         {!ADMIN_EMAILS.includes(p.full_name) && (
                           <div style={{ display: "flex", gap: 4 }}>
@@ -1501,23 +1505,23 @@ export default function DiscGolfLeague() {
             {adminTab === "meldinger" && (
               <div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12" }}>Tilbakemeldinger ({adminFeedback.length})</div>
-                  <button onClick={loadFeedback} style={{ fontSize: 11, padding: "4px 10px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.1)", background: "rgba(0,0,0,0.04)", color: "#4a5a38", fontWeight: 600, cursor: "pointer" }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "var(--c-text-primary)" }}>Tilbakemeldinger ({adminFeedback.length})</div>
+                  <button onClick={loadFeedback} style={{ fontSize: 11, padding: "4px 10px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.1)", background: "var(--c-bg-input)", color: "var(--c-text-secondary)", fontWeight: 600, cursor: "pointer" }}>
                     {adminFeedbackLoading ? "Laster..." : "↻ Oppdater"}
                   </button>
                 </div>
                 {adminFeedback.length === 0 && !adminFeedbackLoading && (
-                  <div style={{ fontSize: 13, color: "#6b7a58", textAlign: "center", padding: 24 }}>
+                  <div style={{ fontSize: 13, color: "var(--c-text-muted)", textAlign: "center", padding: 24 }}>
                     {adminFeedback.length === 0 && adminFeedbackLoading === false ? "Ingen tilbakemeldinger ennå — trykk Oppdater" : "Ingen tilbakemeldinger ennå"}
                   </div>
                 )}
                 {adminFeedback.map(f => (
-                  <div key={f.id} style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "12px 14px", marginBottom: 8 }}>
+                  <div key={f.id} style={{ background: "var(--c-bg-card)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "12px 14px", marginBottom: 8 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: "#1c2b12" }}>{f.user_name || "Ukjent"}</div>
-                      <div style={{ fontSize: 10, color: "#8a9a70" }}>{new Date(f.created_at).toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "var(--c-text-primary)" }}>{f.user_name || "Ukjent"}</div>
+                      <div style={{ fontSize: 10, color: "var(--c-text-faint)" }}>{new Date(f.created_at).toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</div>
                     </div>
-                    <div style={{ fontSize: 13, color: "#4a5a38", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{f.message}</div>
+                    <div style={{ fontSize: 13, color: "var(--c-text-secondary)", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{f.message}</div>
                     <button onClick={async () => {
                       if (!confirm("Slett denne tilbakemeldingen?")) return;
                       await supabase.from("feedback").delete().eq("id", f.id);
@@ -1531,25 +1535,25 @@ export default function DiscGolfLeague() {
             {/* Nyheter */}
             {adminTab === "nyheter" && (
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12", marginBottom: 4 }}>📰 Publiser nyhet</div>
-                <div style={{ fontSize: 11, color: "#6b7a58", marginBottom: 12 }}>Viktige nyheter vises som popup for brukere som ikke har sett den</div>
-                <div style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 14, marginBottom: 16, display: "flex", flexDirection: "column", gap: 10 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--c-text-primary)", marginBottom: 4 }}>📰 Publiser nyhet</div>
+                <div style={{ fontSize: 11, color: "var(--c-text-muted)", marginBottom: 12 }}>Viktige nyheter vises som popup for brukere som ikke har sett den</div>
+                <div style={{ background: "var(--c-bg-card)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 14, marginBottom: 16, display: "flex", flexDirection: "column", gap: 10 }}>
                   <input
                     type="text"
                     placeholder="Tittel"
                     value={newsForm.title}
                     onChange={e => setNewsForm({ ...newsForm, title: e.target.value })}
                     maxLength={120}
-                    style={{ width: "100%", padding: "10px 12px", borderRadius: 10, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 14, fontWeight: 600, outline: "none", boxSizing: "border-box" }}
+                    style={{ width: "100%", padding: "10px 12px", borderRadius: 10, background: "var(--c-bg-input)", border: "1px solid rgba(0,0,0,0.1)", color: "var(--c-text-primary)", fontSize: 14, fontWeight: 600, outline: "none", boxSizing: "border-box" }}
                   />
                   <textarea
                     placeholder="Tekst (støtter linjeskift)"
                     value={newsForm.body}
                     onChange={e => setNewsForm({ ...newsForm, body: e.target.value })}
                     rows={5}
-                    style={{ width: "100%", padding: "10px 12px", borderRadius: 10, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 13, lineHeight: 1.5, outline: "none", resize: "vertical", fontFamily: "inherit", boxSizing: "border-box" }}
+                    style={{ width: "100%", padding: "10px 12px", borderRadius: 10, background: "var(--c-bg-input)", border: "1px solid rgba(0,0,0,0.1)", color: "var(--c-text-primary)", fontSize: 13, lineHeight: 1.5, outline: "none", resize: "vertical", fontFamily: "inherit", boxSizing: "border-box" }}
                   />
-                  <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#4a5a38", cursor: "pointer", userSelect: "none" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "var(--c-text-secondary)", cursor: "pointer", userSelect: "none" }}>
                     <input type="checkbox" checked={newsForm.important} onChange={e => setNewsForm({ ...newsForm, important: e.target.checked })} style={{ width: 16, height: 16, cursor: "pointer" }} />
                     Marker som viktig (vises som popup)
                   </label>
@@ -1570,18 +1574,18 @@ export default function DiscGolfLeague() {
                 </div>
 
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12" }}>Alle nyheter ({news.length})</div>
-                  <button onClick={loadNews} style={{ fontSize: 11, padding: "4px 10px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.1)", background: "rgba(0,0,0,0.04)", color: "#4a5a38", fontWeight: 600, cursor: "pointer" }}>↻ Oppdater</button>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "var(--c-text-primary)" }}>Alle nyheter ({news.length})</div>
+                  <button onClick={loadNews} style={{ fontSize: 11, padding: "4px 10px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.1)", background: "var(--c-bg-input)", color: "var(--c-text-secondary)", fontWeight: 600, cursor: "pointer" }}>↻ Oppdater</button>
                 </div>
-                {news.length === 0 && <div style={{ fontSize: 13, color: "#6b7a58", textAlign: "center", padding: 20 }}>Ingen nyheter publisert ennå</div>}
+                {news.length === 0 && <div style={{ fontSize: 13, color: "var(--c-text-muted)", textAlign: "center", padding: 20 }}>Ingen nyheter publisert ennå</div>}
                 {news.map(n => (
-                  <div key={n.id} style={{ background: "rgba(255,255,255,0.75)", border: `1px solid ${n.important ? "rgba(239,168,68,0.3)" : "rgba(0,0,0,0.08)"}`, borderRadius: 12, padding: "12px 14px", marginBottom: 8 }}>
+                  <div key={n.id} style={{ background: "var(--c-bg-card)", border: `1px solid ${n.important ? "rgba(239,168,68,0.3)" : "var(--c-border)"}`, borderRadius: 12, padding: "12px 14px", marginBottom: 8 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
                       {n.important && <span style={{ fontSize: 9, fontWeight: 700, color: "#b45309", background: "rgba(239,168,68,0.15)", padding: "2px 6px", borderRadius: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>Viktig</span>}
-                      <span style={{ fontSize: 10, color: "#8a9a70" }}>{new Date(n.created_at).toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                      <span style={{ fontSize: 10, color: "var(--c-text-faint)" }}>{new Date(n.created_at).toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
                     </div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12", marginBottom: 4 }}>{n.title}</div>
-                    <div style={{ fontSize: 12, color: "#4a5a38", lineHeight: 1.5, whiteSpace: "pre-wrap", marginBottom: 8 }}>{n.body}</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "var(--c-text-primary)", marginBottom: 4 }}>{n.title}</div>
+                    <div style={{ fontSize: 12, color: "var(--c-text-secondary)", lineHeight: 1.5, whiteSpace: "pre-wrap", marginBottom: 8 }}>{n.body}</div>
                     <button onClick={async () => {
                       if (!confirm("Slett denne nyheten?")) return;
                       const { error } = await supabase.from("news").delete().eq("id", n.id);
@@ -1596,8 +1600,8 @@ export default function DiscGolfLeague() {
             {/* Test */}
             {adminTab === "test" && (
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12", marginBottom: 4 }}>🧪 Test notifikasjoner</div>
-                <div style={{ fontSize: 11, color: "#6b7a58", marginBottom: 12 }}>Send testnotifikasjoner til deg selv</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--c-text-primary)", marginBottom: 4 }}>🧪 Test notifikasjoner</div>
+                <div style={{ fontSize: 11, color: "var(--c-text-muted)", marginBottom: 12 }}>Send testnotifikasjoner til deg selv</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                   {[
                     { label: "🏅 Ny badge", type: "badge_earned", title: "Ny badge: Utforsker! 🗺️", body: "Du har spilt 3 forskjellige baner" },
@@ -1611,13 +1615,13 @@ export default function DiscGolfLeague() {
                       await supabase.from("notifications").insert({ user_id: user.id, type: n.type, title: n.title, body: n.body, data: n.data || {}, read: false });
                       await loadNotifications();
                       alert("Notifikasjon sendt!");
-                    }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 12, background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#1c2b12", textAlign: "left" }}>
+                    }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 12, background: "var(--c-bg-card)", border: "1px solid rgba(0,0,0,0.08)", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "var(--c-text-primary)", textAlign: "left" }}>
                       <span>{n.label}</span>
                     </button>
                   ))}
                 </div>
 
-                <div style={{ marginTop: 20, fontSize: 13, fontWeight: 700, color: "#1c2b12", marginBottom: 8 }}>⚠️ Farlig sone</div>
+                <div style={{ marginTop: 20, fontSize: 13, fontWeight: 700, color: "var(--c-text-primary)", marginBottom: 8 }}>⚠️ Farlig sone</div>
                 <button onClick={async () => {
                   if (!confirm("Slett ALLE notifikasjoner for deg?")) return;
                   await supabase.from("notifications").delete().eq("user_id", user.id);
@@ -1632,18 +1636,18 @@ export default function DiscGolfLeague() {
 
       {selectedPlayer && (
         <div onClick={() => setSelectedPlayer(null)} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, maxHeight: "80vh", background: "linear-gradient(180deg, #ffffff, #f0f9e8)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 24, overflowY: "auto", animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, maxHeight: "80vh", background: "var(--c-modal-bg)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 24, overflowY: "auto", animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
               <div style={{ width: 54, height: 54, borderRadius: "50%", overflow: "hidden", background: "linear-gradient(135deg, rgba(101,163,13,0.2), rgba(101,163,13,0.06))", border: "2px solid rgba(101,163,13,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26 }}>
                 {selectedPlayer.avatar?.startsWith("http") ? <img src={selectedPlayer.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (selectedPlayer.name?.[0] ?? "?")}
               </div>
-              <div><div style={{ fontSize: 20, fontWeight: 800, color: "#1c2b12" }}>{selectedPlayer.name}</div><div style={{ fontSize: 12, color: "#6b7a58" }}>{selectedPlayer.hometown ? `${selectedPlayer.hometown} · ` : ""}{selectedPlayer.division} divisjon</div></div>
+              <div><div style={{ fontSize: 20, fontWeight: 800, color: "var(--c-text-primary)" }}>{selectedPlayer.name}</div><div style={{ fontSize: 12, color: "var(--c-text-muted)" }}>{selectedPlayer.hometown ? `${selectedPlayer.hometown} · ` : ""}{selectedPlayer.division} divisjon</div></div>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginBottom: 20 }}>
               {[{ l: "Runder", v: selectedPlayer.rounds }, { l: "Beste", v: selectedPlayer.best }, { l: "Snitt", v: selectedPlayer.avg > 0 ? `+${selectedPlayer.avg}` : selectedPlayer.avg }, { l: "Poeng", v: selectedPlayer.pts }].map(s => (
                 <div key={s.l} style={{ background: "rgba(101,163,13,0.07)", borderRadius: 12, padding: "12px 8px", textAlign: "center", border: "1px solid rgba(101,163,13,0.12)" }}>
                   <div style={{ fontSize: 18, fontWeight: 900, color: "#4a8a10" }}>{s.v}</div>
-                  <div style={{ fontSize: 9, color: "#6b7a58", textTransform: "uppercase", letterSpacing: "0.1em" }}>{s.l}</div>
+                  <div style={{ fontSize: 9, color: "var(--c-text-muted)", textTransform: "uppercase", letterSpacing: "0.1em" }}>{s.l}</div>
                 </div>
               ))}
             </div>
@@ -1669,10 +1673,10 @@ export default function DiscGolfLeague() {
                 <button onClick={async () => { if (!sentRequests.includes(selectedPlayer.id)) await sendFriendRequest(selectedPlayer.id); }} style={{ width: "100%", padding: "10px 0", borderRadius: 12, border: "1px solid", borderColor: sentRequests.includes(selectedPlayer.id) ? "rgba(107,52,163,0.3)" : "rgba(101,163,13,0.3)", background: sentRequests.includes(selectedPlayer.id) ? "rgba(107,52,163,0.08)" : "rgba(101,163,13,0.08)", color: sentRequests.includes(selectedPlayer.id) ? "#6b34a3" : "#4a8a10", fontWeight: 700, fontSize: 13, cursor: sentRequests.includes(selectedPlayer.id) ? "default" : "pointer", marginBottom: 16, transition: "all 0.2s" }}>{sentRequests.includes(selectedPlayer.id) ? "✓ Forespørsel sendt" : "👥 Legg til som venn"}</button>
               );
             })()}
-            <div style={{ marginBottom: 12, fontSize: 13, fontWeight: 700, color: "#1c2b12" }}>Poengutvikling</div>
-            <div style={{ background: "rgba(0,0,0,0.03)", borderRadius: 12, padding: 16, border: "1px solid rgba(0,0,0,0.06)" }}>
+            <div style={{ marginBottom: 12, fontSize: 13, fontWeight: 700, color: "var(--c-text-primary)" }}>Poengutvikling</div>
+            <div style={{ background: "var(--c-bg-subtle)", borderRadius: 12, padding: 16, border: "1px solid rgba(0,0,0,0.06)" }}>
               <Sparkline data={selectedPlayer.trend} color="#65A30D" />
-              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 10, color: "#6b7a58" }}><span>Runde 1</span><span>Runde {selectedPlayer.trend.length}</span></div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 10, color: "var(--c-text-muted)" }}><span>Runde 1</span><span>Runde {selectedPlayer.trend.length}</span></div>
             </div>
             {/* Head-to-head */}
             {user && selectedPlayer.id !== user.id && (() => {
@@ -1690,30 +1694,30 @@ export default function DiscGolfLeague() {
               const draws = h2h.length - myWins - theirWins;
               return (
                 <div style={{ marginTop: 20, marginBottom: 12 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12", marginBottom: 10 }}>⚔️ Du vs {selectedPlayer.name?.split(" ")[0]}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "var(--c-text-primary)", marginBottom: 10 }}>⚔️ Du vs {selectedPlayer.name?.split(" ")[0]}</div>
                   <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-                    <div style={{ flex: 1, textAlign: "center", background: myWins > theirWins ? "rgba(101,163,13,0.1)" : "rgba(0,0,0,0.03)", borderRadius: 12, padding: "12px 8px", border: "1px solid", borderColor: myWins > theirWins ? "rgba(101,163,13,0.2)" : "rgba(0,0,0,0.06)" }}>
+                    <div style={{ flex: 1, textAlign: "center", background: myWins > theirWins ? "rgba(101,163,13,0.1)" : "var(--c-bg-subtle)", borderRadius: 12, padding: "12px 8px", border: "1px solid", borderColor: myWins > theirWins ? "rgba(101,163,13,0.2)" : "var(--c-bg-muted)" }}>
                       <div style={{ fontSize: 24, fontWeight: 900, color: "#4a8a10" }}>{myWins}</div>
-                      <div style={{ fontSize: 10, color: "#6b7a58", fontWeight: 600 }}>Du</div>
+                      <div style={{ fontSize: 10, color: "var(--c-text-muted)", fontWeight: 600 }}>Du</div>
                     </div>
-                    <div style={{ flex: 1, textAlign: "center", background: "rgba(0,0,0,0.03)", borderRadius: 12, padding: "12px 8px", border: "1px solid rgba(0,0,0,0.06)" }}>
-                      <div style={{ fontSize: 24, fontWeight: 900, color: "#6b7a58" }}>{draws}</div>
-                      <div style={{ fontSize: 10, color: "#6b7a58", fontWeight: 600 }}>Uavgjort</div>
+                    <div style={{ flex: 1, textAlign: "center", background: "var(--c-bg-subtle)", borderRadius: 12, padding: "12px 8px", border: "1px solid rgba(0,0,0,0.06)" }}>
+                      <div style={{ fontSize: 24, fontWeight: 900, color: "var(--c-text-muted)" }}>{draws}</div>
+                      <div style={{ fontSize: 10, color: "var(--c-text-muted)", fontWeight: 600 }}>Uavgjort</div>
                     </div>
-                    <div style={{ flex: 1, textAlign: "center", background: theirWins > myWins ? "rgba(107,52,163,0.08)" : "rgba(0,0,0,0.03)", borderRadius: 12, padding: "12px 8px", border: "1px solid", borderColor: theirWins > myWins ? "rgba(107,52,163,0.15)" : "rgba(0,0,0,0.06)" }}>
+                    <div style={{ flex: 1, textAlign: "center", background: theirWins > myWins ? "rgba(107,52,163,0.08)" : "var(--c-bg-subtle)", borderRadius: 12, padding: "12px 8px", border: "1px solid", borderColor: theirWins > myWins ? "rgba(107,52,163,0.15)" : "var(--c-bg-muted)" }}>
                       <div style={{ fontSize: 24, fontWeight: 900, color: "#6b34a3" }}>{theirWins}</div>
-                      <div style={{ fontSize: 10, color: "#6b7a58", fontWeight: 600 }}>{selectedPlayer.name?.split(" ")[0]}</div>
+                      <div style={{ fontSize: 10, color: "var(--c-text-muted)", fontWeight: 600 }}>{selectedPlayer.name?.split(" ")[0]}</div>
                     </div>
                   </div>
-                  <div style={{ fontSize: 11, color: "#6b7a58", textAlign: "center" }}>Basert på {h2h.length} felles runde{h2h.length !== 1 ? "r" : ""}</div>
+                  <div style={{ fontSize: 11, color: "var(--c-text-muted)", textAlign: "center" }}>Basert på {h2h.length} felles runde{h2h.length !== 1 ? "r" : ""}</div>
                 </div>
               );
             })()}
 
             {/* Runder */}
-            <div style={{ marginTop: 20, marginBottom: 12, fontSize: 13, fontWeight: 700, color: "#1c2b12" }}>Runder</div>
+            <div style={{ marginTop: 20, marginBottom: 12, fontSize: 13, fontWeight: 700, color: "var(--c-text-primary)" }}>Runder</div>
             {selectedPlayerRounds.length === 0 && (
-              <div style={{ fontSize: 12, color: "#8a9a70", textAlign: "center", padding: 16 }}>Ingen runder registrert</div>
+              <div style={{ fontSize: 12, color: "var(--c-text-faint)", textAlign: "center", padding: 16 }}>Ingen runder registrert</div>
             )}
             {selectedPlayerRounds.map(r => {
               const course = COURSES.find(c => c.id === r.course_id);
@@ -1721,19 +1725,19 @@ export default function DiscGolfLeague() {
               const totalScore = r.total_score ?? (r.score + (course?.par ?? 0));
               const scoreStr = r.score === 0 ? "E" : r.score > 0 ? `+${r.score}` : `${r.score}`;
               return (
-                <div key={r.id} onClick={() => { setSelectedPlayer(null); setSelectedRound(r); }} style={{ background: "rgba(0,0,0,0.03)", borderRadius: 10, padding: "10px 14px", marginBottom: 6, border: "1px solid rgba(0,0,0,0.06)", cursor: "pointer", transition: "background 0.15s" }}
+                <div key={r.id} onClick={() => { setSelectedPlayer(null); setSelectedRound(r); }} style={{ background: "var(--c-bg-subtle)", borderRadius: 10, padding: "10px 14px", marginBottom: 6, border: "1px solid rgba(0,0,0,0.06)", cursor: "pointer", transition: "background 0.15s" }}
                   onMouseEnter={e => e.currentTarget.style.background = "rgba(101,163,13,0.06)"}
-                  onMouseLeave={e => e.currentTarget.style.background = "rgba(0,0,0,0.03)"}>
+                  onMouseLeave={e => e.currentTarget.style.background = "var(--c-bg-subtle)"}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12" }}>{courseName}</div>
-                      <div style={{ fontSize: 11, color: "#6b7a58", marginTop: 2 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "var(--c-text-primary)" }}>{courseName}</div>
+                      <div style={{ fontSize: 11, color: "var(--c-text-muted)", marginTop: 2 }}>
                         {new Date(r.date + "T12:00:00").toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", year: "numeric" })}
                       </div>
                     </div>
                     <div style={{ textAlign: "right" }}>
                       <div style={{ fontSize: 18, fontWeight: 900, color: r.score <= 0 ? "#4a8a10" : "#ef4444" }}>{totalScore}</div>
-                      <div style={{ fontSize: 10, color: "#6b7a58" }}>({scoreStr})</div>
+                      <div style={{ fontSize: 10, color: "var(--c-text-muted)" }}>({scoreStr})</div>
                     </div>
                   </div>
                   {r.note && <div style={{ fontSize: 11, color: "#5a7040", marginTop: 6, fontStyle: "italic", background: "rgba(101,163,13,0.06)", padding: "3px 8px", borderRadius: 6, display: "inline-block" }}>💬 {r.note}</div>}
@@ -1744,7 +1748,7 @@ export default function DiscGolfLeague() {
                     const mates = allGroupMates.length > groupMates.length ? allGroupMates : groupMates;
                     if (mates.length === 0) return null;
                     return (
-                      <div style={{ fontSize: 10, color: "#8a9a70", marginTop: 4 }}>
+                      <div style={{ fontSize: 10, color: "var(--c-text-faint)", marginTop: 4 }}>
                         Spilt med: {mates.map((gm, gi) => (
                           <span key={gm.id}>{gi > 0 && ", "}<span onClick={(e) => { e.stopPropagation(); const p = players.find(pl => pl.id === gm.user_id); if (p) { setSelectedPlayer(p); } }} style={{ color: "#4a8a10", fontWeight: 600, cursor: "pointer" }}>{gm.profiles?.full_name?.split(" ")[0] ?? "Ukjent"}</span></span>
                         ))}
@@ -1754,26 +1758,26 @@ export default function DiscGolfLeague() {
                 </div>
               );
             })}
-            <button onClick={() => setSelectedPlayer(null)} style={{ width: "100%", padding: 14, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#4a5a38", fontWeight: 700, fontSize: 14, cursor: "pointer", marginTop: 16 }}>Lukk</button>
+            <button onClick={() => setSelectedPlayer(null)} style={{ width: "100%", padding: 14, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "var(--c-bg-input)", color: "var(--c-text-secondary)", fontWeight: 700, fontSize: 14, cursor: "pointer", marginTop: 16 }}>Lukk</button>
           </div>
         </div>
       )}
 
       {showRegister && (
         <div onClick={() => { setShowRegister(false); setRegSuccess(false); setLocationStatus("idle"); setUserLocation(null); setEditRound(null); setRegError(""); setSelectedFriendPlayers([]); setFriendScores({}); setFriendSearch(""); setShowFriendScores(false); }} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 16, animation: "fadeIn 0.2s ease" }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, maxHeight: "calc(100vh - 32px)", overflowY: "auto", background: "linear-gradient(180deg, #ffffff, #f0f9e8)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 24, animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, maxHeight: "calc(100vh - 32px)", overflowY: "auto", background: "var(--c-modal-bg)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 24, animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
             {regSuccess ? (
               <div style={{ textAlign: "center", padding: "30px 0" }}>
                 <div style={{ fontSize: 48, marginBottom: 12 }}>🎉</div>
                 <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>Runde registrert!</div>
-                <div style={{ fontSize: 13, color: "#6b7a58" }}>Poengene dine oppdateres snart</div>
+                <div style={{ fontSize: 13, color: "var(--c-text-muted)" }}>Poengene dine oppdateres snart</div>
               </div>
             ) : (
               <>
-                <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 4, color: "#1c2b12" }}>{editRound ? "Rediger runde" : "Registrer runde"}</div>
-                <div style={{ fontSize: 12, color: "#6b7a58", marginBottom: editRound ? 20 : 12 }}>{editRound ? "Korriger scoren din" : "Legg inn scoren din for å få ligapoeng"}</div>
+                <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 4, color: "var(--c-text-primary)" }}>{editRound ? "Rediger runde" : "Registrer runde"}</div>
+                <div style={{ fontSize: 12, color: "var(--c-text-muted)", marginBottom: editRound ? 20 : 12 }}>{editRound ? "Korriger scoren din" : "Legg inn scoren din for å få ligapoeng"}</div>
                 {!editRound && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderRadius: 10, background: "rgba(101,163,13,0.07)", border: "1px solid rgba(101,163,13,0.15)", marginBottom: 16, fontSize: 11, color: "#4a5a38", lineHeight: 1.5 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderRadius: 10, background: "rgba(101,163,13,0.07)", border: "1px solid rgba(101,163,13,0.15)", marginBottom: 16, fontSize: 11, color: "var(--c-text-secondary)", lineHeight: 1.5 }}>
                     ℹ️ Scorer registreres manuelt — appen er ikke synkronisert med UDisc.
                   </div>
                 )}
@@ -1781,13 +1785,13 @@ export default function DiscGolfLeague() {
                   <div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                       <label style={{ fontSize: 11, fontWeight: 700, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em" }}>Bane</label>
-                      <span style={{ fontSize: 10, color: locationStatus === "loading" ? "#b07a00" : locationStatus === "done" ? "#4a8a10" : locationStatus === "denied" ? "#6b7a58" : "#6b7a58" }}>
+                      <span style={{ fontSize: 10, color: locationStatus === "loading" ? "#b07a00" : locationStatus === "done" ? "#4a8a10" : locationStatus === "denied" ? "var(--c-text-muted)" : "var(--c-text-muted)" }}>
                         {locationStatus === "loading" && "📍 Finner posisjon…"}
                         {locationStatus === "done" && "📍 Sortert etter avstand"}
                         {locationStatus === "denied" && "GPS ikke tilgjengelig"}
                       </span>
                     </div>
-                    <select value={regForm.course} onChange={e => setRegForm({ ...regForm, course: e.target.value })} style={{ width: "100%", padding: "12px 14px", borderRadius: 12, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 14, outline: "none", appearance: "none", boxSizing: "border-box" }}>
+                    <select value={regForm.course} onChange={e => setRegForm({ ...regForm, course: e.target.value })} style={{ width: "100%", padding: "12px 14px", borderRadius: 12, background: "var(--c-bg-input)", border: "1px solid rgba(0,0,0,0.1)", color: "var(--c-text-primary)", fontSize: 14, outline: "none", appearance: "none", boxSizing: "border-box" }}>
                       <option value="">Velg bane...</option>
                       {sortedCourses.map(c => {
                         const dist = userLocation ? ` · ${getDistance(userLocation.lat, userLocation.lng, c.lat, c.lng)} km` : "";
@@ -1798,9 +1802,9 @@ export default function DiscGolfLeague() {
                   <div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                       <label style={{ fontSize: 11, fontWeight: 700, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em" }}>Score mot par</label>
-                      {regForm.course && <span style={{ fontSize: 11, color: "#6b7a58" }}>Par: {COURSES.find(c => c.id === regForm.course)?.par ?? "?"}</span>}
+                      {regForm.course && <span style={{ fontSize: 11, color: "var(--c-text-muted)" }}>Par: {COURSES.find(c => c.id === regForm.course)?.par ?? "?"}</span>}
                     </div>
-                    <input type="number" placeholder={regForm.course ? `f.eks. ${(COURSES.find(c => c.id === regForm.course)?.par ?? 54) - 3}` : "Velg bane først"} value={regForm.score} onChange={e => setRegForm({ ...regForm, score: e.target.value })} style={{ width: "100%", padding: "12px 14px", borderRadius: 12, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+                    <input type="number" placeholder={regForm.course ? `f.eks. ${(COURSES.find(c => c.id === regForm.course)?.par ?? 54) - 3}` : "Velg bane først"} value={regForm.score} onChange={e => setRegForm({ ...regForm, score: e.target.value })} style={{ width: "100%", padding: "12px 14px", borderRadius: 12, background: "var(--c-bg-input)", border: "1px solid rgba(0,0,0,0.1)", color: "var(--c-text-primary)", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
                     {regForm.course && regForm.score !== "" && (() => {
                       const par = COURSES.find(c => c.id === regForm.course)?.par;
                       const diff = parseInt(regForm.score) - par;
@@ -1817,7 +1821,7 @@ export default function DiscGolfLeague() {
                           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                             {isMajor && <span style={{ fontSize: 10, color: "#b07a00", fontWeight: 700, background: "rgba(251,191,36,0.12)", border: "1px solid rgba(251,191,36,0.3)", borderRadius: 6, padding: "2px 6px" }}>⭐ ×1.5</span>}
                             <span style={{ fontSize: 20, fontWeight: 900, color: ptsColor }}>{pts}</span>
-                            <span style={{ fontSize: 11, color: "#6b7a58", fontWeight: 600 }}>pts</span>
+                            <span style={{ fontSize: 11, color: "var(--c-text-muted)", fontWeight: 600 }}>pts</span>
                           </div>
                         </div>
                       );
@@ -1838,7 +1842,7 @@ export default function DiscGolfLeague() {
                       const months = ["Januar","Februar","Mars","April","Mai","Juni","Juli","August","September","Oktober","November","Desember"];
                       const daysInMonth = (parts_m, parts_y) => new Date(parseInt(parts_y) || 2026, parseInt(parts_m) || 1, 0).getDate();
                       const maxD = daysInMonth(m, y);
-                      const selStyle = { padding: "10px 8px", borderRadius: 10, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 14, outline: "none", appearance: "none", cursor: "pointer" };
+                      const selStyle = { padding: "10px 8px", borderRadius: 10, background: "var(--c-bg-input)", border: "1px solid rgba(0,0,0,0.1)", color: "var(--c-text-primary)", fontSize: 14, outline: "none", appearance: "none", cursor: "pointer" };
                       return (
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr 1.2fr", gap: 8 }}>
                           <select value={d || ""} onChange={e => setDatePart("d", e.target.value)} style={selStyle}>
@@ -1881,7 +1885,7 @@ export default function DiscGolfLeague() {
                             {label}<br /><span style={{ opacity: 0.65, fontWeight: 600 }}>({num})</span>
                           </div>
                           {statTooltip === key && (
-                            <div onClick={() => setStatTooltip(null)} style={{ position: "absolute", bottom: "calc(100% + 2px)", ...tipPos, padding: "8px 10px", borderRadius: 8, background: "#1c2b12", color: "#e8e8e0", fontSize: 11, fontWeight: 500, letterSpacing: 0, lineHeight: 1.4, width: "max-content", maxWidth: 180, textAlign: "center", textTransform: "none", zIndex: 20, boxShadow: "0 6px 20px rgba(0,0,0,0.35)", cursor: "pointer" }}>
+                            <div onClick={() => setStatTooltip(null)} style={{ position: "absolute", bottom: "calc(100% + 2px)", ...tipPos, padding: "8px 10px", borderRadius: 8, background: "var(--c-text-primary)", color: "#e8e8e0", fontSize: 11, fontWeight: 500, letterSpacing: 0, lineHeight: 1.4, width: "max-content", maxWidth: 180, textAlign: "center", textTransform: "none", zIndex: 20, boxShadow: "0 6px 20px rgba(0,0,0,0.35)", cursor: "pointer" }}>
                               {info}
                             </div>
                           )}
@@ -1892,7 +1896,7 @@ export default function DiscGolfLeague() {
                             placeholder="0"
                             value={regForm[key] ?? ""}
                             onChange={e => setRegForm({ ...regForm, [key]: e.target.value === "" ? null : Math.max(0, parseInt(e.target.value) || 0) })}
-                            style={{ width: "100%", padding: "8px 6px", borderRadius: 10, background: "rgba(0,0,0,0.04)", border: `1px solid ${regForm[key] != null ? color + "55" : "rgba(0,0,0,0.1)"}`, color: "#1c2b12", fontSize: 16, fontWeight: 700, outline: "none", textAlign: "center", boxSizing: "border-box" }}
+                            style={{ width: "100%", padding: "8px 6px", borderRadius: 10, background: "var(--c-bg-input)", border: `1px solid ${regForm[key] != null ? color + "55" : "var(--c-border-strong)"}`, color: "var(--c-text-primary)", fontSize: 16, fontWeight: 700, outline: "none", textAlign: "center", boxSizing: "border-box" }}
                           />
                         </div>
                         );
@@ -1901,13 +1905,13 @@ export default function DiscGolfLeague() {
                   </div>
                   <div>
                     <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#5a7040", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.1em" }}>Notat <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(valgfritt)</span></label>
-                    <input type="text" placeholder="f.eks. Vind, vått, ny personlig rekord!" value={regNote} onChange={e => setRegNote(e.target.value)} maxLength={100} style={{ width: "100%", padding: "10px 14px", borderRadius: 12, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+                    <input type="text" placeholder="f.eks. Vind, vått, ny personlig rekord!" value={regNote} onChange={e => setRegNote(e.target.value)} maxLength={100} style={{ width: "100%", padding: "10px 14px", borderRadius: 12, background: "var(--c-bg-input)", border: "1px solid rgba(0,0,0,0.1)", color: "var(--c-text-primary)", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
                   </div>
                   {!editRound && allProfiles.length > 1 && (
                     <div>
-                      <button onClick={() => setShowFriendScores(!showFriendScores)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "10px 14px", borderRadius: 12, background: showFriendScores ? "rgba(101,163,13,0.08)" : "rgba(0,0,0,0.03)", border: showFriendScores ? "1px solid rgba(101,163,13,0.2)" : "1px solid rgba(0,0,0,0.08)", cursor: "pointer", transition: "all 0.2s" }}>
+                      <button onClick={() => setShowFriendScores(!showFriendScores)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "10px 14px", borderRadius: 12, background: showFriendScores ? "rgba(101,163,13,0.08)" : "var(--c-bg-subtle)", border: showFriendScores ? "1px solid rgba(101,163,13,0.2)" : "1px solid rgba(0,0,0,0.08)", cursor: "pointer", transition: "all 0.2s" }}>
                         <span style={{ fontSize: 13, fontWeight: 700, color: showFriendScores ? "#4a8a10" : "#5a7040" }}>👥 Legg til venners score</span>
-                        <span style={{ fontSize: 16, color: "#6b7a58", transform: showFriendScores ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s" }}>▾</span>
+                        <span style={{ fontSize: 16, color: "var(--c-text-muted)", transform: showFriendScores ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s" }}>▾</span>
                       </button>
                       {showFriendScores && (
                         <div style={{ marginTop: 10, animation: "fadeSlideUp 0.2s ease" }}>
@@ -1923,10 +1927,10 @@ export default function DiscGolfLeague() {
                                     <div style={{ width: 24, height: 24, minWidth: 24, borderRadius: "50%", overflow: "hidden", background: "rgba(101,163,13,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, flexShrink: 0 }}>
                                       {p.avatar_url?.startsWith("http") ? <img src={p.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (p.full_name?.[0] ?? "?")}
                                     </div>
-                                    <span style={{ fontSize: 12, fontWeight: 600, color: "#1c2b12", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.full_name?.split(" ")[0]}</span>
+                                    <span style={{ fontSize: 12, fontWeight: 600, color: "var(--c-text-primary)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.full_name?.split(" ")[0]}</span>
                                     {!isFriend && <span style={{ fontSize: 9, color: "#b07a00", background: "rgba(251,191,36,0.15)", padding: "1px 6px", borderRadius: 6, flexShrink: 0 }}>Ny venn</span>}
-                                    <input type="number" placeholder="Total" value={friendScores[pid] || ""} onChange={e => setFriendScores(prev => ({ ...prev, [pid]: e.target.value }))} style={{ width: 70, padding: "6px 8px", borderRadius: 8, background: "rgba(255,255,255,0.8)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 13, outline: "none", textAlign: "center", marginLeft: "auto", flexShrink: 0, boxSizing: "border-box" }} />
-                                    <span onClick={() => { setSelectedFriendPlayers(prev => prev.filter(id => id !== pid)); setFriendScores(prev => { const n = { ...prev }; delete n[pid]; return n; }); }} style={{ cursor: "pointer", fontSize: 16, color: "#8a9a70", lineHeight: 1, flexShrink: 0 }}>×</span>
+                                    <input type="number" placeholder="Total" value={friendScores[pid] || ""} onChange={e => setFriendScores(prev => ({ ...prev, [pid]: e.target.value }))} style={{ width: 70, padding: "6px 8px", borderRadius: 8, background: "var(--c-bg-card-strong)", border: "1px solid rgba(0,0,0,0.1)", color: "var(--c-text-primary)", fontSize: 13, outline: "none", textAlign: "center", marginLeft: "auto", flexShrink: 0, boxSizing: "border-box" }} />
+                                    <span onClick={() => { setSelectedFriendPlayers(prev => prev.filter(id => id !== pid)); setFriendScores(prev => { const n = { ...prev }; delete n[pid]; return n; }); }} style={{ cursor: "pointer", fontSize: 16, color: "var(--c-text-faint)", lineHeight: 1, flexShrink: 0 }}>×</span>
                                   </div>
                                 );
                               })}
@@ -1936,7 +1940,7 @@ export default function DiscGolfLeague() {
                           {(() => {
                             const availableFriends = friends.filter(f => !selectedFriendPlayers.includes(f.friend_id)).map(f => allProfiles.find(p => p.id === f.friend_id)).filter(Boolean);
                             return availableFriends.length > 0 ? (
-                              <div style={{ maxHeight: 140, overflowY: "auto", borderRadius: 12, background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.08)", padding: 4 }}>
+                              <div style={{ maxHeight: 140, overflowY: "auto", borderRadius: 12, background: "var(--c-bg-subtle)", border: "1px solid rgba(0,0,0,0.08)", padding: 4 }}>
                                 {availableFriends.map(p => (
                                   <div key={p.id} onClick={() => { setSelectedFriendPlayers(prev => [...prev, p.id]); }} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 8, cursor: "pointer", transition: "background 0.15s" }}
                                     onMouseEnter={e => e.currentTarget.style.background = "rgba(101,163,13,0.08)"}
@@ -1944,7 +1948,7 @@ export default function DiscGolfLeague() {
                                     <div style={{ width: 24, height: 24, minWidth: 24, borderRadius: "50%", overflow: "hidden", background: "rgba(101,163,13,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, border: "1px solid rgba(0,0,0,0.06)", flexShrink: 0 }}>
                                       {p.avatar_url?.startsWith("http") ? <img src={p.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (p.full_name?.[0] ?? "?")}
                                     </div>
-                                    <span style={{ fontSize: 13, fontWeight: 600, color: "#1c2b12" }}>{p.full_name}</span>
+                                    <span style={{ fontSize: 13, fontWeight: 600, color: "var(--c-text-primary)" }}>{p.full_name}</span>
                                     <span style={{ fontSize: 9, color: "#4a8a10", marginLeft: "auto", fontWeight: 600 }}>Venn ✓</span>
                                   </div>
                                 ))}
@@ -2112,7 +2116,7 @@ export default function DiscGolfLeague() {
                     setRegSuccess(true);
                     setTimeout(() => { setRegSuccess(false); setShowRegister(false); setRegForm({ course: "", score: "", date: "", aces: null, eagles: null, birdies: null, bogeys: null }); setEditRound(null); setRegError(""); setRegNote(""); setFriendSearch(""); setShowFriendScores(false); }, 2000);
                   }} style={{ width: "100%", padding: 14, border: "none", borderRadius: 14, background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 24px rgba(101,163,13,0.25)", marginTop: 4 }}>{editRound ? "Lagre endring ✓" : "Registrer 🥏"}</button>
-                  <button onClick={() => { setShowRegister(false); setEditRound(null); setRegError(""); }} style={{ width: "100%", padding: 12, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#6b7a58", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Avbryt</button>
+                  <button onClick={() => { setShowRegister(false); setEditRound(null); setRegError(""); }} style={{ width: "100%", padding: 12, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "var(--c-bg-input)", color: "var(--c-text-muted)", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Avbryt</button>
                 </div>
               </>
             )}
@@ -2122,37 +2126,37 @@ export default function DiscGolfLeague() {
 
       {showAuth && (
   <div onClick={() => { setShowAuth(false); setSignupEmailSent(false); }} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
-    <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, background: "linear-gradient(180deg, #ffffff, #f0f9e8)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 24, animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
+    <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, background: "var(--c-modal-bg)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 24, animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
       {signupEmailSent ? (
         <div style={{ textAlign: "center", padding: "20px 0" }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>📬</div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: "#1c2b12", marginBottom: 8 }}>Sjekk e-posten din!</div>
-          <div style={{ fontSize: 13, color: "#4a5a38", lineHeight: 1.7, marginBottom: 20 }}>Vi har sendt en bekreftelseslenke til <strong>{authForm.email}</strong>. Klikk lenken for å aktivere kontoen din.</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "var(--c-text-primary)", marginBottom: 8 }}>Sjekk e-posten din!</div>
+          <div style={{ fontSize: 13, color: "var(--c-text-secondary)", lineHeight: 1.7, marginBottom: 20 }}>Vi har sendt en bekreftelseslenke til <strong>{authForm.email}</strong>. Klikk lenken for å aktivere kontoen din.</div>
           <button onClick={() => { setShowAuth(false); setSignupEmailSent(false); setAuthForm({ email: "", password: "", name: "" }); }} style={{ width: "100%", padding: 13, border: "none", borderRadius: 12, background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>Lukk</button>
         </div>
       ) : (
         <>
-      <div style={{ fontSize: 20, fontWeight: 800, color: "#1c2b12", marginBottom: 4 }}>{authMode === "login" ? "Logg inn" : "Opprett konto"}</div>
-      <div style={{ fontSize: 12, color: "#6b7a58", marginBottom: 20 }}>{authMode === "login" ? "Velkommen tilbake!" : "Bli med i ligaen 🥏"}</div>
+      <div style={{ fontSize: 20, fontWeight: 800, color: "var(--c-text-primary)", marginBottom: 4 }}>{authMode === "login" ? "Logg inn" : "Opprett konto"}</div>
+      <div style={{ fontSize: 12, color: "var(--c-text-muted)", marginBottom: 20 }}>{authMode === "login" ? "Velkommen tilbake!" : "Bli med i ligaen 🥏"}</div>
 
       {/* Google */}
-      <button onClick={signInWithGoogle} style={{ width: "100%", padding: "12px", borderRadius: 12, border: "1px solid rgba(0,0,0,0.15)", background: "#fff", color: "#1c2b12", fontWeight: 700, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}>
+      <button onClick={signInWithGoogle} style={{ width: "100%", padding: "12px", borderRadius: 12, border: "1px solid rgba(0,0,0,0.15)", background: "var(--c-bg-card-solid)", color: "var(--c-text-primary)", fontWeight: 700, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}>
         <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
         Fortsett med Google
       </button>
 
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-        <div style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.1)" }} />
-        <span style={{ fontSize: 11, color: "#8a9a70", fontWeight: 600 }}>eller med e-post</span>
-        <div style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.1)" }} />
+        <div style={{ flex: 1, height: 1, background: "var(--c-border-strong)" }} />
+        <span style={{ fontSize: 11, color: "var(--c-text-faint)", fontWeight: 600 }}>eller med e-post</span>
+        <div style={{ flex: 1, height: 1, background: "var(--c-border-strong)" }} />
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {authMode === "signup" && (
-          <input placeholder="Fullt navn" value={authForm.name} onChange={e => setAuthForm({ ...authForm, name: e.target.value })} style={{ width: "100%", padding: "12px 14px", borderRadius: 12, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+          <input placeholder="Fullt navn" value={authForm.name} onChange={e => setAuthForm({ ...authForm, name: e.target.value })} style={{ width: "100%", padding: "12px 14px", borderRadius: 12, background: "var(--c-bg-input)", border: "1px solid rgba(0,0,0,0.1)", color: "var(--c-text-primary)", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
         )}
-        <input type="email" placeholder="E-post" value={authForm.email} onChange={e => setAuthForm({ ...authForm, email: e.target.value })} style={{ width: "100%", padding: "12px 14px", borderRadius: 12, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
-        <input type="password" placeholder="Passord" value={authForm.password} onChange={e => setAuthForm({ ...authForm, password: e.target.value })} onKeyDown={e => e.key === "Enter" && (authMode === "login" ? signInWithEmail() : signUpWithEmail())} style={{ width: "100%", padding: "12px 14px", borderRadius: 12, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+        <input type="email" placeholder="E-post" value={authForm.email} onChange={e => setAuthForm({ ...authForm, email: e.target.value })} style={{ width: "100%", padding: "12px 14px", borderRadius: 12, background: "var(--c-bg-input)", border: "1px solid rgba(0,0,0,0.1)", color: "var(--c-text-primary)", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+        <input type="password" placeholder="Passord" value={authForm.password} onChange={e => setAuthForm({ ...authForm, password: e.target.value })} onKeyDown={e => e.key === "Enter" && (authMode === "login" ? signInWithEmail() : signUpWithEmail())} style={{ width: "100%", padding: "12px 14px", borderRadius: 12, background: "var(--c-bg-input)", border: "1px solid rgba(0,0,0,0.1)", color: "var(--c-text-primary)", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
         {authError && <div style={{ fontSize: 12, color: "#dc2626", background: "rgba(239,68,68,0.08)", padding: "8px 12px", borderRadius: 8, border: "1px solid rgba(239,68,68,0.2)" }}>{authError}</div>}
         <button onClick={authMode === "login" ? signInWithEmail : signUpWithEmail} disabled={authLoading} style={{ width: "100%", padding: 13, border: "none", borderRadius: 12, background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 800, fontSize: 14, cursor: "pointer", opacity: authLoading ? 0.7 : 1 }}>
           {authLoading ? "Vennligst vent..." : authMode === "login" ? "Logg inn" : "Opprett konto"}
@@ -2169,7 +2173,7 @@ export default function DiscGolfLeague() {
 
       {showProfile && user && (
         <div onClick={() => setShowProfile(false)} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, maxHeight: "85vh", background: "linear-gradient(180deg, #ffffff, #f0f9e8)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, maxHeight: "85vh", background: "var(--c-modal-bg)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
             <div style={{ flex: 1, overflowY: "auto", padding: "24px 24px 0" }}>
 
             {/* Header */}
@@ -2179,7 +2183,7 @@ export default function DiscGolfLeague() {
                   ? <img src={user.user_metadata.avatar_url} alt="" style={{ width: 60, height: 60, borderRadius: "50%", border: "3px solid rgba(101,163,13,0.4)", boxShadow: "0 4px 16px rgba(101,163,13,0.2)", objectFit: "cover" }} />
                   : <div style={{ width: 60, height: 60, borderRadius: "50%", background: "linear-gradient(135deg, #A3E635, #65A30D)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, color: "#0a0f0a", fontWeight: 800 }}>{user.user_metadata?.full_name?.[0] ?? "?"}</div>
                 }
-                <div style={{ position: "absolute", bottom: -2, right: -2, width: 22, height: 22, borderRadius: "50%", background: "#fff", border: "2px solid rgba(0,0,0,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11 }}>📷</div>
+                <div style={{ position: "absolute", bottom: -2, right: -2, width: 22, height: 22, borderRadius: "50%", background: "var(--c-bg-card-solid)", border: "2px solid rgba(0,0,0,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11 }}>📷</div>
                 <input id="avatar-upload" type="file" accept="image/*" style={{ display: "none" }} onChange={async (e) => {
                   const file = e.target.files?.[0];
                   if (!file) return;
@@ -2210,8 +2214,8 @@ export default function DiscGolfLeague() {
                   setShowAvatarMenu(false);
                 }} />
                 {showAvatarMenu && (
-                  <div onClick={e => e.stopPropagation()} style={{ position: "absolute", top: 66, left: 0, zIndex: 20, background: "#fff", border: "1px solid rgba(0,0,0,0.12)", borderRadius: 12, boxShadow: "0 4px 20px rgba(0,0,0,0.15)", minWidth: 200, overflow: "hidden", animation: "fadeSlideUp 0.2s ease" }}>
-                    <div onClick={() => { document.getElementById("avatar-upload").click(); }} style={{ padding: "10px 14px", fontSize: 13, fontWeight: 600, color: "#1c2b12", cursor: "pointer", borderBottom: "1px solid rgba(0,0,0,0.06)" }}
+                  <div onClick={e => e.stopPropagation()} style={{ position: "absolute", top: 66, left: 0, zIndex: 20, background: "var(--c-bg-card-solid)", border: "1px solid rgba(0,0,0,0.12)", borderRadius: 12, boxShadow: "0 4px 20px rgba(0,0,0,0.15)", minWidth: 200, overflow: "hidden", animation: "fadeSlideUp 0.2s ease" }}>
+                    <div onClick={() => { document.getElementById("avatar-upload").click(); }} style={{ padding: "10px 14px", fontSize: 13, fontWeight: 600, color: "var(--c-text-primary)", cursor: "pointer", borderBottom: "1px solid rgba(0,0,0,0.06)" }}
                       onMouseEnter={e => e.currentTarget.style.background = "rgba(101,163,13,0.08)"}
                       onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                       📷 Last opp nytt bilde
@@ -2239,7 +2243,7 @@ export default function DiscGolfLeague() {
                           setUser({ ...user, user_metadata: { ...user.user_metadata, avatar_url: googleAvatarUrl } });
                           loadPlayers(); loadAllProfiles();
                           setShowAvatarMenu(false);
-                        }} style={{ padding: "10px 14px", fontSize: 13, fontWeight: 600, color: "#1c2b12", cursor: "pointer" }}
+                        }} style={{ padding: "10px 14px", fontSize: 13, fontWeight: 600, color: "var(--c-text-primary)", cursor: "pointer" }}
                           onMouseEnter={e => e.currentTarget.style.background = "rgba(101,163,13,0.08)"}
                           onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                           🔗 Bruk Google-bilde
@@ -2250,8 +2254,8 @@ export default function DiscGolfLeague() {
                 )}
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 20, fontWeight: 800, color: "#1c2b12" }}>{user.user_metadata?.full_name ?? "Ukjent"}</div>
-                <div style={{ fontSize: 12, color: "#6b7a58", marginTop: 2 }}>{user.email}</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "var(--c-text-primary)" }}>{user.user_metadata?.full_name ?? "Ukjent"}</div>
+                <div style={{ fontSize: 12, color: "var(--c-text-muted)", marginTop: 2 }}>{user.email}</div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 4 }}>
                   <div style={{ fontSize: 11, color: "#4a8a10", fontWeight: 700, background: "rgba(101,163,13,0.1)", padding: "2px 10px", borderRadius: 10, border: "1px solid rgba(101,163,13,0.2)" }}>🏅 {userDivision} divisjon</div>
                 </div>
@@ -2267,7 +2271,7 @@ export default function DiscGolfLeague() {
                     setUserDivision(d);
                     await supabase.from("profiles").update({ division: d }).eq("id", user.id);
                     loadPlayers();
-                  }} style={{ flex: 1, padding: "10px 0", borderRadius: 12, border: "1px solid", borderColor: userDivision === d ? "rgba(101,163,13,0.4)" : "rgba(0,0,0,0.1)", background: userDivision === d ? "rgba(101,163,13,0.12)" : "rgba(0,0,0,0.03)", color: userDivision === d ? "#4a8a10" : "#6b7a58", fontWeight: userDivision === d ? 700 : 500, fontSize: 13, cursor: "pointer", transition: "all 0.2s" }}>{d}</button>
+                  }} style={{ flex: 1, padding: "10px 0", borderRadius: 12, border: "1px solid", borderColor: userDivision === d ? "rgba(101,163,13,0.4)" : "var(--c-border-strong)", background: userDivision === d ? "rgba(101,163,13,0.12)" : "var(--c-bg-subtle)", color: userDivision === d ? "#4a8a10" : "var(--c-text-muted)", fontWeight: userDivision === d ? 700 : 500, fontSize: 13, cursor: "pointer", transition: "all 0.2s" }}>{d}</button>
                 ))}
               </div>
             </div>
@@ -2284,16 +2288,16 @@ export default function DiscGolfLeague() {
                 if (e.key === "Enter") {
                   e.target.blur();
                 }
-              }} style={{ width: "100%", padding: "10px 14px", borderRadius: 12, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+              }} style={{ width: "100%", padding: "10px 14px", borderRadius: 12, background: "var(--c-bg-input)", border: "1px solid rgba(0,0,0,0.1)", color: "var(--c-text-primary)", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
               {showHometownSuggestions && (() => {
                 const q = userHometown.toLowerCase().trim();
                 const uniqueHometowns = [...new Set(allProfiles.map(p => p.hometown).filter(h => h && h.trim()))];
                 const filtered = q ? uniqueHometowns.filter(h => h.toLowerCase().startsWith(q) && h.toLowerCase() !== q) : uniqueHometowns;
                 if (filtered.length === 0) return null;
                 return (
-                  <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 10, background: "#fff", border: "1px solid rgba(0,0,0,0.12)", borderRadius: 12, marginTop: 4, boxShadow: "0 4px 16px rgba(0,0,0,0.1)", maxHeight: 150, overflowY: "auto" }}>
+                  <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 10, background: "var(--c-bg-card-solid)", border: "1px solid rgba(0,0,0,0.12)", borderRadius: 12, marginTop: 4, boxShadow: "0 4px 16px rgba(0,0,0,0.1)", maxHeight: 150, overflowY: "auto" }}>
                     {filtered.map(h => (
-                      <div key={h} onMouseDown={async (e) => { e.preventDefault(); setUserHometown(h); setShowHometownSuggestions(false); await supabase.from("profiles").update({ hometown: h }).eq("id", user.id); loadPlayers(); loadAllProfiles(); }} style={{ padding: "10px 14px", fontSize: 13, color: "#1c2b12", cursor: "pointer", borderBottom: "1px solid rgba(0,0,0,0.04)" }}
+                      <div key={h} onMouseDown={async (e) => { e.preventDefault(); setUserHometown(h); setShowHometownSuggestions(false); await supabase.from("profiles").update({ hometown: h }).eq("id", user.id); loadPlayers(); loadAllProfiles(); }} style={{ padding: "10px 14px", fontSize: 13, color: "var(--c-text-primary)", cursor: "pointer", borderBottom: "1px solid rgba(0,0,0,0.04)" }}
                         onMouseEnter={e => e.currentTarget.style.background = "rgba(101,163,13,0.08)"}
                         onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                         {h}
@@ -2324,7 +2328,7 @@ export default function DiscGolfLeague() {
                       <div key={s.label} style={{ background: "rgba(101,163,13,0.07)", border: "1px solid rgba(101,163,13,0.12)", borderRadius: 12, padding: "12px 8px", textAlign: "center" }}>
                         <div style={{ fontSize: 16, marginBottom: 4 }}>{s.icon}</div>
                         <div style={{ fontSize: 20, fontWeight: 900, color: "#4a8a10" }}>{s.value}</div>
-                        <div style={{ fontSize: 9, color: "#6b7a58", textTransform: "uppercase", letterSpacing: "0.1em" }}>{s.label}</div>
+                        <div style={{ fontSize: 9, color: "var(--c-text-muted)", textTransform: "uppercase", letterSpacing: "0.1em" }}>{s.label}</div>
                       </div>
                     ))}
                   </div>
@@ -2332,7 +2336,7 @@ export default function DiscGolfLeague() {
                   <div style={{ marginTop: 12 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                       <div style={{ fontSize: 11, fontWeight: 700, color: "#5a7040" }}>Ligabaner</div>
-                      <div style={{ fontSize: 11, color: "#6b7a58" }}>{coursesPlayed}/{totalCourses} spilt</div>
+                      <div style={{ fontSize: 11, color: "var(--c-text-muted)" }}>{coursesPlayed}/{totalCourses} spilt</div>
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 5 }}>
                       {LEAGUE_COURSE_IDS.map(cid => {
@@ -2341,15 +2345,15 @@ export default function DiscGolfLeague() {
                         const isMajor = MAJOR_COURSE_IDS.has(cid);
                         const shortName = course?.name.split(" ")[0] ?? cid;
                         return (
-                          <div key={cid} style={{ padding: "6px 8px", borderRadius: 8, background: count > 0 ? "rgba(101,163,13,0.1)" : "rgba(0,0,0,0.04)", border: `1px solid ${count > 0 ? "rgba(101,163,13,0.25)" : "rgba(0,0,0,0.08)"}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2 }}>
-                            <div style={{ fontSize: 10, fontWeight: 700, color: count > 0 ? "#1c2b12" : "#8a9a70", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{isMajor ? "⭐ " : ""}{shortName}</div>
+                          <div key={cid} style={{ padding: "6px 8px", borderRadius: 8, background: count > 0 ? "rgba(101,163,13,0.1)" : "var(--c-bg-input)", border: `1px solid ${count > 0 ? "rgba(101,163,13,0.25)" : "var(--c-border)"}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2 }}>
+                            <div style={{ fontSize: 10, fontWeight: 700, color: count > 0 ? "var(--c-text-primary)" : "var(--c-text-faint)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{isMajor ? "⭐ " : ""}{shortName}</div>
                             <div style={{ fontSize: 12, fontWeight: 800, color: count > 0 ? "#4a8a10" : "#c0c8b0", flexShrink: 0 }}>{count > 0 ? (count > 1 ? `×${count}` : "✓") : "—"}</div>
                           </div>
                         );
                       })}
                     </div>
                   </div>
-              {myRounds.length === 0 && <div style={{ marginTop: 10, fontSize: 11, color: "#8a9a70", textAlign: "center", fontStyle: "italic" }}>Registrer din første runde for å se statistikk 🚀</div>}
+              {myRounds.length === 0 && <div style={{ marginTop: 10, fontSize: 11, color: "var(--c-text-faint)", textAlign: "center", fontStyle: "italic" }}>Registrer din første runde for å se statistikk 🚀</div>}
                 </div>
               );
             })()}
@@ -2364,15 +2368,15 @@ export default function DiscGolfLeague() {
                     const friendPlayer = players.find(p => p.id === f.friend_id);
                     if (!friendProfile) return null;
                     return (
-                      <div key={f.id} onClick={() => { if (friendPlayer) { setShowProfile(false); setSelectedPlayer(friendPlayer); } }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", borderRadius: 10, background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.06)", cursor: friendPlayer ? "pointer" : "default", transition: "background 0.15s" }}
+                      <div key={f.id} onClick={() => { if (friendPlayer) { setShowProfile(false); setSelectedPlayer(friendPlayer); } }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", borderRadius: 10, background: "var(--c-bg-subtle)", border: "1px solid rgba(0,0,0,0.06)", cursor: friendPlayer ? "pointer" : "default", transition: "background 0.15s" }}
                         onMouseEnter={e => { if (friendPlayer) e.currentTarget.style.background = "rgba(101,163,13,0.06)"; }}
-                        onMouseLeave={e => e.currentTarget.style.background = "rgba(0,0,0,0.03)"}>
+                        onMouseLeave={e => e.currentTarget.style.background = "var(--c-bg-subtle)"}>
                         <div style={{ width: 28, height: 28, minWidth: 28, borderRadius: "50%", overflow: "hidden", background: "rgba(101,163,13,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, border: "1px solid rgba(0,0,0,0.06)", flexShrink: 0 }}>
                           {friendProfile.avatar_url?.startsWith("http") ? <img src={friendProfile.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (friendProfile.full_name?.[0] ?? "?")}
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: "#1c2b12", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{friendProfile.full_name}</div>
-                          {friendPlayer && <div style={{ fontSize: 10, color: "#6b7a58" }}>{friendPlayer.rounds} runder · {friendPlayer.pts} pts</div>}
+                          <div style={{ fontSize: 13, fontWeight: 600, color: "var(--c-text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{friendProfile.full_name}</div>
+                          {friendPlayer && <div style={{ fontSize: 10, color: "var(--c-text-muted)" }}>{friendPlayer.rounds} runder · {friendPlayer.pts} pts</div>}
                         </div>
                       </div>
                     );
@@ -2395,19 +2399,19 @@ export default function DiscGolfLeague() {
                     const totalScore = r.total_score ?? (r.score + (course?.par ?? 0));
                     const scoreStr = r.score === 0 ? "E" : r.score > 0 ? `+${r.score}` : `${r.score}`;
                     return (
-                      <div key={r.id} onClick={() => { setShowProfile(false); setSelectedRound(r); }} style={{ background: "rgba(0,0,0,0.03)", borderRadius: 10, padding: "10px 14px", marginBottom: 6, border: "1px solid rgba(0,0,0,0.06)", cursor: "pointer", transition: "background 0.15s" }}
+                      <div key={r.id} onClick={() => { setShowProfile(false); setSelectedRound(r); }} style={{ background: "var(--c-bg-subtle)", borderRadius: 10, padding: "10px 14px", marginBottom: 6, border: "1px solid rgba(0,0,0,0.06)", cursor: "pointer", transition: "background 0.15s" }}
                         onMouseEnter={e => e.currentTarget.style.background = "rgba(101,163,13,0.06)"}
-                        onMouseLeave={e => e.currentTarget.style.background = "rgba(0,0,0,0.03)"}>
+                        onMouseLeave={e => e.currentTarget.style.background = "var(--c-bg-subtle)"}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                           <div>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12" }}>{courseName}</div>
-                            <div style={{ fontSize: 11, color: "#6b7a58", marginTop: 2 }}>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--c-text-primary)" }}>{courseName}</div>
+                            <div style={{ fontSize: 11, color: "var(--c-text-muted)", marginTop: 2 }}>
                               {new Date(r.date + "T12:00:00").toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", year: "numeric" })}
                             </div>
                           </div>
                           <div style={{ textAlign: "right" }}>
                             <div style={{ fontSize: 18, fontWeight: 900, color: r.score <= 0 ? "#4a8a10" : "#ef4444" }}>{totalScore}</div>
-                            <div style={{ fontSize: 10, color: "#6b7a58" }}>({scoreStr})</div>
+                            <div style={{ fontSize: 10, color: "var(--c-text-muted)" }}>({scoreStr})</div>
                           </div>
                         </div>
                         {r.note && <div style={{ fontSize: 11, color: "#5a7040", marginTop: 6, fontStyle: "italic", background: "rgba(101,163,13,0.06)", padding: "3px 8px", borderRadius: 6, display: "inline-block" }}>💬 {r.note}</div>}
@@ -2415,7 +2419,7 @@ export default function DiscGolfLeague() {
                     );
                   })}
                   {myRounds.length > 10 && (
-                    <button onClick={() => { setShowProfile(false); setTab("runder"); setShowMyRounds(true); }} style={{ width: "100%", padding: 10, border: "1px solid rgba(0,0,0,0.08)", borderRadius: 10, background: "rgba(0,0,0,0.03)", color: "#4a8a10", fontWeight: 700, fontSize: 12, cursor: "pointer", marginTop: 4 }}>Vis alle ({myRounds.length} runder)</button>
+                    <button onClick={() => { setShowProfile(false); setTab("runder"); setShowMyRounds(true); }} style={{ width: "100%", padding: 10, border: "1px solid rgba(0,0,0,0.08)", borderRadius: 10, background: "var(--c-bg-subtle)", color: "#4a8a10", fontWeight: 700, fontSize: 12, cursor: "pointer", marginTop: 4 }}>Vis alle ({myRounds.length} runder)</button>
                   )}
                 </div>
               );
@@ -2426,7 +2430,7 @@ export default function DiscGolfLeague() {
             {/* Sticky buttons */}
             <div style={{ padding: "12px 24px 24px", borderTop: "1px solid rgba(0,0,0,0.06)", background: "linear-gradient(180deg, #f8fdf2, #f0f9e8)", flexShrink: 0 }}>
               <div style={{ display: "flex", flexDirection: "row", gap: 8 }}>
-                <button onClick={() => { setShowProfile(false); }} style={{ flex: 1, padding: 13, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#4a5a38", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Lukk</button>
+                <button onClick={() => { setShowProfile(false); }} style={{ flex: 1, padding: 13, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "var(--c-bg-input)", color: "var(--c-text-secondary)", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Lukk</button>
                 <button onClick={() => { if (confirm("Er du sikker på at du vil logge ut?")) { signOut(); setShowProfile(false); } }} style={{ flex: 1, padding: 13, border: "1px solid rgba(239,68,68,0.2)", borderRadius: 12, background: "rgba(239,68,68,0.05)", color: "#dc2626", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Logg ut</button>
               </div>
             </div>
@@ -2436,7 +2440,7 @@ export default function DiscGolfLeague() {
 
       {selectedRound && (
         <div onClick={() => setSelectedRound(null)} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, background: "linear-gradient(180deg, #ffffff, #f0f9e8)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 24, animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, background: "var(--c-modal-bg)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 24, animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
             {(() => {
               const r = selectedRound;
               const course = COURSES.find(c => c.id === r.course_id);
@@ -2452,15 +2456,15 @@ export default function DiscGolfLeague() {
                       {r.profiles?.avatar_url?.startsWith("http") ? <img src={r.profiles.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (r.profiles?.full_name?.[0] ?? "?")}
                     </div>
                     <div>
-                      <div style={{ fontSize: 16, fontWeight: 800, color: "#1c2b12" }}>{r.profiles?.full_name ?? "Ukjent spiller"}</div>
-                      <div style={{ fontSize: 11, color: "#6b7a58" }}>{new Date(r.date + "T12:00:00").toLocaleDateString("nb-NO", { day: "2-digit", month: "long", year: "numeric" })}</div>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: "var(--c-text-primary)" }}>{r.profiles?.full_name ?? "Ukjent spiller"}</div>
+                      <div style={{ fontSize: 11, color: "var(--c-text-muted)" }}>{new Date(r.date + "T12:00:00").toLocaleDateString("nb-NO", { day: "2-digit", month: "long", year: "numeric" })}</div>
                     </div>
                   </div>
 
                   {/* Score */}
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(101,163,13,0.07)", border: "1px solid rgba(101,163,13,0.12)", borderRadius: 14, padding: "16px 20px", marginBottom: 16 }}>
                     <div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: "#1c2b12", marginBottom: 4 }}>{courseName}</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "var(--c-text-primary)", marginBottom: 4 }}>{courseName}</div>
                       {course && (
                         <div style={{ display: "flex", gap: 10 }}>
                           <a href={course.udisc} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ fontSize: 11, color: "#4a8a10", fontWeight: 600, textDecoration: "none" }}>🔗 UDisc</a>
@@ -2470,7 +2474,7 @@ export default function DiscGolfLeague() {
                     </div>
                     <div style={{ textAlign: "right" }}>
                       <div style={{ fontSize: 28, fontWeight: 900, color: r.score <= 0 ? "#4a8a10" : "#ef4444", lineHeight: 1 }}>{totalScore}</div>
-                      <div style={{ fontSize: 12, color: "#6b7a58", marginTop: 2 }}>({scoreStr})</div>
+                      <div style={{ fontSize: 12, color: "var(--c-text-muted)", marginTop: 2 }}>({scoreStr})</div>
                     </div>
                   </div>
 
@@ -2478,7 +2482,7 @@ export default function DiscGolfLeague() {
                   {r.note && (
                     <div style={{ marginBottom: 16, padding: "10px 14px", borderRadius: 10, background: "rgba(101,163,13,0.06)", border: "1px solid rgba(101,163,13,0.1)" }}>
                       <div style={{ fontSize: 10, fontWeight: 700, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Notat</div>
-                      <div style={{ fontSize: 13, color: "#4a5a38", fontStyle: "italic" }}>💬 {r.note}</div>
+                      <div style={{ fontSize: 13, color: "var(--c-text-secondary)", fontStyle: "italic" }}>💬 {r.note}</div>
                     </div>
                   )}
 
@@ -2495,12 +2499,12 @@ export default function DiscGolfLeague() {
                             const gmTotal = gm.total_score ?? (gm.score + (gmCourse?.par ?? 0));
                             const gmScoreStr = gm.score === 0 ? "E" : gm.score > 0 ? `+${gm.score}` : `${gm.score}`;
                             return (
-                              <div key={gm.id} onClick={(e) => { e.stopPropagation(); const p = players.find(pl => pl.id === gm.user_id); if (p) { setSelectedRound(null); setSelectedPlayer(p); } }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", borderRadius: 10, background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.06)", cursor: "pointer" }}>
+                              <div key={gm.id} onClick={(e) => { e.stopPropagation(); const p = players.find(pl => pl.id === gm.user_id); if (p) { setSelectedRound(null); setSelectedPlayer(p); } }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", borderRadius: 10, background: "var(--c-bg-subtle)", border: "1px solid rgba(0,0,0,0.06)", cursor: "pointer" }}>
                                 <div style={{ width: 28, height: 28, minWidth: 28, borderRadius: "50%", overflow: "hidden", background: "rgba(101,163,13,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, border: "1px solid rgba(0,0,0,0.06)", flexShrink: 0 }}>
                                   {gm.profiles?.avatar_url?.startsWith("http") ? <img src={gm.profiles.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (gm.profiles?.full_name?.[0] ?? "?")}
                                 </div>
-                                <span style={{ fontSize: 13, fontWeight: 600, color: "#1c2b12", flex: 1 }}>{gm.profiles?.full_name ?? "Ukjent"}</span>
-                                <span style={{ fontSize: 14, fontWeight: 800, color: gm.score <= 0 ? "#4a8a10" : "#ef4444" }}>{gmTotal} <span style={{ fontSize: 11, fontWeight: 600, color: "#6b7a58" }}>({gmScoreStr})</span></span>
+                                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--c-text-primary)", flex: 1 }}>{gm.profiles?.full_name ?? "Ukjent"}</span>
+                                <span style={{ fontSize: 14, fontWeight: 800, color: gm.score <= 0 ? "#4a8a10" : "#ef4444" }}>{gmTotal} <span style={{ fontSize: 11, fontWeight: 600, color: "var(--c-text-muted)" }}>({gmScoreStr})</span></span>
                               </div>
                             );
                           })}
@@ -2519,7 +2523,7 @@ export default function DiscGolfLeague() {
                         setRegForm({ course: r.course_id, score: r.total_score ? String(r.total_score) : String(r.score + coursePar), date: r.date, aces: r.aces ?? null, eagles: r.eagles ?? null, birdies: r.birdies ?? null, bogeys: r.bogeys ?? null });
                         setRegNote(r.note || "");
                         setShowRegister(true);
-                      }} style={{ flex: 1, padding: "10px 0", borderRadius: 10, border: "1px solid rgba(0,0,0,0.1)", background: "rgba(0,0,0,0.03)", color: "#4a5a38", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>✏️ Rediger</button>
+                      }} style={{ flex: 1, padding: "10px 0", borderRadius: 10, border: "1px solid rgba(0,0,0,0.1)", background: "var(--c-bg-subtle)", color: "var(--c-text-secondary)", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>✏️ Rediger</button>
                       <button onClick={async () => {
                         if (!confirm("Sikker på at du vil slette denne runden?")) return;
                         await supabase.from("rounds").delete().eq("id", r.id);
@@ -2530,7 +2534,7 @@ export default function DiscGolfLeague() {
                     </div>
                   )}
 
-                  <button onClick={() => setSelectedRound(null)} style={{ width: "100%", padding: 13, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#4a5a38", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Lukk</button>
+                  <button onClick={() => setSelectedRound(null)} style={{ width: "100%", padding: 13, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "var(--c-bg-input)", color: "var(--c-text-secondary)", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Lukk</button>
                 </>
               );
             })()}
@@ -2540,9 +2544,9 @@ export default function DiscGolfLeague() {
 
       {showNotifications && user && (
         <div onClick={() => setShowNotifications(false)} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, maxHeight: "80vh", background: "linear-gradient(180deg, #ffffff, #f0f9e8)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 24, overflowY: "auto", animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
-            <div style={{ fontSize: 18, fontWeight: 800, color: "#1c2b12", marginBottom: 4 }}>🔔 Varsler</div>
-            <div style={{ fontSize: 12, color: "#6b7a58", marginBottom: 16 }}>Invitasjoner og oppdateringer</div>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, maxHeight: "80vh", background: "var(--c-modal-bg)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 24, overflowY: "auto", animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: "var(--c-text-primary)", marginBottom: 4 }}>🔔 Varsler</div>
+            <div style={{ fontSize: 12, color: "var(--c-text-muted)", marginBottom: 16 }}>Invitasjoner og oppdateringer</div>
 
             {/* Pending friend requests */}
             {pendingFriendRequests.length > 0 && (
@@ -2556,7 +2560,7 @@ export default function DiscGolfLeague() {
                       </div>
                       <div>
                         <div style={{ fontSize: 13, fontWeight: 700 }}>{req.profiles?.full_name ?? "Noen"}</div>
-                        <div style={{ fontSize: 11, color: "#6b7a58" }}>vil legge deg til som venn</div>
+                        <div style={{ fontSize: 11, color: "var(--c-text-muted)" }}>vil legge deg til som venn</div>
                       </div>
                     </div>
                     <div style={{ display: "flex", gap: 8 }}>
@@ -2572,7 +2576,7 @@ export default function DiscGolfLeague() {
             {notifications.length === 0 && pendingFriendRequests.length === 0 && (
               <div style={{ textAlign: "center", padding: "30px 0" }}>
                 <div style={{ fontSize: 32, marginBottom: 8 }}>🔕</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#6b7a58" }}>Ingen varsler ennå</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--c-text-muted)" }}>Ingen varsler ennå</div>
               </div>
             )}
             {notifications.map(n => (
@@ -2597,15 +2601,15 @@ export default function DiscGolfLeague() {
                 onMouseEnter={e => e.currentTarget.style.background = !n.read ? "rgba(107,52,163,0.12)" : "rgba(101,163,13,0.06)"}
                 onMouseLeave={e => e.currentTarget.style.background = !n.read ? "rgba(107,52,163,0.08)" : "rgba(0,0,0,0.02)"}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <div style={{ fontSize: 13, fontWeight: !n.read ? 700 : 500, color: !n.read ? "#6b34a3" : "#1c2b12" }}>{n.title}</div>
+                  <div style={{ fontSize: 13, fontWeight: !n.read ? 700 : 500, color: !n.read ? "#6b34a3" : "var(--c-text-primary)" }}>{n.title}</div>
                   {!n.read && <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#6b34a3", flexShrink: 0, marginTop: 4, marginLeft: 8 }} />}
                 </div>
-                {n.body && <div style={{ fontSize: 12, color: "#4a5a38", marginTop: 4, lineHeight: 1.5 }}>{n.body}</div>}
-                <div style={{ fontSize: 10, color: "#8a9a70", marginTop: 6 }}>{new Date(n.created_at).toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</div>
+                {n.body && <div style={{ fontSize: 12, color: "var(--c-text-secondary)", marginTop: 4, lineHeight: 1.5 }}>{n.body}</div>}
+                <div style={{ fontSize: 10, color: "var(--c-text-faint)", marginTop: 6 }}>{new Date(n.created_at).toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</div>
               </div>
             ))}
 
-            <button onClick={() => setShowNotifications(false)} style={{ width: "100%", padding: 13, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#4a5a38", fontWeight: 700, fontSize: 14, cursor: "pointer", marginTop: 8 }}>Lukk</button>
+            <button onClick={() => setShowNotifications(false)} style={{ width: "100%", padding: 13, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "var(--c-bg-input)", color: "var(--c-text-secondary)", fontWeight: 700, fontSize: 14, cursor: "pointer", marginTop: 8 }}>Lukk</button>
           </div>
         </div>
       )}
@@ -2620,7 +2624,7 @@ export default function DiscGolfLeague() {
               <div style={{ fontSize: 11, color: "#a0b090", lineHeight: 1.4 }}>Opprett konto for å registrere runder og klatre på tabellen</div>
             </div>
             <button onClick={() => { setShowAuth(true); setAuthMode("signup"); }} style={{ padding: "8px 16px", borderRadius: 12, border: "none", background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 800, fontSize: 12, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>Registrer deg</button>
-            <button onClick={() => { setOnboardingDismissed(true); localStorage.setItem("onboardingDismissed", "true"); }} style={{ background: "none", border: "none", color: "#6b7a58", fontSize: 18, cursor: "pointer", padding: "0 4px", flexShrink: 0, lineHeight: 1 }}>×</button>
+            <button onClick={() => { setOnboardingDismissed(true); localStorage.setItem("onboardingDismissed", "true"); }} style={{ background: "none", border: "none", color: "var(--c-text-muted)", fontSize: 18, cursor: "pointer", padding: "0 4px", flexShrink: 0, lineHeight: 1 }}>×</button>
           </div>
         </div>
       )}
@@ -2628,16 +2632,16 @@ export default function DiscGolfLeague() {
       {/* PWA install tooltip */}
       {showInstallTip && !window.matchMedia("(display-mode: standalone)").matches && (
         <div style={{ position: "fixed", bottom: !user && !onboardingDismissed ? 80 : 16, right: 16, zIndex: 85, animation: "slideUp 0.3s ease", maxWidth: 280 }}>
-          <div style={{ background: "#fff", borderRadius: 14, padding: "12px 14px", boxShadow: "0 4px 24px rgba(0,0,0,0.15)", border: "1px solid rgba(0,0,0,0.08)" }}>
+          <div style={{ background: "var(--c-bg-card-solid)", borderRadius: 14, padding: "12px 14px", boxShadow: "0 4px 24px rgba(0,0,0,0.15)", border: "1px solid rgba(0,0,0,0.08)" }}>
             <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
               <div style={{ fontSize: 22, flexShrink: 0 }}>📲</div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "#1c2b12", marginBottom: 4 }}>Installer som app!</div>
-                <div style={{ fontSize: 11, color: "#4a5a38", lineHeight: 1.5 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "var(--c-text-primary)", marginBottom: 4 }}>Installer som app!</div>
+                <div style={{ fontSize: 11, color: "var(--c-text-secondary)", lineHeight: 1.5 }}>
                   {deferredPrompt ? "Trykk \"Installer\" for rask tilgang fra hjemskjermen." : /iPhone|iPad/.test(navigator.userAgent) ? "Trykk Del-ikon → «Legg til på Hjem-skjerm»" : "Trykk ⋮ i nettleseren → «Installer app» eller «Legg til på startskjermen»"}
                 </div>
               </div>
-              <button onClick={() => setShowInstallTip(false)} style={{ background: "none", border: "none", color: "#8a9a70", fontSize: 16, cursor: "pointer", padding: 0, lineHeight: 1 }}>×</button>
+              <button onClick={() => setShowInstallTip(false)} style={{ background: "none", border: "none", color: "var(--c-text-faint)", fontSize: 16, cursor: "pointer", padding: 0, lineHeight: 1 }}>×</button>
             </div>
             {deferredPrompt && (
               <button onClick={async () => { deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; if (outcome === "accepted") setDeferredPrompt(null); setShowInstallTip(false); }} style={{ width: "100%", padding: "8px 0", marginTop: 10, borderRadius: 10, border: "none", background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>Installer</button>
@@ -2649,7 +2653,7 @@ export default function DiscGolfLeague() {
       {/* Profil-meny-sheet */}
       {showProfileMenu && user && (
         <div onClick={() => setShowProfileMenu(false)} style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 16, animation: "fadeIn 0.2s ease" }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, background: "linear-gradient(180deg, #ffffff, #f0f9e8)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 20, animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, background: "var(--c-modal-bg)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 20, animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, paddingBottom: 12, borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
               <div style={{ width: 44, height: 44, borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}>
                 {user.user_metadata?.avatar_url
@@ -2658,28 +2662,28 @@ export default function DiscGolfLeague() {
                 }
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 800, color: "#1c2b12", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.user_metadata?.full_name ?? "Ukjent"}</div>
-                <div style={{ fontSize: 11, color: "#8a9a70", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.email}</div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: "var(--c-text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.user_metadata?.full_name ?? "Ukjent"}</div>
+                <div style={{ fontSize: 11, color: "var(--c-text-faint)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.email}</div>
               </div>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              <button onClick={() => { setShowProfile(true); setShowProfileMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 10, background: "transparent", border: "none", cursor: "pointer", textAlign: "left", fontSize: 14, fontWeight: 600, color: "#1c2b12" }}>
+              <button onClick={() => { setShowProfile(true); setShowProfileMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 10, background: "transparent", border: "none", cursor: "pointer", textAlign: "left", fontSize: 14, fontWeight: 600, color: "var(--c-text-primary)" }}>
                 <span style={{ fontSize: 18, width: 24, textAlign: "center" }}>👤</span> Min profil
               </button>
-              <button onClick={() => { setShowFeedback(true); setShowProfileMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 10, background: "transparent", border: "none", cursor: "pointer", textAlign: "left", fontSize: 14, fontWeight: 600, color: "#1c2b12" }}>
+              <button onClick={() => { setShowFeedback(true); setShowProfileMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 10, background: "transparent", border: "none", cursor: "pointer", textAlign: "left", fontSize: 14, fontWeight: 600, color: "var(--c-text-primary)" }}>
                 <span style={{ fontSize: 18, width: 24, textAlign: "center" }}>💬</span> Tilbakemelding
               </button>
               {isAdmin && (
-                <button onClick={() => { setTab("admin"); setShowProfileMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 10, background: "transparent", border: "none", cursor: "pointer", textAlign: "left", fontSize: 14, fontWeight: 600, color: "#1c2b12" }}>
+                <button onClick={() => { setTab("admin"); setShowProfileMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 10, background: "transparent", border: "none", cursor: "pointer", textAlign: "left", fontSize: 14, fontWeight: 600, color: "var(--c-text-primary)" }}>
                   <span style={{ fontSize: 18, width: 24, textAlign: "center" }}>🔧</span> Admin
                 </button>
               )}
-              <div style={{ height: 1, background: "rgba(0,0,0,0.06)", margin: "4px 0" }} />
+              <div style={{ height: 1, background: "var(--c-bg-muted)", margin: "4px 0" }} />
               <button onClick={() => { if (confirm("Er du sikker på at du vil logge ut?")) { signOut(); setShowProfileMenu(false); } }} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 10, background: "transparent", border: "none", cursor: "pointer", textAlign: "left", fontSize: 14, fontWeight: 600, color: "#dc2626" }}>
                 <span style={{ fontSize: 18, width: 24, textAlign: "center" }}>↪</span> Logg ut
               </button>
             </div>
-            <button onClick={() => setShowProfileMenu(false)} style={{ width: "100%", padding: 12, marginTop: 12, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#6b7a58", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Lukk</button>
+            <button onClick={() => setShowProfileMenu(false)} style={{ width: "100%", padding: 12, marginTop: 12, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "var(--c-bg-input)", color: "var(--c-text-muted)", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Lukk</button>
           </div>
         </div>
       )}
@@ -2687,18 +2691,18 @@ export default function DiscGolfLeague() {
       {/* Tilbakemelding */}
       {showFeedback && (
         <div onClick={() => { setShowFeedback(false); setFeedbackText(""); setFeedbackSent(false); }} style={{ position: "fixed", inset: 0, zIndex: 210, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, background: "#fff", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 24, animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, background: "var(--c-bg-card-solid)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 24, animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
             {feedbackSent ? (
               <div style={{ textAlign: "center", padding: "24px 0" }}>
                 <div style={{ fontSize: 44, marginBottom: 12 }}>🙏</div>
-                <div style={{ fontSize: 18, fontWeight: 800, color: "#1c2b12", marginBottom: 6 }}>Takk for tilbakemeldingen!</div>
-                <div style={{ fontSize: 13, color: "#6b7a58" }}>Admin vil lese den snart.</div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: "var(--c-text-primary)", marginBottom: 6 }}>Takk for tilbakemeldingen!</div>
+                <div style={{ fontSize: 13, color: "var(--c-text-muted)" }}>Admin vil lese den snart.</div>
                 <button onClick={() => { setShowFeedback(false); setFeedbackText(""); setFeedbackSent(false); }} style={{ marginTop: 20, padding: "10px 28px", background: "#65A30D", color: "#fff", border: "none", borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Lukk</button>
               </div>
             ) : (
               <>
-                <div style={{ fontSize: 18, fontWeight: 800, color: "#1c2b12", marginBottom: 4 }}>💬 Gi tilbakemelding</div>
-                <div style={{ fontSize: 13, color: "#6b7a58", marginBottom: 16 }}>Hva synes du om appen? Tips, bugs, ønsker?</div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: "var(--c-text-primary)", marginBottom: 4 }}>💬 Gi tilbakemelding</div>
+                <div style={{ fontSize: 13, color: "var(--c-text-muted)", marginBottom: 16 }}>Hva synes du om appen? Tips, bugs, ønsker?</div>
                 <textarea
                   value={feedbackText}
                   onChange={e => setFeedbackText(e.target.value)}
@@ -2707,7 +2711,7 @@ export default function DiscGolfLeague() {
                   style={{ width: "100%", padding: 12, borderRadius: 12, border: "1px solid rgba(0,0,0,0.15)", fontSize: 14, fontFamily: "inherit", resize: "vertical", boxSizing: "border-box", outline: "none" }}
                 />
                 <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-                  <button onClick={() => { setShowFeedback(false); setFeedbackText(""); }} style={{ flex: 1, padding: 13, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#4a5a38", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Avbryt</button>
+                  <button onClick={() => { setShowFeedback(false); setFeedbackText(""); }} style={{ flex: 1, padding: 13, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "var(--c-bg-input)", color: "var(--c-text-secondary)", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Avbryt</button>
                   <button
                     disabled={!feedbackText.trim() || feedbackSending}
                     onClick={async () => {
@@ -2729,8 +2733,8 @@ export default function DiscGolfLeague() {
       {/* Personvernerklæring */}
       {showPrivacy && (
         <div onClick={() => setShowPrivacy(false)} style={{ position: "fixed", inset: 0, zIndex: 210, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, maxHeight: "80vh", background: "#fff", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 24, overflowY: "auto", animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
-            <div style={{ fontSize: 18, fontWeight: 800, color: "#1c2b12", marginBottom: 16 }}>🔒 Personvernerklæring</div>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, maxHeight: "80vh", background: "var(--c-bg-card-solid)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 24, overflowY: "auto", animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: "var(--c-text-primary)", marginBottom: 16 }}>🔒 Personvernerklæring</div>
             {[
               { title: "Hvem er vi?", text: "Gudbrandsdalen Discgolf Liga er en uavhengig ligaapp for lokale discgolfspillere i Gudbrandsdalen. Appen driftes på frivillig basis." },
               { title: "Hvilke data samler vi?", text: "Ved registrering lagrer vi: navn, e-postadresse og eventuelt profilbilde (fra Google). Ved bruk lagrer vi: runder du registrerer (bane, score, dato) og divisjonsvalg." },
@@ -2741,12 +2745,12 @@ export default function DiscGolfLeague() {
               { title: "Lagring", text: "Data lagres i Supabase (PostgreSQL) på servere i EU. Data slettes ved forespørsel." },
             ].map((s, i) => (
               <div key={i} style={{ marginBottom: 14 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12", marginBottom: 2 }}>{s.title}</div>
-                <div style={{ fontSize: 12, color: "#4a5a38", lineHeight: 1.6 }}>{s.text}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--c-text-primary)", marginBottom: 2 }}>{s.title}</div>
+                <div style={{ fontSize: 12, color: "var(--c-text-secondary)", lineHeight: 1.6 }}>{s.text}</div>
               </div>
             ))}
-            <div style={{ fontSize: 10, color: "#8a9a70", marginBottom: 16 }}>Sist oppdatert: 25. mars 2026</div>
-            <button onClick={() => setShowPrivacy(false)} style={{ width: "100%", padding: 13, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#4a5a38", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Lukk</button>
+            <div style={{ fontSize: 10, color: "var(--c-text-faint)", marginBottom: 16 }}>Sist oppdatert: 25. mars 2026</div>
+            <button onClick={() => setShowPrivacy(false)} style={{ width: "100%", padding: 13, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "var(--c-bg-input)", color: "var(--c-text-secondary)", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Lukk</button>
           </div>
         </div>
       )}
@@ -2768,7 +2772,7 @@ export default function DiscGolfLeague() {
               <button onClick={() => { setCookieConsent("accepted"); localStorage.setItem("cookieConsent", "accepted"); }} style={{ flex: 1, padding: "10px 0", borderRadius: 12, border: "none", background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>Godta</button>
               <button onClick={() => { setCookieConsent("necessary"); localStorage.setItem("cookieConsent", "necessary"); }} style={{ flex: 1, padding: "10px 0", borderRadius: 12, border: "1px solid rgba(163,230,53,0.2)", background: "rgba(255,255,255,0.08)", color: "#e8e8e0", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Kun nødvendige</button>
             </div>
-            <div style={{ fontSize: 10, color: "#8a9a70", marginTop: 8, textAlign: "center", lineHeight: 1.5 }}>
+            <div style={{ fontSize: 10, color: "var(--c-text-faint)", marginTop: 8, textAlign: "center", lineHeight: 1.5 }}>
               Les mer i vår <button onClick={() => setShowPrivacy(true)} style={{ background: "none", border: "none", color: "#A3E635", fontWeight: 700, cursor: "pointer", fontSize: 10, textDecoration: "underline", padding: 0 }}>personvernerklæring</button>
             </div>
           </div>
@@ -2777,7 +2781,7 @@ export default function DiscGolfLeague() {
 
       {showThemePicker && (
         <div onClick={() => setShowThemePicker(false)} style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.45)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: theme.isDark ? "rgba(20,22,30,0.98)" : "rgba(255,255,255,0.98)", color: theme.text, borderRadius: 24, padding: 20, width: "100%", maxWidth: 460, maxHeight: "85vh", overflowY: "auto", animation: "slideUp 0.3s ease", border: `1px solid ${theme.accent}33`, boxShadow: `0 -8px 40px rgba(0,0,0,0.2)` }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: theme.isDark ? "rgba(20,22,30,0.98)" : "var(--c-bg-card-solid)", color: theme.text, borderRadius: 24, padding: 20, width: "100%", maxWidth: 460, maxHeight: "85vh", overflowY: "auto", animation: "slideUp 0.3s ease", border: `1px solid ${theme.accent}33`, boxShadow: `0 -8px 40px rgba(0,0,0,0.2)` }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
               <div style={{ fontSize: 18, fontWeight: 800 }}>🎨 Velg fargetema</div>
               <button onClick={() => setShowThemePicker(false)} style={{ background: "none", border: "none", fontSize: 22, cursor: "pointer", color: theme.textMuted, lineHeight: 1 }}>×</button>
@@ -2787,7 +2791,7 @@ export default function DiscGolfLeague() {
               {Object.entries(THEMES).map(([id, t]) => {
                 const active = id === themeId;
                 return (
-                  <button key={id} onClick={() => setThemeId(id)} style={{ display: "flex", alignItems: "center", gap: 12, padding: 12, borderRadius: 14, border: `2px solid ${active ? t.accent : "rgba(0,0,0,0.08)"}`, background: active ? `${t.accent}15` : (theme.isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.02)"), cursor: "pointer", textAlign: "left", transition: "all 0.2s" }}>
+                  <button key={id} onClick={() => setThemeId(id)} style={{ display: "flex", alignItems: "center", gap: 12, padding: 12, borderRadius: 14, border: `2px solid ${active ? t.accent : "var(--c-border)"}`, background: active ? `${t.accent}15` : (theme.isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.02)"), cursor: "pointer", textAlign: "left", transition: "all 0.2s" }}>
                     <div style={{ width: 56, height: 56, minWidth: 56, borderRadius: 12, background: t.bg, border: "1px solid rgba(0,0,0,0.1)", position: "relative", overflow: "hidden", flexShrink: 0 }}>
                       <div style={{ position: "absolute", bottom: 6, left: 6, width: 14, height: 14, borderRadius: "50%", background: `linear-gradient(135deg, ${t.accentLight}, ${t.accent})` }} />
                       <div style={{ position: "absolute", top: 6, right: 6, width: 10, height: 10, borderRadius: "50%", background: t.mountain, opacity: 0.6 }} />
@@ -2823,16 +2827,16 @@ export default function DiscGolfLeague() {
 
       {popupNews && (
         <div style={{ position: "fixed", inset: 0, zIndex: 220, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
-          <div style={{ width: "100%", maxWidth: 440, background: "linear-gradient(180deg, #ffffff, #fef9e8)", border: "1px solid rgba(239,168,68,0.3)", borderRadius: 20, padding: 24, animation: "slideUp 0.3s ease", boxShadow: "0 8px 40px rgba(0,0,0,0.25)" }}>
+          <div style={{ width: "100%", maxWidth: 440, background: "var(--c-modal-bg)", border: "1px solid rgba(239,168,68,0.3)", borderRadius: 20, padding: 24, animation: "slideUp 0.3s ease", boxShadow: "0 8px 40px rgba(0,0,0,0.25)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
               <span style={{ fontSize: 22 }}>📢</span>
               <span style={{ fontSize: 10, fontWeight: 700, color: "#b45309", background: "rgba(239,168,68,0.15)", padding: "3px 10px", borderRadius: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>Viktig melding</span>
             </div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: "#1c2b12", marginBottom: 8 }}>{popupNews.title}</div>
-            <div style={{ fontSize: 12, color: "#8a9a70", marginBottom: 14 }}>{new Date(popupNews.created_at).toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", year: "numeric" })}</div>
-            <div style={{ fontSize: 14, color: "#4a5a38", lineHeight: 1.7, marginBottom: 20, whiteSpace: "pre-wrap" }}>{popupNews.body}</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: "var(--c-text-primary)", marginBottom: 8 }}>{popupNews.title}</div>
+            <div style={{ fontSize: 12, color: "var(--c-text-faint)", marginBottom: 14 }}>{new Date(popupNews.created_at).toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", year: "numeric" })}</div>
+            <div style={{ fontSize: 14, color: "var(--c-text-secondary)", lineHeight: 1.7, marginBottom: 20, whiteSpace: "pre-wrap" }}>{popupNews.body}</div>
             <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => setPopupNews(null)} style={{ flex: 1, padding: 12, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#4a5a38", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Senere</button>
+              <button onClick={() => setPopupNews(null)} style={{ flex: 1, padding: 12, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "var(--c-bg-input)", color: "var(--c-text-secondary)", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Senere</button>
               <button onClick={() => markNewsRead(popupNews.id)} style={{ flex: 2, padding: 12, border: "none", borderRadius: 12, background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 800, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(101,163,13,0.25)" }}>Greit, lest ✓</button>
             </div>
           </div>
@@ -2850,8 +2854,11 @@ export default function DiscGolfLeague() {
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes slideDown { from { transform: translateY(-40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        select option { background: #f0f9e8; color: #1c2b12; }
+        select option { background: var(--c-bg-card-solid); color: var(--c-text-primary); }
         input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.3); }
+        [data-theme-dark="true"] input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.85); }
+        [data-theme-dark="true"] input, [data-theme-dark="true"] textarea, [data-theme-dark="true"] select { color-scheme: dark; }
+        [data-theme-dark="true"] input::placeholder, [data-theme-dark="true"] textarea::placeholder { color: var(--c-text-faint); }
       `}</style>
     </div>
   );
