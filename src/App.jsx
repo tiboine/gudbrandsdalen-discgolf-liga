@@ -719,10 +719,28 @@ export default function DiscGolfLeague() {
                   ))}
                 </div>
                 <div style={{ display: "flex", justifyContent: "center", marginTop: 4 }}>
-                  <button onClick={() => setShowMer(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 18px", border: "none", borderRadius: 10, background: merActive ? "#ffffff" : "transparent", color: merActive ? "#4a8a10" : "#6b7a58", fontWeight: merActive ? 700 : 600, fontSize: 11, cursor: "pointer", transition: "all 0.2s", boxShadow: merActive ? "0 1px 4px rgba(0,0,0,0.1)" : "none" }}>
-                    Mer <span style={{ fontSize: 9, opacity: 0.7 }}>▾</span>
+                  <button onClick={() => setShowMer(!showMer)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 18px", border: "none", borderRadius: 10, background: merActive || showMer ? "#ffffff" : "transparent", color: merActive ? "#4a8a10" : "#6b7a58", fontWeight: merActive ? 700 : 600, fontSize: 11, cursor: "pointer", transition: "all 0.2s", boxShadow: merActive || showMer ? "0 1px 4px rgba(0,0,0,0.1)" : "none" }}>
+                    Mer <span style={{ fontSize: 9, opacity: 0.7, display: "inline-block", transition: "transform 0.2s", transform: showMer ? "rotate(180deg)" : "rotate(0)" }}>▾</span>
                   </button>
                 </div>
+                {showMer && (() => {
+                  const secondaryTabs = [
+                    { id: "rekorder", label: "Rekorder" },
+                    { id: "regler", label: "Poeng" },
+                    { id: "badges", label: "Badges" },
+                    ...(user && friends.length > 0 ? [{ id: "venner", label: "Venner" }] : []),
+                    { id: "intro", label: "Ny her?" },
+                  ];
+                  return (
+                    <div style={{ display: "flex", gap: 4, marginTop: 4, animation: "slideDown 0.25s ease", overflow: "hidden" }}>
+                      {secondaryTabs.map(t => (
+                        <button key={t.id} onClick={() => { setTab(t.id); setShowMer(false); }} style={tabBtnStyle(t, secondaryTabs.length)}>
+                          {TAB_ICONS[t.id] ? TAB_ICONS[t.id]({ size: 22, color: tab === t.id ? "#4a8a10" : "#6b34a3" }) : null}{t.label}
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
             );
           })()}
@@ -2604,42 +2622,6 @@ export default function DiscGolfLeague() {
           </div>
         </div>
       )}
-
-      {/* Mer-sheet */}
-      {showMer && (() => {
-        const merItems = [
-          { id: "rekorder", label: "Rekorder", desc: "Alle-tiders + banerekorder" },
-          { id: "regler", label: "Poeng", desc: "Forklaring av Stableford-systemet" },
-          { id: "badges", label: "Badges", desc: "Prestasjoner du kan låse opp" },
-          ...(user && friends.length > 0 ? [{ id: "venner", label: "Venner", desc: "Spill med venner og se deres runder" }] : []),
-          { id: "intro", label: "Ny her?", desc: "Discgolf-introduksjon for nybegynnere" },
-        ];
-        return (
-          <div onClick={() => setShowMer(false)} style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 16, animation: "fadeIn 0.2s ease" }}>
-            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, background: "linear-gradient(180deg, #ffffff, #f0f9e8)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 20, animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
-              <div style={{ fontSize: 16, fontWeight: 800, color: "#1c2b12", marginBottom: 4 }}>Mer</div>
-              <div style={{ fontSize: 12, color: "#6b7a58", marginBottom: 16 }}>Velg en seksjon</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {merItems.map(it => {
-                  const Icon = TAB_ICONS[it.id];
-                  const active = tab === it.id;
-                  return (
-                    <button key={it.id} onClick={() => { setTab(it.id); setShowMer(false); }} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 12, background: active ? "rgba(101,163,13,0.12)" : "rgba(255,255,255,0.7)", border: `1px solid ${active ? "rgba(101,163,13,0.3)" : "rgba(0,0,0,0.08)"}`, cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}>
-                      {Icon && <div style={{ flexShrink: 0 }}>{Icon({ size: 26, color: active ? "#4a8a10" : "#6b34a3" })}</div>}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: active ? "#4a8a10" : "#1c2b12" }}>{it.label}</div>
-                        <div style={{ fontSize: 11, color: "#6b7a58", marginTop: 1 }}>{it.desc}</div>
-                      </div>
-                      <div style={{ fontSize: 18, color: "#8a9a70", flexShrink: 0 }}>›</div>
-                    </button>
-                  );
-                })}
-              </div>
-              <button onClick={() => setShowMer(false)} style={{ width: "100%", padding: 12, marginTop: 12, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#6b7a58", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Lukk</button>
-            </div>
-          </div>
-        );
-      })()}
 
       {/* Profil-meny-sheet */}
       {showProfileMenu && user && (
