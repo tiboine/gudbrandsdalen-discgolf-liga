@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
+import { useRegisterSW } from "virtual:pwa-register/react";
 import { BADGE_ICONS } from "./components/BadgeIcons";
 import { TAB_ICONS, STAT_ICONS, LogoIcon, BellIcon } from "./components/TabIcons";
 import { THEMES, BG_IMAGES, applyTheme } from "./themes";
@@ -197,6 +198,28 @@ export default function DiscGolfLeague() {
   const [showMer, setShowMer] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+
+  const { updateServiceWorker } = useRegisterSW({
+    immediate: true,
+    onRegisteredSW(swUrl, r) {
+      if (r) {
+        setInterval(() => { r.update(); }, 60 * 60 * 1000);
+      }
+    },
+    onNeedRefresh() {
+      updateServiceWorker(true);
+    },
+  });
+
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === "visible" && "serviceWorker" in navigator) {
+        navigator.serviceWorker.getRegistration().then(r => r?.update()).catch(() => {});
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, []);
   const [feedbackText, setFeedbackText] = useState("");
   const [feedbackSending, setFeedbackSending] = useState(false);
   const [feedbackSent, setFeedbackSent] = useState(false);
