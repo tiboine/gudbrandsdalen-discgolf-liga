@@ -192,6 +192,8 @@ export default function DiscGolfLeague() {
   const [regForm, setRegForm] = useState({ course: "", score: "", date: new Date().toISOString().split("T")[0], aces: null, eagles: null, birdies: null, bogeys: null });
   const [statTooltip, setStatTooltip] = useState(null);
   const [updatedToast, setUpdatedToast] = useState(false);
+  const [news, setNews] = useState([]);
+  const [popupNews, setPopupNews] = useState(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
   const [feedbackSending, setFeedbackSending] = useState(false);
@@ -270,6 +272,31 @@ export default function DiscGolfLeague() {
       localStorage.setItem("lastSeenVersion", __COMMIT_HASH__);
     } catch {}
   }, []);
+
+  const loadNews = async () => {
+    const { data } = await supabase.from("news").select("*").order("created_at", { ascending: false });
+    if (data) {
+      setNews(data);
+      try {
+        const readIds = JSON.parse(localStorage.getItem("readNews") || "[]");
+        const unreadImportant = data.find(n => n.important && !readIds.includes(n.id));
+        if (unreadImportant) setPopupNews(unreadImportant);
+      } catch {}
+    }
+  };
+
+  useEffect(() => { loadNews(); }, []);
+
+  const markNewsRead = (id) => {
+    try {
+      const readIds = JSON.parse(localStorage.getItem("readNews") || "[]");
+      if (!readIds.includes(id)) {
+        readIds.push(id);
+        localStorage.setItem("readNews", JSON.stringify(readIds));
+      }
+    } catch {}
+    setPopupNews(null);
+  };
 
   const theme = THEMES[themeId] || THEMES.skog;
 
@@ -578,6 +605,8 @@ export default function DiscGolfLeague() {
   const [adminTab, setAdminTab] = useState("oversikt");
   const [adminFeedback, setAdminFeedback] = useState([]);
   const [adminFeedbackLoading, setAdminFeedbackLoading] = useState(false);
+  const [newsForm, setNewsForm] = useState({ title: "", body: "", important: false });
+  const [newsSaving, setNewsSaving] = useState(false);
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -668,7 +697,7 @@ export default function DiscGolfLeague() {
           >+ Registrer runde</button>
 
           {(() => {
-            const allTabs = [{ id: "tabell", label: "Ligatabell" }, { id: "runder", label: "Runder" }, { id: "baner", label: "Baner" }, { id: "regler", label: "Poeng" }, { id: "rekorder", label: "Rekorder" }, ...(user && friends.length > 0 ? [{ id: "venner", label: "Venner" }] : []), { id: "badges", label: "Badges" }, { id: "intro", label: "Ny her?" }, ...(user ? [{ id: "tilbakemelding", label: "Tilbakemelding" }] : []), ...(isAdmin ? [{ id: "admin", label: "Admin" }] : [])];
+            const allTabs = [{ id: "tabell", label: "Ligatabell" }, { id: "nytt", label: "Siste nytt" }, { id: "runder", label: "Runder" }, { id: "baner", label: "Baner" }, { id: "regler", label: "Poeng" }, { id: "rekorder", label: "Rekorder" }, ...(user && friends.length > 0 ? [{ id: "venner", label: "Venner" }] : []), { id: "badges", label: "Badges" }, { id: "intro", label: "Ny her?" }, ...(user ? [{ id: "tilbakemelding", label: "Tilbakemelding" }] : []), ...(isAdmin ? [{ id: "admin", label: "Admin" }] : [])];
             const mid = Math.ceil(allTabs.length / 2);
             const row1 = allTabs.slice(0, mid);
             const row2 = allTabs.slice(mid);
@@ -1186,6 +1215,32 @@ export default function DiscGolfLeague() {
           </div>
         )}
 
+        {tab === "nytt" && (
+          <div style={{ animation: "fadeSlideUp 0.4s ease" }}>
+            <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 12 }}>📰 Siste nytt</div>
+            {news.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "40px 20px", background: "rgba(255,255,255,0.6)", borderRadius: 16, border: "1px solid rgba(0,0,0,0.08)" }}>
+                <div style={{ fontSize: 36, marginBottom: 8 }}>📭</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#1c2b12", marginBottom: 4 }}>Ingen nyheter ennå</div>
+                <div style={{ fontSize: 12, color: "#6b7a58" }}>Sjekk tilbake senere</div>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {news.map((n, i) => (
+                  <div key={n.id} style={{ background: "rgba(255,255,255,0.85)", border: `1px solid ${n.important ? "rgba(239,168,68,0.35)" : "rgba(0,0,0,0.08)"}`, borderRadius: 14, padding: "14px 16px", boxShadow: n.important ? "0 2px 12px rgba(239,168,68,0.12)" : "0 2px 8px rgba(0,0,0,0.04)", animation: `fadeSlideUp 0.4s ease ${i * 0.04}s both` }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                      {n.important && <span style={{ fontSize: 10, fontWeight: 700, color: "#b45309", background: "rgba(239,168,68,0.15)", padding: "2px 8px", borderRadius: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>Viktig</span>}
+                      <span style={{ fontSize: 11, color: "#8a9a70", fontWeight: 500 }}>{new Date(n.created_at).toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", year: "numeric" })}</span>
+                    </div>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: "#1c2b12", marginBottom: 6 }}>{n.title}</div>
+                    <div style={{ fontSize: 13, color: "#4a5a38", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{n.body}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {tab === "intro" && (
           <div style={{ animation: "fadeSlideUp 0.4s ease" }}>
             {/* Hero */}
@@ -1271,7 +1326,7 @@ export default function DiscGolfLeague() {
 
             {/* Admin tabs */}
             <div style={{ display: "flex", gap: 4, background: "rgba(0,0,0,0.06)", borderRadius: 10, padding: 3, marginBottom: 16 }}>
-              {[{ id: "oversikt", label: "📊 Oversikt" }, { id: "runder", label: "🥏 Runder" }, { id: "spillere", label: "👥 Spillere" }, { id: "profiler", label: "🪪 Profiler" }, { id: "meldinger", label: "💬 Meldinger" }, { id: "test", label: "🧪 Test" }].map(t => (
+              {[{ id: "oversikt", label: "📊 Oversikt" }, { id: "runder", label: "🥏 Runder" }, { id: "spillere", label: "👥 Spillere" }, { id: "profiler", label: "🪪 Profiler" }, { id: "meldinger", label: "💬 Meldinger" }, { id: "nyheter", label: "📰 Nyheter" }, { id: "test", label: "🧪 Test" }].map(t => (
                 <button key={t.id} onClick={() => { setAdminTab(t.id); if (t.id === "meldinger") loadFeedback(); }} style={{ flex: 1, padding: "8px 6px", border: "none", borderRadius: 8, background: adminTab === t.id ? "#fff" : "transparent", color: adminTab === t.id ? "#4a8a10" : "#6b7a58", fontWeight: adminTab === t.id ? 700 : 500, fontSize: 11, cursor: "pointer", transition: "all 0.2s", boxShadow: adminTab === t.id ? "0 1px 4px rgba(0,0,0,0.1)" : "none" }}>{t.label}</button>
               ))}
             </div>
@@ -1424,6 +1479,71 @@ export default function DiscGolfLeague() {
                       await supabase.from("feedback").delete().eq("id", f.id);
                       setAdminFeedback(prev => prev.filter(x => x.id !== f.id));
                     }} style={{ marginTop: 8, padding: "3px 10px", borderRadius: 6, border: "1px solid rgba(239,68,68,0.2)", background: "rgba(239,68,68,0.06)", color: "#dc2626", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Slett</button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Nyheter */}
+            {adminTab === "nyheter" && (
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12", marginBottom: 4 }}>📰 Publiser nyhet</div>
+                <div style={{ fontSize: 11, color: "#6b7a58", marginBottom: 12 }}>Viktige nyheter vises som popup for brukere som ikke har sett den</div>
+                <div style={{ background: "rgba(255,255,255,0.75)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 14, marginBottom: 16, display: "flex", flexDirection: "column", gap: 10 }}>
+                  <input
+                    type="text"
+                    placeholder="Tittel"
+                    value={newsForm.title}
+                    onChange={e => setNewsForm({ ...newsForm, title: e.target.value })}
+                    maxLength={120}
+                    style={{ width: "100%", padding: "10px 12px", borderRadius: 10, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 14, fontWeight: 600, outline: "none", boxSizing: "border-box" }}
+                  />
+                  <textarea
+                    placeholder="Tekst (støtter linjeskift)"
+                    value={newsForm.body}
+                    onChange={e => setNewsForm({ ...newsForm, body: e.target.value })}
+                    rows={5}
+                    style={{ width: "100%", padding: "10px 12px", borderRadius: 10, background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.1)", color: "#1c2b12", fontSize: 13, lineHeight: 1.5, outline: "none", resize: "vertical", fontFamily: "inherit", boxSizing: "border-box" }}
+                  />
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#4a5a38", cursor: "pointer", userSelect: "none" }}>
+                    <input type="checkbox" checked={newsForm.important} onChange={e => setNewsForm({ ...newsForm, important: e.target.checked })} style={{ width: 16, height: 16, cursor: "pointer" }} />
+                    Marker som viktig (vises som popup)
+                  </label>
+                  <button
+                    onClick={async () => {
+                      if (!newsForm.title.trim() || !newsForm.body.trim()) { alert("Tittel og tekst er påkrevd"); return; }
+                      setNewsSaving(true);
+                      const { error } = await supabase.from("news").insert({ title: newsForm.title.trim(), body: newsForm.body.trim(), important: newsForm.important, created_by: user.id });
+                      setNewsSaving(false);
+                      if (error) { alert("Feil: " + error.message); return; }
+                      setNewsForm({ title: "", body: "", important: false });
+                      await loadNews();
+                    }}
+                    disabled={newsSaving}
+                    style={{ padding: "12px 16px", borderRadius: 10, border: "none", background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 800, fontSize: 13, cursor: newsSaving ? "wait" : "pointer", opacity: newsSaving ? 0.6 : 1 }}>
+                    {newsSaving ? "Lagrer..." : "Publiser nyhet"}
+                  </button>
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12" }}>Alle nyheter ({news.length})</div>
+                  <button onClick={loadNews} style={{ fontSize: 11, padding: "4px 10px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.1)", background: "rgba(0,0,0,0.04)", color: "#4a5a38", fontWeight: 600, cursor: "pointer" }}>↻ Oppdater</button>
+                </div>
+                {news.length === 0 && <div style={{ fontSize: 13, color: "#6b7a58", textAlign: "center", padding: 20 }}>Ingen nyheter publisert ennå</div>}
+                {news.map(n => (
+                  <div key={n.id} style={{ background: "rgba(255,255,255,0.75)", border: `1px solid ${n.important ? "rgba(239,168,68,0.3)" : "rgba(0,0,0,0.08)"}`, borderRadius: 12, padding: "12px 14px", marginBottom: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                      {n.important && <span style={{ fontSize: 9, fontWeight: 700, color: "#b45309", background: "rgba(239,168,68,0.15)", padding: "2px 6px", borderRadius: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>Viktig</span>}
+                      <span style={{ fontSize: 10, color: "#8a9a70" }}>{new Date(n.created_at).toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#1c2b12", marginBottom: 4 }}>{n.title}</div>
+                    <div style={{ fontSize: 12, color: "#4a5a38", lineHeight: 1.5, whiteSpace: "pre-wrap", marginBottom: 8 }}>{n.body}</div>
+                    <button onClick={async () => {
+                      if (!confirm("Slett denne nyheten?")) return;
+                      const { error } = await supabase.from("news").delete().eq("id", n.id);
+                      if (error) { alert("Feil: " + error.message); return; }
+                      await loadNews();
+                    }} style={{ padding: "3px 10px", borderRadius: 6, border: "1px solid rgba(239,68,68,0.2)", background: "rgba(239,68,68,0.06)", color: "#dc2626", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Slett</button>
                   </div>
                 ))}
               </div>
@@ -2616,6 +2736,24 @@ export default function DiscGolfLeague() {
         <div onClick={() => setUpdatedToast(false)} style={{ position: "fixed", top: 16, left: 16, right: 16, zIndex: 300, maxWidth: 380, margin: "0 auto", background: "rgba(28,58,10,0.95)", backdropFilter: "blur(12px)", borderRadius: 12, padding: "10px 14px", boxShadow: "0 6px 24px rgba(0,0,0,0.3)", display: "flex", alignItems: "center", gap: 10, animation: "slideDown 0.3s ease", cursor: "pointer" }}>
           <div style={{ fontSize: 18, flexShrink: 0 }}>✨</div>
           <div style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 600, color: "#e8e8e0" }}>Appen er oppdatert til v{__APP_VERSION__} <span style={{ opacity: 0.6, fontWeight: 400 }}>({__COMMIT_HASH__})</span></div>
+        </div>
+      )}
+
+      {popupNews && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 220, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
+          <div style={{ width: "100%", maxWidth: 440, background: "linear-gradient(180deg, #ffffff, #fef9e8)", border: "1px solid rgba(239,168,68,0.3)", borderRadius: 20, padding: 24, animation: "slideUp 0.3s ease", boxShadow: "0 8px 40px rgba(0,0,0,0.25)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+              <span style={{ fontSize: 22 }}>📢</span>
+              <span style={{ fontSize: 10, fontWeight: 700, color: "#b45309", background: "rgba(239,168,68,0.15)", padding: "3px 10px", borderRadius: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>Viktig melding</span>
+            </div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: "#1c2b12", marginBottom: 8 }}>{popupNews.title}</div>
+            <div style={{ fontSize: 12, color: "#8a9a70", marginBottom: 14 }}>{new Date(popupNews.created_at).toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", year: "numeric" })}</div>
+            <div style={{ fontSize: 14, color: "#4a5a38", lineHeight: 1.7, marginBottom: 20, whiteSpace: "pre-wrap" }}>{popupNews.body}</div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => setPopupNews(null)} style={{ flex: 1, padding: 12, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "rgba(0,0,0,0.04)", color: "#4a5a38", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Senere</button>
+              <button onClick={() => markNewsRead(popupNews.id)} style={{ flex: 2, padding: 12, border: "none", borderRadius: 12, background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 800, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(101,163,13,0.25)" }}>Greit, lest ✓</button>
+            </div>
+          </div>
         </div>
       )}
 

@@ -400,6 +400,17 @@ function FeedbackIcon({ size = 32, color = "#6b34a3" } = {}) {
   );
 }
 
+// News / megaphone icon
+function NewsIcon({ size = 32, color = "#6b34a3" } = {}) {
+  return (
+    <svg viewBox="0 0 32 32" width={size} height={size} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M6 12v6a2 2 0 002 2h2l1 6h3l-1-6h4l8 4V8l-8 4H8a2 2 0 00-2 2v-2z" stroke={color} strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="M23 11v10" stroke={color} strokeWidth="1.6" strokeLinecap="round" opacity="0.6" />
+      <path d="M27 9c1 1.5 1 6.5 0 8" stroke={color} strokeWidth="1.4" strokeLinecap="round" opacity="0.5" />
+    </svg>
+  );
+}
+
 // ---- Exports: Tab and Stat icon mappings ----
 
 export const TAB_ICONS = {
@@ -411,6 +422,7 @@ export const TAB_ICONS = {
   badges: BadgesIcon,
   intro: NewHereIcon,
   tilbakemelding: FeedbackIcon,
+  nytt: NewsIcon,
   admin: AdminIcon,
   venner: FriendsIcon,
 };
