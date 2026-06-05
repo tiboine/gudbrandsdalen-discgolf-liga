@@ -44,6 +44,18 @@ function getSeasonLabel(date = new Date()) {
   return s ? `${s} ${date.getFullYear()}` : `${date.getFullYear()}`;
 }
 
+// Stable season key for grouping. Returns e.g. "2026-V" for spring,
+// "2026-H" for fall, null for off-season rounds (which don't count for the league).
+function getSeasonKey(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return null;
+  const m = d.getMonth() + 1;
+  if (SPRING_MONTHS.includes(m)) return `${d.getFullYear()}-V`;
+  if (FALL_MONTHS.includes(m)) return `${d.getFullYear()}-H`;
+  return null;
+}
+
 function scoreToPoints(score, isMajor) {
   let pts;
   if (score <= -4) pts = 10;
@@ -450,15 +462,28 @@ export default function DiscGolfLeague() {
       const pr = rounds.filter(r => r.user_id === p.id);
       const leagueRounds = pr.filter(r => LEAGUE_COURSE_IDS.includes(r.course_id));
 
-      const totalPts = leagueRounds.reduce((sum, r) => {
+      // For league points: keep only the BEST round per (course, season) tuple.
+      // Multiple rounds on the same course in the same season can be registered
+      // (badge stats benefit from them), but only the best one earns league points.
+      const bestPerCourseSeason = new Map();
+      for (const r of leagueRounds) {
+        const seasonKey = getSeasonKey(r.date);
+        if (!seasonKey) continue; // off-season rounds don't count toward league
+        const key = `${r.course_id}__${seasonKey}`;
+        const existing = bestPerCourseSeason.get(key);
+        if (!existing || r.score < existing.score) bestPerCourseSeason.set(key, r);
+      }
+      const countingRounds = Array.from(bestPerCourseSeason.values());
+
+      const totalPts = countingRounds.reduce((sum, r) => {
         return sum + scoreToPoints(r.score, MAJOR_COURSE_IDS.has(r.course_id));
       }, 0);
 
       const leagueCoursesPlayed = new Set(leagueRounds.map(r => r.course_id)).size;
-      const qualified = leagueRounds.length > 0;
+      const qualified = countingRounds.length > 0;
 
       const scores = pr.map(r => r.score).sort((a, b) => a - b);
-      const byDate = [...leagueRounds].sort((a, b) => new Date(a.created_at || a.date) - new Date(b.created_at || b.date));
+      const byDate = [...countingRounds].sort((a, b) => new Date(a.created_at || a.date) - new Date(b.created_at || b.date));
 
       return {
         id: p.id,
@@ -1798,6 +1823,23 @@ export default function DiscGolfLeague() {
                         return <option key={c.id} value={c.id}>{MAJOR_COURSE_IDS.has(c.id) ? "⭐ " : ""}{c.name} ({c.holes}h, par {c.par}){dist}</option>;
                       })}
                     </select>
+                    {!editRound && regForm.course && user && (() => {
+                      const seasonKey = getSeasonKey(regForm.date);
+                      if (!seasonKey) return null;
+                      const existing = realRounds.filter(r =>
+                        r.user_id === user.id &&
+                        r.course_id === regForm.course &&
+                        getSeasonKey(r.date) === seasonKey
+                      );
+                      if (existing.length === 0) return null;
+                      const bestScore = Math.min(...existing.map(r => r.score));
+                      const bestStr = bestScore === 0 ? "E" : bestScore > 0 ? `+${bestScore}` : `${bestScore}`;
+                      return (
+                        <div style={{ marginTop: 8, padding: "8px 12px", borderRadius: 10, background: "rgba(101,163,13,0.07)", border: "1px solid rgba(101,163,13,0.15)", fontSize: 11, color: "var(--c-text-secondary)", lineHeight: 1.5 }}>
+                          ℹ️ Du har allerede {existing.length} runde{existing.length === 1 ? "" : "r"} på denne banen denne sesongen (beste: <strong>{bestStr}</strong>). Kun beste runde teller for ligapoeng, men aces/eagles/birdies fra alle rundene samles til badges.
+                        </div>
+                      );
+                    })()}
                   </div>
                   <div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
@@ -1971,27 +2013,8 @@ export default function DiscGolfLeague() {
                       setRegError(`Ugyldig score. For ${course.name} (par ${course.par}) bør total være mellom ${course.par - 15} og ${course.par + 30}`);
                       return;
                     }
-                    // Max 2 rounds per course per week
-                    if (!editRound) {
-                      const d = new Date(regForm.date);
-                      const dayOfWeek = d.getDay();
-                      const weekStart = new Date(d);
-                      weekStart.setDate(d.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
-                      const weekEnd = new Date(weekStart);
-                      weekEnd.setDate(weekStart.getDate() + 7);
-                      const weekStartStr = weekStart.toISOString().slice(0, 10);
-                      const weekEndStr = weekEnd.toISOString().slice(0, 10);
-                      const roundsThisWeek = realRounds.filter(r =>
-                        r.user_id === user.id &&
-                        r.course_id === regForm.course &&
-                        r.date >= weekStartStr &&
-                        r.date < weekEndStr
-                      );
-                      if (roundsThisWeek.length >= 2) {
-                        setRegError(`Du har allerede registrert 2 runder på ${course.name} denne uken. Maks 2 per bane per uke.`);
-                        return;
-                      }
-                    }
+                    // Multi-round registration is allowed — only the best round per (course, season)
+                    // counts for league points, so there's no incentive to spam-register.
                     // Validate friend scores if any
                     for (const pid of selectedFriendPlayers) {
                       const fs = parseInt(friendScores[pid]);
