@@ -2030,7 +2030,7 @@ export default function DiscGolfLeague() {
                     if (user) {
                       setRoundsLoading(true);
                       if (editRound) {
-                        await supabase.from("rounds").update({
+                        const { error: updateError } = await supabase.from("rounds").update({
                           course_id: regForm.course,
                           course_name: course.name,
                           score: vsPar,
@@ -2042,10 +2042,15 @@ export default function DiscGolfLeague() {
                           birdies: regForm.birdies,
                           bogeys: regForm.bogeys,
                         }).eq("id", editRound.id);
+                        if (updateError) {
+                          setRoundsLoading(false);
+                          setRegError(`Kunne ikke lagre endring: ${updateError.message}`);
+                          return;
+                        }
                       } else {
                         // Generate group_id if registering with friends
                         const groupId = selectedFriendPlayers.length > 0 ? crypto.randomUUID() : null;
-                        const { data: newRound } = await supabase.from("rounds").insert({
+                        const { data: newRound, error: insertError } = await supabase.from("rounds").insert({
                           user_id: user.id,
                           course_id: regForm.course,
                           course_name: course.name,
@@ -2059,6 +2064,14 @@ export default function DiscGolfLeague() {
                           birdies: regForm.birdies,
                           bogeys: regForm.bogeys,
                         }).select().single();
+                        if (insertError) {
+                          setRoundsLoading(false);
+                          const isDuplicate = /duplicate|unique|conflict/i.test(insertError.message);
+                          setRegError(isDuplicate
+                            ? `Databasen tillater ikke flere runder pa samme bane og dato. Be admin om aa fjerne UNIQUE-constraint paa rounds-tabellen (user_id, course_id, date).`
+                            : `Kunne ikke registrere: ${insertError.message}`);
+                          return;
+                        }
 
                         // Register friends' rounds with same group_id
                         if (newRound && selectedFriendPlayers.length > 0) {
