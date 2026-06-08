@@ -210,6 +210,46 @@ export default function DiscGolfLeague() {
   const [showMer, setShowMer] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [dialog, setDialog] = useState(null);
+
+  const appConfirm = (message, opts = {}) => new Promise(resolve => {
+    setDialog({
+      kind: "confirm",
+      title: opts.title || null,
+      message,
+      confirmLabel: opts.confirmLabel || "OK",
+      cancelLabel: opts.cancelLabel || "Avbryt",
+      danger: !!opts.danger,
+      onConfirm: () => { setDialog(null); resolve(true); },
+      onCancel: () => { setDialog(null); resolve(false); },
+    });
+  });
+
+  const appAlert = (message, opts = {}) => new Promise(resolve => {
+    setDialog({
+      kind: "alert",
+      title: opts.title || null,
+      message,
+      confirmLabel: opts.confirmLabel || "OK",
+      danger: !!opts.danger,
+      onConfirm: () => { setDialog(null); resolve(); },
+    });
+  });
+
+  const appPrompt = (message, opts = {}) => new Promise(resolve => {
+    setDialog({
+      kind: "prompt",
+      title: opts.title || null,
+      message,
+      placeholder: opts.placeholder || "",
+      confirmLabel: opts.confirmLabel || "OK",
+      cancelLabel: opts.cancelLabel || "Avbryt",
+      danger: !!opts.danger,
+      input: opts.defaultValue || "",
+      onConfirm: (val) => { setDialog(null); resolve(val); },
+      onCancel: () => { setDialog(null); resolve(null); },
+    });
+  });
 
   const { updateServiceWorker } = useRegisterSW({
     immediate: true,
@@ -1441,7 +1481,7 @@ export default function DiscGolfLeague() {
                     </div>
                     <div style={{ fontSize: 16, fontWeight: 900, color: r.score <= 0 ? "#4a8a10" : "#ef4444", minWidth: 36, textAlign: "right" }}>{r.score > 0 ? "+" : ""}{r.score}</div>
                     <button onClick={async () => {
-                      if (!confirm(`Slett runde av ${r.profiles?.full_name}?`)) return;
+                      if (!(await appConfirm(`Slett runde av ${r.profiles?.full_name}?`, { danger: true, confirmLabel: "Slett" }))) return;
                       await supabase.from("rounds").delete().eq("id", r.id);
                       await loadRounds();
                       await loadPlayers();
@@ -1502,19 +1542,19 @@ export default function DiscGolfLeague() {
                           <div style={{ display: "flex", gap: 4 }}>
                             <button onClick={async () => {
                               const action = p.disabled ? "aktivere" : "deaktivere";
-                              if (!confirm(`${p.disabled ? "Aktivere" : "Deaktivere"} ${p.full_name}?`)) return;
+                              if (!(await appConfirm(`${p.disabled ? "Aktivere" : "Deaktivere"} ${p.full_name}?`))) return;
                               await supabase.from("profiles").update({ disabled: !p.disabled }).eq("id", p.id);
                               loadAllProfiles();
                             }} style={{ padding: "3px 8px", borderRadius: 6, border: "1px solid", borderColor: p.disabled ? "rgba(101,163,13,0.3)" : "rgba(239,168,68,0.3)", background: p.disabled ? "rgba(101,163,13,0.07)" : "rgba(239,168,68,0.07)", color: p.disabled ? "#4a8a10" : "#b45309", fontSize: 10, fontWeight: 600, cursor: "pointer" }}>{p.disabled ? "Aktiver" : "Deaktiver"}</button>
                             {p.disabled && (
                               <button onClick={async () => {
-                                const input = prompt(`Skriv "slett" for å permanent slette ${p.full_name} og alle deres runder:`);
-                                if (input?.toLowerCase() !== "slett") { if (input !== null) alert("Feil tekst. Sletting avbrutt."); return; }
+                                const input = await appPrompt(`Skriv "slett" for å permanent slette ${p.full_name} og alle deres runder:`, { placeholder: "slett", danger: true, confirmLabel: "Slett permanent" });
+                                if (input?.toLowerCase() !== "slett") { if (input !== null) await appAlert("Feil tekst. Sletting avbrutt."); return; }
                                 await supabase.from("rounds").delete().eq("user_id", p.id);
                                 await supabase.from("notifications").delete().eq("user_id", p.id);
                                 await supabase.from("profiles").delete().eq("id", p.id);
                                 loadAllProfiles(); loadPlayers(); loadRounds();
-                                alert(`${p.full_name} er slettet.`);
+                                await appAlert(`${p.full_name} er slettet.`);
                               }} style={{ padding: "3px 8px", borderRadius: 6, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.07)", color: "#dc2626", fontSize: 10, fontWeight: 600, cursor: "pointer" }}>Slett</button>
                             )}
                           </div>
@@ -1548,7 +1588,7 @@ export default function DiscGolfLeague() {
                     </div>
                     <div style={{ fontSize: 13, color: "var(--c-text-secondary)", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{f.message}</div>
                     <button onClick={async () => {
-                      if (!confirm("Slett denne tilbakemeldingen?")) return;
+                      if (!(await appConfirm("Slett denne tilbakemeldingen?", { danger: true, confirmLabel: "Slett" }))) return;
                       await supabase.from("feedback").delete().eq("id", f.id);
                       setAdminFeedback(prev => prev.filter(x => x.id !== f.id));
                     }} style={{ marginTop: 8, padding: "3px 10px", borderRadius: 6, border: "1px solid rgba(239,68,68,0.2)", background: "rgba(239,68,68,0.06)", color: "#dc2626", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Slett</button>
@@ -1584,11 +1624,11 @@ export default function DiscGolfLeague() {
                   </label>
                   <button
                     onClick={async () => {
-                      if (!newsForm.title.trim() || !newsForm.body.trim()) { alert("Tittel og tekst er påkrevd"); return; }
+                      if (!newsForm.title.trim() || !newsForm.body.trim()) { await appAlert("Tittel og tekst er påkrevd"); return; }
                       setNewsSaving(true);
                       const { error } = await supabase.from("news").insert({ title: newsForm.title.trim(), body: newsForm.body.trim(), important: newsForm.important, created_by: user.id });
                       setNewsSaving(false);
-                      if (error) { alert("Feil: " + error.message); return; }
+                      if (error) { await appAlert("Feil: " + error.message); return; }
                       setNewsForm({ title: "", body: "", important: false });
                       await loadNews();
                     }}
@@ -1612,9 +1652,9 @@ export default function DiscGolfLeague() {
                     <div style={{ fontSize: 13, fontWeight: 700, color: "var(--c-text-primary)", marginBottom: 4 }}>{n.title}</div>
                     <div style={{ fontSize: 12, color: "var(--c-text-secondary)", lineHeight: 1.5, whiteSpace: "pre-wrap", marginBottom: 8 }}>{n.body}</div>
                     <button onClick={async () => {
-                      if (!confirm("Slett denne nyheten?")) return;
+                      if (!(await appConfirm("Slett denne nyheten?", { danger: true, confirmLabel: "Slett" }))) return;
                       const { error } = await supabase.from("news").delete().eq("id", n.id);
-                      if (error) { alert("Feil: " + error.message); return; }
+                      if (error) { await appAlert("Feil: " + error.message); return; }
                       await loadNews();
                     }} style={{ padding: "3px 10px", borderRadius: 6, border: "1px solid rgba(239,68,68,0.2)", background: "rgba(239,68,68,0.06)", color: "#dc2626", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Slett</button>
                   </div>
@@ -1639,7 +1679,7 @@ export default function DiscGolfLeague() {
                     <button key={n.type} onClick={async () => {
                       await supabase.from("notifications").insert({ user_id: user.id, type: n.type, title: n.title, body: n.body, data: n.data || {}, read: false });
                       await loadNotifications();
-                      alert("Notifikasjon sendt!");
+                      await appAlert("Notifikasjon sendt!");
                     }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 12, background: "var(--c-bg-card)", border: "1px solid rgba(0,0,0,0.08)", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "var(--c-text-primary)", textAlign: "left" }}>
                       <span>{n.label}</span>
                     </button>
@@ -1648,10 +1688,10 @@ export default function DiscGolfLeague() {
 
                 <div style={{ marginTop: 20, fontSize: 13, fontWeight: 700, color: "var(--c-text-primary)", marginBottom: 8 }}>⚠️ Farlig sone</div>
                 <button onClick={async () => {
-                  if (!confirm("Slett ALLE notifikasjoner for deg?")) return;
+                  if (!(await appConfirm("Slett ALLE notifikasjoner for deg?", { danger: true, confirmLabel: "Slett alle" }))) return;
                   await supabase.from("notifications").delete().eq("user_id", user.id);
                   await loadNotifications();
-                  alert("Alle notifikasjoner slettet");
+                  await appAlert("Alle notifikasjoner slettet");
                 }} style={{ padding: "10px 14px", borderRadius: 12, background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.2)", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#dc2626", width: "100%" }}>🗑️ Slett alle mine notifikasjoner</button>
               </div>
             )}
@@ -2240,7 +2280,7 @@ export default function DiscGolfLeague() {
                   });
                   const path = `avatars/${user.id}.webp`;
                   const { error: upErr } = await supabase.storage.from("avatars").upload(path, compressed, { upsert: true, contentType: "image/webp" });
-                  if (upErr) { alert("Feil ved opplasting: " + upErr.message); return; }
+                  if (upErr) { await appAlert("Feil ved opplasting: " + upErr.message); return; }
                   const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
                   const avatarUrl = urlData.publicUrl + "?t=" + Date.now();
                   await supabase.auth.updateUser({ data: { avatar_url: avatarUrl } });
@@ -2467,7 +2507,7 @@ export default function DiscGolfLeague() {
             <div style={{ padding: "12px 24px 24px", borderTop: "1px solid rgba(0,0,0,0.06)", background: "linear-gradient(180deg, #f8fdf2, #f0f9e8)", flexShrink: 0 }}>
               <div style={{ display: "flex", flexDirection: "row", gap: 8 }}>
                 <button onClick={() => { setShowProfile(false); }} style={{ flex: 1, padding: 13, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "var(--c-bg-input)", color: "var(--c-text-secondary)", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Lukk</button>
-                <button onClick={() => { if (confirm("Er du sikker på at du vil logge ut?")) { signOut(); setShowProfile(false); } }} style={{ flex: 1, padding: 13, border: "1px solid rgba(239,68,68,0.2)", borderRadius: 12, background: "rgba(239,68,68,0.05)", color: "#dc2626", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Logg ut</button>
+                <button onClick={async () => { if (await appConfirm("Er du sikker på at du vil logge ut?", { confirmLabel: "Logg ut", danger: true })) { signOut(); setShowProfile(false); } }} style={{ flex: 1, padding: 13, border: "1px solid rgba(239,68,68,0.2)", borderRadius: 12, background: "rgba(239,68,68,0.05)", color: "#dc2626", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Logg ut</button>
               </div>
             </div>
           </div>
@@ -2561,7 +2601,7 @@ export default function DiscGolfLeague() {
                         setShowRegister(true);
                       }} style={{ flex: 1, padding: "10px 0", borderRadius: 10, border: "1px solid rgba(0,0,0,0.1)", background: "var(--c-bg-subtle)", color: "var(--c-text-secondary)", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>✏️ Rediger</button>
                       <button onClick={async () => {
-                        if (!confirm("Sikker på at du vil slette denne runden?")) return;
+                        if (!(await appConfirm("Sikker på at du vil slette denne runden?", { danger: true, confirmLabel: "Slett" }))) return;
                         await supabase.from("rounds").delete().eq("id", r.id);
                         setSelectedRound(null);
                         await loadRounds();
@@ -2715,7 +2755,7 @@ export default function DiscGolfLeague() {
                 </button>
               )}
               <div style={{ height: 1, background: "var(--c-bg-muted)", margin: "4px 0" }} />
-              <button onClick={() => { if (confirm("Er du sikker på at du vil logge ut?")) { signOut(); setShowProfileMenu(false); } }} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 10, background: "transparent", border: "none", cursor: "pointer", textAlign: "left", fontSize: 14, fontWeight: 600, color: "#dc2626" }}>
+              <button onClick={async () => { if (await appConfirm("Er du sikker på at du vil logge ut?", { confirmLabel: "Logg ut", danger: true })) { signOut(); setShowProfileMenu(false); } }} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 10, background: "transparent", border: "none", cursor: "pointer", textAlign: "left", fontSize: 14, fontWeight: 600, color: "#dc2626" }}>
                 <span style={{ fontSize: 18, width: 24, textAlign: "center" }}>↪</span> Logg ut
               </button>
             </div>
@@ -2882,6 +2922,40 @@ export default function DiscGolfLeague() {
       <div style={{ textAlign: "center", padding: "20px 0 28px", fontSize: 10, color: "rgba(107,122,88,0.5)", letterSpacing: "0.05em", fontWeight: 500 }}>
         v{__APP_VERSION__} · {__COMMIT_HASH__} · {__BUILD_DATE__}
       </div>
+
+      {dialog && (
+        <div
+          onClick={dialog.kind === "alert" ? dialog.onConfirm : dialog.onCancel}
+          style={{ position: "fixed", inset: 0, zIndex: 400, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, animation: "fadeIn 0.18s ease" }}
+        >
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 380, background: "var(--c-modal-bg)", border: "1px solid var(--c-border)", borderRadius: 18, padding: 22, animation: "slideUp 0.22s ease", boxShadow: "0 12px 40px rgba(0,0,0,0.3)" }}>
+            {dialog.title && (
+              <div style={{ fontSize: 16, fontWeight: 800, color: "var(--c-text-primary)", marginBottom: 8 }}>{dialog.title}</div>
+            )}
+            <div style={{ fontSize: 14, color: "var(--c-text-secondary)", lineHeight: 1.5, marginBottom: dialog.kind === "prompt" ? 12 : 20, whiteSpace: "pre-wrap" }}>{dialog.message}</div>
+            {dialog.kind === "prompt" && (
+              <input
+                type="text"
+                autoFocus
+                value={dialog.input}
+                placeholder={dialog.placeholder}
+                onChange={e => setDialog(d => d ? { ...d, input: e.target.value } : d)}
+                onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); dialog.onConfirm(dialog.input); } else if (e.key === "Escape") { dialog.onCancel(); } }}
+                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, background: "var(--c-bg-input)", border: "1px solid var(--c-border)", color: "var(--c-text-primary)", fontSize: 14, outline: "none", marginBottom: 18, boxSizing: "border-box" }}
+              />
+            )}
+            <div style={{ display: "flex", gap: 8 }}>
+              {dialog.kind !== "alert" && (
+                <button onClick={dialog.onCancel} style={{ flex: 1, padding: 12, border: "1px solid var(--c-border)", borderRadius: 11, background: "var(--c-bg-input)", color: "var(--c-text-secondary)", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>{dialog.cancelLabel}</button>
+              )}
+              <button
+                onClick={() => dialog.kind === "prompt" ? dialog.onConfirm(dialog.input) : dialog.onConfirm()}
+                style={{ flex: dialog.kind === "alert" ? 1 : 2, padding: 12, border: "none", borderRadius: 11, background: dialog.danger ? "linear-gradient(135deg, #f87171, #dc2626)" : "linear-gradient(135deg, #A3E635, #65A30D)", color: dialog.danger ? "#fff" : "#0a0f0a", fontWeight: 800, fontSize: 13, cursor: "pointer", boxShadow: dialog.danger ? "0 4px 16px rgba(220,38,38,0.25)" : "0 4px 16px rgba(101,163,13,0.25)" }}
+              >{dialog.confirmLabel}</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;0,9..40,900&display=swap');
