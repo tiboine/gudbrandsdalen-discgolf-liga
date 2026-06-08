@@ -20,6 +20,9 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
       registerType: 'prompt',
       injectRegister: false,
       includeAssets: ['favicon.ico'],
@@ -42,15 +45,8 @@ export default defineConfig({
           { src: '/icon-512.png', sizes: '512x512', type: 'image/png', form_factor: 'narrow', label: 'Gudbrandsdalen Discgolf Liga' },
         ],
       },
-      workbox: {
+      injectManifest: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
-            handler: 'NetworkFirst',
-            options: { cacheName: 'supabase-cache', expiration: { maxEntries: 50, maxAgeSeconds: 300 } },
-          },
-        ],
       },
     }),
   ],

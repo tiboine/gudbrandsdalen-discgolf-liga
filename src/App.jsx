@@ -211,6 +211,9 @@ export default function DiscGolfLeague() {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [dialog, setDialog] = useState(null);
+  const [pushStatus, setPushStatus] = useState("unknown"); // "unknown" | "default" | "granted" | "denied" | "unsupported"
+  const [showPushBanner, setShowPushBanner] = useState(false);
+  const [pushPrefs, setPushPrefs] = useState(null);
 
   const appConfirm = (message, opts = {}) => new Promise(resolve => {
     setDialog({
@@ -352,6 +355,111 @@ export default function DiscGolfLeague() {
       }
       localStorage.setItem("lastSeenVersion", __COMMIT_HASH__);
     } catch {}
+  }, []);
+
+  // ---- Web Push setup ----
+  const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || "";
+
+  const urlBase64ToUint8Array = (base64String) => {
+    const padding = "=".repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+    const rawData = atob(base64);
+    const output = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) output[i] = rawData.charCodeAt(i);
+    return output;
+  };
+
+  useEffect(() => {
+    if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
+      setPushStatus("unsupported");
+      return;
+    }
+    setPushStatus(Notification.permission);
+  }, []);
+
+  // Show subscribe-banner one time per user, once they're logged in and haven't decided yet.
+  useEffect(() => {
+    if (!user || pushStatus !== "default") return;
+    try {
+      if (localStorage.getItem("pushBannerDismissed") === "1") return;
+    } catch {}
+    const t = setTimeout(() => setShowPushBanner(true), 3000);
+    return () => clearTimeout(t);
+  }, [user, pushStatus]);
+
+  const subscribeToPush = async () => {
+    if (!VAPID_PUBLIC_KEY) {
+      await appAlert("Push-varsler er ikke konfigurert ennå. Admin må sette VITE_VAPID_PUBLIC_KEY.");
+      return false;
+    }
+    try {
+      const permission = await Notification.requestPermission();
+      setPushStatus(permission);
+      if (permission !== "granted") return false;
+      const reg = await navigator.serviceWorker.ready;
+      let sub = await reg.pushManager.getSubscription();
+      if (!sub) {
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+        });
+      }
+      const json = sub.toJSON();
+      await supabase.from("push_subscriptions").upsert({
+        user_id: user.id,
+        endpoint: sub.endpoint,
+        p256dh: json.keys.p256dh,
+        auth: json.keys.auth,
+        ua: navigator.userAgent,
+      }, { onConflict: "user_id,endpoint" });
+      return true;
+    } catch (e) {
+      await appAlert("Klarte ikke aktivere push-varsler: " + e.message);
+      return false;
+    }
+  };
+
+  const unsubscribeFromPush = async () => {
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) {
+        await supabase.from("push_subscriptions").delete().eq("endpoint", sub.endpoint);
+        await sub.unsubscribe();
+      }
+      setPushStatus(Notification.permission);
+    } catch (e) {
+      console.warn("unsubscribe failed", e);
+    }
+  };
+
+  // Load user's push prefs from profile
+  useEffect(() => {
+    if (!user) { setPushPrefs(null); return; }
+    (async () => {
+      const { data } = await supabase.from("profiles").select("push_prefs").eq("id", user.id).single();
+      if (data?.push_prefs) setPushPrefs(data.push_prefs);
+    })();
+  }, [user]);
+
+  const updatePushPref = async (key, value) => {
+    if (!user || !pushPrefs) return;
+    const next = { ...pushPrefs, [key]: value };
+    setPushPrefs(next);
+    await supabase.from("profiles").update({ push_prefs: next }).eq("id", user.id);
+  };
+
+  // Listen for "navigate" messages from the SW (when user clicks a push notification)
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) return;
+    const handler = (e) => {
+      if (e.data?.type === "navigate" && e.data.path) {
+        const tab = e.data.path.replace(/^\//, "");
+        if (tab) setTab(tab);
+      }
+    };
+    navigator.serviceWorker.addEventListener("message", handler);
+    return () => navigator.serviceWorker.removeEventListener("message", handler);
   }, []);
 
   const loadNews = async () => {
@@ -2434,6 +2542,61 @@ export default function DiscGolfLeague() {
               );
             })()}
 
+            {/* Push-varsler */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Push-varsler</div>
+              {pushStatus === "unsupported" && (
+                <div style={{ fontSize: 12, color: "var(--c-text-muted)", padding: "10px 12px", borderRadius: 10, background: "var(--c-bg-subtle)", border: "1px solid var(--c-border)" }}>
+                  Nettleseren din støtter ikke push-varsler.
+                </div>
+              )}
+              {pushStatus !== "unsupported" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 6, padding: "10px 12px", borderRadius: 12, background: "var(--c-bg-card)", border: "1px solid var(--c-border)" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "var(--c-text-primary)" }}>
+                      {pushStatus === "granted" ? "🔔 Aktivert" : pushStatus === "denied" ? "🔕 Blokkert" : "🔕 Av"}
+                    </div>
+                    {pushStatus === "granted" ? (
+                      <button onClick={async () => { await unsubscribeFromPush(); }} style={{ fontSize: 11, padding: "5px 12px", borderRadius: 8, border: "1px solid var(--c-border)", background: "var(--c-bg-input)", color: "var(--c-text-secondary)", fontWeight: 600, cursor: "pointer" }}>Skru av</button>
+                    ) : pushStatus === "default" ? (
+                      <button onClick={async () => { await subscribeToPush(); }} style={{ fontSize: 11, padding: "5px 12px", borderRadius: 8, border: "none", background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 700, cursor: "pointer" }}>Aktiver</button>
+                    ) : null}
+                  </div>
+                  {pushStatus === "denied" && (
+                    <div style={{ fontSize: 11, color: "var(--c-text-muted)", lineHeight: 1.4 }}>
+                      Varsler er blokkert i nettleserinnstillingene. For å aktivere må du tillate dem i nettleserens nettstedinnstillinger.
+                    </div>
+                  )}
+                  {pushStatus === "granted" && pushPrefs && (
+                    <>
+                      <div style={{ height: 1, background: "var(--c-border-light)", margin: "6px 0" }} />
+                      <div style={{ fontSize: 10, fontWeight: 700, color: "var(--c-text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>Varsle om</div>
+                      {[
+                        { key: "round_registered", label: "Runde registrert for meg" },
+                        { key: "friend_request", label: "Venneforespørsel" },
+                        { key: "friend_accepted", label: "Venneforespørsel godtatt" },
+                        { key: "weekly_best", label: "Ukens spiller" },
+                        { key: "course_record", label: "Ny banerekord" },
+                        { key: "badge_earned", label: "Ny badge" },
+                        { key: "badge_lost", label: "Mistet badge" },
+                        ...(isAdmin ? [{ key: "new_feedback", label: "Ny tilbakemelding (admin)" }] : []),
+                      ].map(({ key, label }) => (
+                        <label key={key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 2px", cursor: "pointer", userSelect: "none" }}>
+                          <span style={{ fontSize: 12, color: "var(--c-text-secondary)" }}>{label}</span>
+                          <input
+                            type="checkbox"
+                            checked={!!pushPrefs[key]}
+                            onChange={e => updatePushPref(key, e.target.checked)}
+                            style={{ width: 16, height: 16, accentColor: "#65A30D", cursor: "pointer" }}
+                          />
+                        </label>
+                      ))}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Venner */}
             {friends.length > 0 && (
               <div style={{ marginBottom: 20 }}>
@@ -2901,6 +3064,18 @@ export default function DiscGolfLeague() {
         <div onClick={() => setUpdatedToast(false)} style={{ position: "fixed", top: 16, left: 16, right: 16, zIndex: 300, maxWidth: 380, margin: "0 auto", background: "rgba(28,58,10,0.95)", backdropFilter: "blur(12px)", borderRadius: 12, padding: "10px 14px", boxShadow: "0 6px 24px rgba(0,0,0,0.3)", display: "flex", alignItems: "center", gap: 10, animation: "slideDown 0.3s ease", cursor: "pointer" }}>
           <div style={{ fontSize: 18, flexShrink: 0 }}>✨</div>
           <div style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 600, color: "#e8e8e0" }}>Appen er oppdatert til v{__APP_VERSION__} <span style={{ opacity: 0.6, fontWeight: 400 }}>({__COMMIT_HASH__})</span></div>
+        </div>
+      )}
+
+      {showPushBanner && user && (
+        <div style={{ position: "fixed", top: 12, left: 12, right: 12, zIndex: 290, maxWidth: 500, margin: "0 auto", background: "linear-gradient(135deg, #1c3a0a, #2a4a16)", borderRadius: 14, padding: "12px 14px", boxShadow: "0 6px 24px rgba(0,0,0,0.35)", display: "flex", alignItems: "center", gap: 10, animation: "slideDown 0.3s ease" }}>
+          <div style={{ fontSize: 22, flexShrink: 0 }}>🔔</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#e8e8e0", marginBottom: 2 }}>Få varsler på telefonen?</div>
+            <div style={{ fontSize: 11, color: "#a0b090", lineHeight: 1.4 }}>Vi varsler kun om viktige ting (runder, venneforespørsler)</div>
+          </div>
+          <button onClick={async () => { const ok = await subscribeToPush(); if (ok) setShowPushBanner(false); }} style={{ padding: "8px 14px", borderRadius: 10, border: "none", background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 800, fontSize: 12, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>Aktiver</button>
+          <button onClick={() => { setShowPushBanner(false); try { localStorage.setItem("pushBannerDismissed", "1"); } catch {} }} style={{ background: "none", border: "none", color: "#6b7a58", fontSize: 18, cursor: "pointer", padding: "0 4px", flexShrink: 0, lineHeight: 1 }}>×</button>
         </div>
       )}
 
