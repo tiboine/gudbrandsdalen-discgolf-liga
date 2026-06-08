@@ -38,7 +38,10 @@ const TYPE_TO_PATH: Record<string, string> = {
 
 Deno.serve(async (req) => {
   try {
-    const { notification_id } = await req.json();
+    const body = await req.json();
+    // Accept both direct calls ({notification_id: "..."}) and Database Webhook
+    // payloads ({type: "INSERT", record: {id: "..."}, ...}).
+    const notification_id = body.notification_id || body.record?.id;
     if (!notification_id) {
       return new Response(JSON.stringify({ error: "missing notification_id" }), { status: 400 });
     }
