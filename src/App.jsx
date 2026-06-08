@@ -2673,6 +2673,9 @@ export default function DiscGolfLeague() {
                 else if (n.type === "round_registered") {
                   setTab("runder"); setShowNotifications(false);
                 }
+                else if (n.type === "new_feedback") {
+                  setTab("admin"); setAdminTab("meldinger"); loadFeedback(); setShowNotifications(false);
+                }
               }} style={{ background: !n.read ? "rgba(107,52,163,0.08)" : "rgba(0,0,0,0.02)", border: !n.read ? "1px solid rgba(107,52,163,0.2)" : "1px solid rgba(0,0,0,0.06)", borderRadius: 12, padding: "12px 14px", marginBottom: 6, cursor: "pointer", transition: "background 0.15s" }}
                 onMouseEnter={e => e.currentTarget.style.background = !n.read ? "rgba(107,52,163,0.12)" : "rgba(101,163,13,0.06)"}
                 onMouseLeave={e => e.currentTarget.style.background = !n.read ? "rgba(107,52,163,0.08)" : "rgba(0,0,0,0.02)"}>
