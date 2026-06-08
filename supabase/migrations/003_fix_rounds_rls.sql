@@ -1,44 +1,18 @@
--- Allow users to register multiple rounds on the same course/date.
--- The existing INSERT policy likely has extra restrictions (e.g. one-round-per-week,
--- one-per-course-per-season) that the app logic now handles client-side instead.
+-- Replaces the buggy "Maks 2 runder per bane per uke" INSERT policy on rounds.
 --
--- DIAGNOSTIC: first run this in Supabase SQL Editor to see what policies exist:
+-- The old policy compared `existing.course_id = existing.course_id` and a similar
+-- date_trunc comparison — both are column-vs-itself, always true. The COUNT subquery
+-- therefore returned the user's TOTAL rounds globally rather than rounds on the
+-- same course and week, blocking any insert as soon as a user had 2+ rounds anywhere.
 --
---   SELECT policyname, cmd, qual, with_check
---   FROM pg_policies
---   WHERE schemaname = 'public' AND tablename = 'rounds';
---
--- Then run the rest of this file to replace the INSERT policy with a clean one.
+-- The app now enforces "best round per (course, season) counts for league points"
+-- in JavaScript, so we don't need an RLS restriction on number of rounds. Multiple
+-- rounds are explicitly allowed so badge stats (aces, birdies, eagles) can accumulate
+-- across attempts.
 
--- Drop any existing INSERT policy on rounds (covers common names)
-drop policy if exists "Users can insert their own rounds" on rounds;
+drop policy if exists "Maks 2 runder per bane per uke" on rounds;
 drop policy if exists "users can insert own rounds" on rounds;
-drop policy if exists "rounds_insert" on rounds;
-drop policy if exists "Enable insert for authenticated users only" on rounds;
-drop policy if exists "Authenticated users can insert their own rounds" on rounds;
-drop policy if exists "Insert own rounds" on rounds;
-drop policy if exists "rounds insert policy" on rounds;
-drop policy if exists "Allow insert for own user_id" on rounds;
-drop policy if exists "rounds_insert_policy" on rounds;
-drop policy if exists "Users can register rounds" on rounds;
 
--- Create clean INSERT policy: users can only insert rounds where user_id = their own auth uid.
--- App logic enforces best-per-course-per-season for league points; multiple rounds are allowed
--- so badge stats can accumulate across attempts.
 create policy "users can insert own rounds"
 on rounds for insert
 with check (auth.uid() = user_id);
-
--- Also allow inserting rounds for friends if they share a group_id and you're logged in.
--- (Friend-registration sets the same group_id on the friend's row.)
--- Skip this if you don't use the friend-registration feature.
-create policy "users can insert friend rounds via group"
-on rounds for insert
-with check (
-  group_id is not null
-  and exists (
-    select 1 from rounds existing
-    where existing.group_id = rounds.group_id
-      and existing.user_id = auth.uid()
-  )
-);
