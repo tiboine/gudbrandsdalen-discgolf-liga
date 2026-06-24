@@ -709,11 +709,8 @@ export default function DiscGolfLeague() {
     const { data: existing } = await supabase.from("friends").select("id, status").or(`and(user_id.eq.${user.id},friend_id.eq.${friendId}),and(user_id.eq.${friendId},friend_id.eq.${user.id})`);
     if (existing && existing.length > 0) return; // already exists
     await supabase.from("friends").insert({ user_id: user.id, friend_id: friendId, status: "pending" });
-    const userName = user.user_metadata?.full_name || "Noen";
-    await supabase.from("notifications").insert({
-      user_id: friendId, type: "friend_request", title: "Ny venneforespørsel!",
-      body: `${userName} vil legge deg til som venn`, data: { from_user_id: user.id }
-    });
+    // Cross-user notification goes via SECURITY DEFINER RPC (sender name set server-side).
+    await supabase.rpc("notify_friend_request", { target: friendId });
     setSentRequests(prev => [...prev, friendId]);
     await loadFriends();
   };
@@ -729,12 +726,8 @@ export default function DiscGolfLeague() {
     } else {
       await supabase.from("friends").update({ status: "accepted" }).eq("user_id", user.id).eq("friend_id", request.user_id);
     }
-    // Notify the requester
-    const userName = user.user_metadata?.full_name || "Noen";
-    await supabase.from("notifications").insert({
-      user_id: request.user_id, type: "friend_accepted", title: "Venneforespørsel godkjent!",
-      body: `${userName} godtok venneforespørselen din`
-    });
+    // Notify the requester via SECURITY DEFINER RPC (sender name set server-side).
+    await supabase.rpc("notify_friend_accepted", { target: request.user_id });
     // Update the notification for this friend request to show "Godkjent"
     await supabase.from("notifications").update({ title: "✓ Venneforespørsel godkjent", body: `Du og ${request.profiles?.full_name || "en spiller"} er nå venner`, read: true }).eq("user_id", user.id).eq("type", "friend_request").filter("data->>from_user_id", "eq", request.user_id);
     await loadFriends();
@@ -2258,21 +2251,21 @@ export default function DiscGolfLeague() {
                             return;
                           }
 
-                          // Send notifications to friends (sekundært — blokkerer ikke ved feil)
+                          // Send notifications to friends via SECURITY DEFINER RPC (sender set server-side).
                           const friendIds = friends.map(f => f.friend_id);
-                          const notifs = selectedFriendPlayers.map(pid => {
+                          await Promise.all(selectedFriendPlayers.map(pid => {
                             const fs = parseInt(friendScores[pid]);
                             const fvsPar = fs - course.par;
                             const scoreStr = fvsPar === 0 ? "E" : fvsPar > 0 ? `+${fvsPar}` : `${fvsPar}`;
-                            return {
-                              user_id: pid,
-                              type: "round_registered",
-                              title: "Runde registrert for deg!",
-                              body: `${userName} registrerte ${scoreStr} for deg på ${course.name}`,
-                              data: { course_id: regForm.course, date: regForm.date, group_id: groupId },
-                            };
-                          });
-                          await supabase.from("notifications").insert(notifs);
+                            return supabase.rpc("notify_round_registered", {
+                              target: pid,
+                              p_course_name: course.name,
+                              p_score: scoreStr,
+                              p_course_id: regForm.course,
+                              p_date: regForm.date,
+                              p_group: groupId,
+                            });
+                          }));
 
                           // Auto-send friend requests to non-friends
                           for (const pid of selectedFriendPlayers) {
@@ -2286,25 +2279,19 @@ export default function DiscGolfLeague() {
                         if (newRound) {
                           const { data: courseRounds } = await supabase.from("rounds").select("user_id, score").eq("course_id", regForm.course);
                           if (courseRounds) {
-                            const uniqueUsers = new Set(courseRounds.map(r => r.user_id));
-                            if (uniqueUsers.size >= 2) {
-                              const bestScore = Math.min(...courseRounds.map(r => r.score));
-                              if (vsPar === bestScore) {
-                                const otherPlayers = courseRounds.filter(r => r.user_id !== user.id).map(r => r.user_id);
-                                const uniqueOthers = [...new Set(otherPlayers)];
-                                if (uniqueOthers.length > 0) {
-                                  const userName = user.user_metadata?.full_name || "Noen";
-                                  const scoreStr = vsPar === 0 ? "E" : vsPar > 0 ? `+${vsPar}` : `${vsPar}`;
-                                  await supabase.from("notifications").insert(
-                                    uniqueOthers.map(pid => ({
-                                      user_id: pid,
-                                      type: "course_record",
-                                      title: "Ny banerekord! \u{1F3C6}",
-                                      body: `${userName} satte ny rekord på ${course.name}: ${scoreStr}`,
-                                      read: false,
-                                    }))
-                                  );
-                                }
+                            const otherRounds = courseRounds.filter(r => r.user_id !== user.id);
+                            const uniqueOthers = [...new Set(otherRounds.map(r => r.user_id))];
+                            // Only a STRICTLY better score than every other player counts as a new record
+                            // (a tie should not fire "ny rekord").
+                            if (uniqueOthers.length > 0) {
+                              const prevBestOthers = Math.min(...otherRounds.map(r => r.score));
+                              if (vsPar < prevBestOthers) {
+                                const scoreStr = vsPar === 0 ? "E" : vsPar > 0 ? `+${vsPar}` : `${vsPar}`;
+                                await supabase.rpc("notify_course_record", {
+                                  targets: uniqueOthers,
+                                  p_course_name: course.name,
+                                  p_score: scoreStr,
+                                });
                               }
                             }
                           }
