@@ -292,6 +292,11 @@ export default function DiscGolfLeague() {
   const [realRounds, setRealRounds] = useState(() => {
     try { return JSON.parse(localStorage.getItem("cache_rounds") || "[]"); } catch { return []; }
   });
+  // Full, unbounded rounds set for aggregates/stats (records, badges, profile, admin).
+  // realRounds stays capped at 50 for the "recent activity" feed only.
+  const [allRounds, setAllRounds] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("cache_allrounds") || "[]"); } catch { return []; }
+  });
   const [roundsLoading, setRoundsLoading] = useState(false);
   const [editRound, setEditRound] = useState(null); // null or round object being edited
   const [players, setPlayers] = useState(() => {
@@ -602,11 +607,16 @@ export default function DiscGolfLeague() {
 
   const loadPlayers = async () => {
     const { data: profilesData } = await supabase.from("profiles").select("*");
-    const { data: roundsData, error: roundsErr } = await supabase.from("rounds").select("*");
+    const { data: roundsData, error: roundsErr } = await supabase.from("rounds").select("*, profiles(full_name, avatar_url)");
     // Bail (keep cache) if either fetch failed — otherwise everyone shows 0 pts.
     if (!profilesData || roundsErr || !roundsData) return;
     const profiles = profilesData;
     const rounds = roundsData;
+
+    // This unbounded fetch doubles as the source for records/badges/stats so they
+    // aren't capped at the 50-round feed limit. Refreshes on every loadPlayers().
+    setAllRounds(rounds);
+    try { localStorage.setItem("cache_allrounds", JSON.stringify(rounds)); } catch {}
 
     const result = profiles.map(p => {
       const pr = rounds.filter(r => r.user_id === p.id);
@@ -795,7 +805,12 @@ export default function DiscGolfLeague() {
     return () => window.removeEventListener("beforeinstallprompt", handler);
   }, []);
 
-  const signOut = () => supabase.auth.signOut();
+  const signOut = async () => {
+    // Remove this device's push subscription before logging out, so the next
+    // user on a shared device doesn't inherit the previous user's push.
+    try { await unsubscribeFromPush(); } catch {}
+    await supabase.auth.signOut();
+  };
 
   const ADMIN_EMAILS = [import.meta.env.VITE_ADMIN_EMAIL, "urbanthor@gmail.com"].filter(Boolean);
   const isAdmin = ADMIN_EMAILS.includes(user?.email);
@@ -877,7 +892,7 @@ export default function DiscGolfLeague() {
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, margin: "16px 0" }}>
-            {[{ label: "Spillere", value: players.length, iconKey: "players", tab: "tabell", anim: true }, { label: "Runder spilt", value: realRounds.length, iconKey: "rounds", tab: "runder", anim: true }, { label: "Baner", value: COURSES.length, iconKey: "courses", tab: "baner", anim: false }].map(s => (
+            {[{ label: "Spillere", value: players.length, iconKey: "players", tab: "tabell", anim: true }, { label: "Runder spilt", value: allRounds.length, iconKey: "rounds", tab: "runder", anim: true }, { label: "Baner", value: COURSES.length, iconKey: "courses", tab: "baner", anim: false }].map(s => (
               <div key={s.label} onClick={() => setTab(s.tab)} style={{ background: "var(--c-bg-card)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "12px 10px", textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", cursor: "pointer", transition: "transform 0.15s, box-shadow 0.15s" }}
                 onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)"; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.06)"; }}>
@@ -955,7 +970,7 @@ export default function DiscGolfLeague() {
               const sunday = new Date(monday);
               sunday.setDate(sunday.getDate() + 6);
               const sundayStr = sunday.toISOString().split("T")[0];
-              const weekRounds = realRounds.filter(r => r.date >= mondayStr && r.date <= sundayStr);
+              const weekRounds = allRounds.filter(r => r.date >= mondayStr && r.date <= sundayStr);
               if (weekRounds.length === 0) return null;
               const best = weekRounds.reduce((a, b) => a.score < b.score ? a : b);
               const playerName = best.profiles?.full_name ?? "Ukjent";
@@ -1154,14 +1169,14 @@ export default function DiscGolfLeague() {
             </div>
             {(() => {
               const roundCounts = {};
-              realRounds.forEach(r => { roundCounts[r.course_id] = (roundCounts[r.course_id] || 0) + 1; });
+              allRounds.forEach(r => { roundCounts[r.course_id] = (roundCounts[r.course_id] || 0) + 1; });
               let sorted;
               if (courseSort === "populær") sorted = [...COURSES].sort((a, b) => (roundCounts[b.id] || 0) - (roundCounts[a.id] || 0));
               else if (courseSort === "stjerner") sorted = [...COURSES].sort((a, b) => b.rating - a.rating);
               else sorted = userLocation ? [...COURSES].sort((a, b) => getDistance(userLocation.lat, userLocation.lng, a.lat, a.lng) - getDistance(userLocation.lat, userLocation.lng, b.lat, b.lng)) : COURSES;
               return sorted;
             })().map((c, i) => {
-              const roundCount = realRounds.filter(r => r.course_id === c.id).length;
+              const roundCount = allRounds.filter(r => r.course_id === c.id).length;
               const dist = userLocation ? getDistance(userLocation.lat, userLocation.lng, c.lat, c.lng) : null;
               return (
               <div key={c.id} onClick={() => setSelectedCourse(selectedCourse?.id === c.id ? null : c)} style={{ background: selectedCourse?.id === c.id ? "rgba(101,163,13,0.08)" : "var(--c-bg-card)", border: selectedCourse?.id === c.id ? "1px solid rgba(101,163,13,0.25)" : "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "16px", cursor: "pointer", transition: "all 0.2s", marginBottom: 10, animation: `fadeSlideUp 0.4s ease ${i * 0.05}s both`, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
@@ -1185,7 +1200,7 @@ export default function DiscGolfLeague() {
                   ))}
                 </div>
                 {(() => {
-                  const courseRounds = realRounds.filter(r => r.course_id === c.id);
+                  const courseRounds = allRounds.filter(r => r.course_id === c.id);
                   if (courseRounds.length === 0) return null;
                   const bestRound = courseRounds.reduce((a, b) => a.score < b.score ? a : b);
                   const scoreStr = bestRound.score === 0 ? "E" : bestRound.score > 0 ? `+${bestRound.score}` : `${bestRound.score}`;
@@ -1294,7 +1309,7 @@ export default function DiscGolfLeague() {
 
         {tab === "rekorder" && (
           <div style={{ animation: "fadeSlideUp 0.4s ease" }}>
-            {realRounds.length === 0 ? (
+            {allRounds.length === 0 ? (
               <div style={{ textAlign: "center", padding: "60px 20px", background: "var(--c-bg-card)", borderRadius: 16, border: "1px solid rgba(0,0,0,0.08)" }}>
                 <div style={{ fontSize: 44, marginBottom: 12 }}>🏆</div>
                 <div style={{ fontSize: 16, fontWeight: 800, color: "var(--c-text-primary)", marginBottom: 6 }}>Ingen rekorder ennå</div>
@@ -1304,11 +1319,11 @@ export default function DiscGolfLeague() {
               const fmtScore = s => s === 0 ? "E" : s > 0 ? `+${s}` : `${s}`;
               const scoreColor = s => s < 0 ? "#16a34a" : s > 0 ? "#ef4444" : "var(--c-text-muted)";
 
-              // All-time records
-              const bestRound = realRounds.reduce((a, b) => b.score < a.score ? b : a);
+              // All-time records (use the unbounded allRounds, not the 50-capped feed)
+              const bestRound = allRounds.reduce((a, b) => b.score < a.score ? b : a);
               const bestRoundProfile = allProfiles.find(p => p.id === bestRound.user_id);
 
-              const bestPtsRound = realRounds.reduce((a, b) => {
+              const bestPtsRound = allRounds.reduce((a, b) => {
                 const pa = scoreToPoints(a.score, MAJOR_COURSE_IDS.has(a.course_id));
                 const pb = scoreToPoints(b.score, MAJOR_COURSE_IDS.has(b.course_id));
                 return pb > pa ? b : a;
@@ -1317,19 +1332,19 @@ export default function DiscGolfLeague() {
               const bestPts = scoreToPoints(bestPtsRound.score, MAJOR_COURSE_IDS.has(bestPtsRound.course_id));
 
               const acesByPlayer = {};
-              realRounds.forEach(r => { acesByPlayer[r.user_id] = (acesByPlayer[r.user_id] || 0) + (r.aces || 0); });
+              allRounds.forEach(r => { acesByPlayer[r.user_id] = (acesByPlayer[r.user_id] || 0) + (r.aces || 0); });
               const topAceId = Object.entries(acesByPlayer).sort((a, b) => b[1] - a[1])[0];
               const topAceProfile = topAceId && topAceId[1] > 0 ? allProfiles.find(p => p.id === topAceId[0]) : null;
 
               const roundsByPlayer = {};
-              realRounds.forEach(r => { roundsByPlayer[r.user_id] = (roundsByPlayer[r.user_id] || 0) + 1; });
+              allRounds.forEach(r => { roundsByPlayer[r.user_id] = (roundsByPlayer[r.user_id] || 0) + 1; });
               const topRoundsId = Object.entries(roundsByPlayer).sort((a, b) => b[1] - a[1])[0];
               const topRoundsProfile = topRoundsId ? allProfiles.find(p => p.id === topRoundsId[0]) : null;
 
               const avgByPlayer = {};
               Object.entries(roundsByPlayer).forEach(([uid, cnt]) => {
                 if (cnt >= 3) {
-                  const sum = realRounds.filter(r => r.user_id === uid).reduce((s, r) => s + r.score, 0);
+                  const sum = allRounds.filter(r => r.user_id === uid).reduce((s, r) => s + r.score, 0);
                   avgByPlayer[uid] = sum / cnt;
                 }
               });
@@ -1346,7 +1361,7 @@ export default function DiscGolfLeague() {
 
               // Course records
               const courseRecords = COURSES.map(course => {
-                const cr = realRounds.filter(r => r.course_id === course.id);
+                const cr = allRounds.filter(r => r.course_id === course.id);
                 if (cr.length === 0) return null;
                 const best = cr.reduce((a, b) => b.score < a.score ? b : a);
                 const holder = allProfiles.find(p => p.id === best.user_id);
@@ -1400,8 +1415,8 @@ export default function DiscGolfLeague() {
           <div style={{ animation: "fadeSlideUp 0.4s ease" }}>
             {(() => {
               const myProfile = user ? { id: user.id } : null;
-              const myRounds = user ? realRounds.filter(r => r.user_id === user.id) : [];
-              const earnedCount = BADGE_DEFS.filter(b => b.check(myProfile, myRounds, COURSES, realRounds, players)).length;
+              const myRounds = user ? allRounds.filter(r => r.user_id === user.id) : [];
+              const earnedCount = BADGE_DEFS.filter(b => b.check(myProfile, myRounds, COURSES, allRounds, players)).length;
               return (
                 <>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
@@ -1413,7 +1428,7 @@ export default function DiscGolfLeague() {
                   )}
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
                     {BADGE_DEFS.map((badge) => {
-                      const earned = user ? badge.check(myProfile, myRounds, COURSES, realRounds, players) : false;
+                      const earned = user ? badge.check(myProfile, myRounds, COURSES, allRounds, players) : false;
                       return (
                         <div key={badge.id} style={{ background: earned ? "rgba(101,163,13,0.08)" : "var(--c-bg-card)", border: earned ? "1px solid rgba(101,163,13,0.3)" : "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "14px 8px", textAlign: "center", boxShadow: earned ? "0 0 16px rgba(101,163,13,0.15)" : "0 2px 8px rgba(0,0,0,0.05)", transition: "all 0.3s" }}>
                           <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
@@ -1551,7 +1566,7 @@ export default function DiscGolfLeague() {
             {adminTab === "oversikt" && (
               <div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 16 }}>
-                  {[{ label: "Brukere", value: players.length, icon: "👥" }, { label: "Runder totalt", value: realRounds.length, icon: "🥏" }, { label: "Baner brukt", value: [...new Set(realRounds.map(r => r.course_id))].length, icon: "🗺️" }].map(s => (
+                  {[{ label: "Brukere", value: players.length, icon: "👥" }, { label: "Runder totalt", value: allRounds.length, icon: "🥏" }, { label: "Baner brukt", value: [...new Set(allRounds.map(r => r.course_id))].length, icon: "🗺️" }].map(s => (
                     <div key={s.label} style={{ background: "var(--c-bg-card)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "12px 8px", textAlign: "center" }}>
                       <div style={{ fontSize: 16, marginBottom: 2 }}>{s.icon}</div>
                       <div style={{ fontSize: 22, fontWeight: 800 }}>{s.value}</div>
@@ -1574,9 +1589,9 @@ export default function DiscGolfLeague() {
             {/* Runder */}
             {adminTab === "runder" && (
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--c-text-primary)", marginBottom: 8 }}>Alle registrerte runder ({realRounds.length})</div>
-                {realRounds.length === 0 && <div style={{ fontSize: 13, color: "var(--c-text-muted)", textAlign: "center", padding: 20 }}>Ingen runder ennå</div>}
-                {realRounds.map(r => (
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--c-text-primary)", marginBottom: 8 }}>Alle registrerte runder ({allRounds.length})</div>
+                {allRounds.length === 0 && <div style={{ fontSize: 13, color: "var(--c-text-muted)", textAlign: "center", padding: 20 }}>Ingen runder ennå</div>}
+                {[...allRounds].sort((a, b) => (b.created_at || "").localeCompare(a.created_at || "")).map(r => (
                   <div key={r.id} style={{ background: "var(--c-bg-card)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "12px 14px", marginBottom: 8, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 700 }}>{r.profiles?.full_name ?? "Ukjent"}</div>
@@ -1848,7 +1863,7 @@ export default function DiscGolfLeague() {
             </div>
             {/* Head-to-head */}
             {user && selectedPlayer.id !== user.id && (() => {
-              const myRounds = realRounds.filter(r => r.user_id === user.id);
+              const myRounds = allRounds.filter(r => r.user_id === user.id);
               const theirRounds = selectedPlayerRounds;
               // Find rounds on same course & date
               const h2h = [];
@@ -1969,7 +1984,7 @@ export default function DiscGolfLeague() {
                     {!editRound && regForm.course && user && (() => {
                       const seasonKey = getSeasonKey(regForm.date);
                       if (!seasonKey) return null;
-                      const existing = realRounds.filter(r =>
+                      const existing = allRounds.filter(r =>
                         r.user_id === user.id &&
                         r.course_id === regForm.course &&
                         getSeasonKey(r.date) === seasonKey
@@ -2501,7 +2516,7 @@ export default function DiscGolfLeague() {
 
             {/* Sesong-stats — real data */}
             {(() => {
-              const myRounds = realRounds.filter(r => r.user_id === user.id);
+              const myRounds = allRounds.filter(r => r.user_id === user.id);
               const myScores = myRounds.map(r => r.score);
               const myPlayer = players.find(p => p.id === user.id);
               const bestScore = myScores.length ? Math.min(...myScores) : null;
@@ -2633,7 +2648,7 @@ export default function DiscGolfLeague() {
 
             {/* Mine runder */}
             {(() => {
-              const myRounds = realRounds.filter(r => r.user_id === user.id).sort((a, b) => b.date.localeCompare(a.date));
+              const myRounds = allRounds.filter(r => r.user_id === user.id).sort((a, b) => b.date.localeCompare(a.date));
               const displayRounds = myRounds.slice(0, 10);
               if (myRounds.length === 0) return null;
               return (
