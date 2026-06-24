@@ -588,23 +588,25 @@ export default function DiscGolfLeague() {
   };
 
   const loadRounds = async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("rounds")
       .select("*, profiles(full_name, avatar_url)")
       .order("created_at", { ascending: false })
       .limit(50);
-    const real = data || [];
-    const merged = real.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 50);
+    // Don't wipe the good cache on a failed/empty fetch (offline, RLS, network).
+    if (error || !data) return;
+    const merged = data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 50);
     setRealRounds(merged);
     try { localStorage.setItem("cache_rounds", JSON.stringify(merged)); } catch {}
   };
 
   const loadPlayers = async () => {
     const { data: profilesData } = await supabase.from("profiles").select("*");
-    const { data: roundsData } = await supabase.from("rounds").select("*");
-    if (!profilesData) return;
+    const { data: roundsData, error: roundsErr } = await supabase.from("rounds").select("*");
+    // Bail (keep cache) if either fetch failed — otherwise everyone shows 0 pts.
+    if (!profilesData || roundsErr || !roundsData) return;
     const profiles = profilesData;
-    const rounds = roundsData || [];
+    const rounds = roundsData;
 
     const result = profiles.map(p => {
       const pr = rounds.filter(r => r.user_id === p.id);
@@ -664,10 +666,10 @@ export default function DiscGolfLeague() {
 
   const loadAllProfiles = async () => {
     const { data, error } = await supabase.from("profiles").select("id, full_name, avatar_url, hometown, disabled");
-    console.log("loadAllProfiles:", data?.length, "profiles", error);
-    const profiles = data || [];
-    setAllProfiles(profiles);
-    try { localStorage.setItem("cache_profiles", JSON.stringify(profiles)); } catch {}
+    // Don't wipe the good cache on a failed fetch — keep showing last-known profiles.
+    if (error || !data) return;
+    setAllProfiles(data);
+    try { localStorage.setItem("cache_profiles", JSON.stringify(data)); } catch {}
   };
 
   const loadFeedback = async () => {
@@ -893,7 +895,7 @@ export default function DiscGolfLeague() {
             ))}
           </div>
 
-          <button onClick={() => setShowRegister(true)} style={{ width: "100%", padding: "14px", border: "none", borderRadius: 14, background: "linear-gradient(135deg, #A3E635 0%, #65A30D 100%)", color: "#0a0f0a", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 24px rgba(163,230,53,0.25), inset 0 1px 0 rgba(255,255,255,0.2)", transition: "transform 0.15s", marginBottom: 16 }}
+          <button onClick={() => user ? setShowRegister(true) : (setShowAuth(true), setAuthMode("signup"))} style={{ width: "100%", padding: "14px", border: "none", borderRadius: 14, background: "linear-gradient(135deg, #A3E635 0%, #65A30D 100%)", color: "#0a0f0a", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 24px rgba(163,230,53,0.25), inset 0 1px 0 rgba(255,255,255,0.2)", transition: "transform 0.15s", marginBottom: 16 }}
             onMouseDown={e => e.currentTarget.style.transform = "scale(0.97)"}
             onMouseUp={e => e.currentTarget.style.transform = "scale(1)"}
           >+ Registrer runde</button>
@@ -1988,6 +1990,11 @@ export default function DiscGolfLeague() {
                         </div>
                       );
                     })()}
+                    {!editRound && regForm.course && regForm.date && !getSeasonKey(regForm.date) && (
+                      <div style={{ marginTop: 8, padding: "8px 12px", borderRadius: 10, background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.3)", fontSize: 11, color: "var(--c-text-secondary)", lineHeight: 1.5 }}>
+                        📅 Datoen er utenfor sesong (liga spilles mai–juli og aug–okt). Runden lagres og teller for badges, men gir <strong>ikke ligapoeng</strong>.
+                      </div>
+                    )}
                   </div>
                   <div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
@@ -2001,17 +2008,19 @@ export default function DiscGolfLeague() {
                       if (!par || isNaN(diff)) return null;
                       const isMajor = MAJOR_COURSE_IDS.has(regForm.course);
                       const pts = scoreToPoints(diff, isMajor);
+                      const inSeason = !!getSeasonKey(regForm.date);
                       const scoreLabel = diff === 0 ? "E (even par)" : diff > 0 ? `+${diff} over par` : `${diff} under par`;
                       const bgColor = pts >= 8 ? "rgba(101,163,13,0.08)" : pts >= 5 ? "rgba(251,191,36,0.08)" : "rgba(239,68,68,0.06)";
                       const borderColor = pts >= 8 ? "rgba(101,163,13,0.2)" : pts >= 5 ? "rgba(251,191,36,0.25)" : "rgba(239,68,68,0.15)";
                       const ptsColor = pts >= 8 ? "#4a8a10" : pts >= 5 ? "#b07a00" : "#ef4444";
                       return (
-                        <div style={{ marginTop: 8, padding: "10px 14px", borderRadius: 12, background: bgColor, border: `1px solid ${borderColor}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div style={{ marginTop: 8, padding: "10px 14px", borderRadius: 12, background: inSeason ? bgColor : "var(--c-bg-input)", border: `1px solid ${inSeason ? borderColor : "var(--c-border)"}`, display: "flex", justifyContent: "space-between", alignItems: "center", opacity: inSeason ? 1 : 0.6 }}>
                           <div style={{ fontSize: 13, color: diff <= 0 ? "#4a8a10" : "#ef4444", fontWeight: 700 }}>{scoreLabel}</div>
                           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            {isMajor && <span style={{ fontSize: 10, color: "#b07a00", fontWeight: 700, background: "rgba(251,191,36,0.12)", border: "1px solid rgba(251,191,36,0.3)", borderRadius: 6, padding: "2px 6px" }}>⭐ ×1.5</span>}
-                            <span style={{ fontSize: 20, fontWeight: 900, color: ptsColor }}>{pts}</span>
-                            <span style={{ fontSize: 11, color: "var(--c-text-muted)", fontWeight: 600 }}>pts</span>
+                            {isMajor && inSeason && <span style={{ fontSize: 10, color: "#b07a00", fontWeight: 700, background: "rgba(251,191,36,0.12)", border: "1px solid rgba(251,191,36,0.3)", borderRadius: 6, padding: "2px 6px" }}>⭐ ×1.5</span>}
+                            {inSeason
+                              ? <><span style={{ fontSize: 20, fontWeight: 900, color: ptsColor }}>{pts}</span><span style={{ fontSize: 11, color: "var(--c-text-muted)", fontWeight: 600 }}>pts</span></>
+                              : <span style={{ fontSize: 11, color: "var(--c-text-muted)", fontWeight: 600 }}>teller ikke for liga</span>}
                           </div>
                         </div>
                       );
@@ -2150,8 +2159,10 @@ export default function DiscGolfLeague() {
                     </div>
                   )}
                   {regError && <div style={{ fontSize: 12, color: "#dc2626", background: "rgba(239,68,68,0.08)", padding: "8px 12px", borderRadius: 8, border: "1px solid rgba(239,68,68,0.2)" }}>{regError}</div>}
-                  <button onClick={async (e) => {
+                  <button disabled={roundsLoading} onClick={async (e) => {
                     e.preventDefault();
+                    if (roundsLoading) return; // guard mot dobbel-innsending
+                    if (!user) { setRegError("Du må være innlogget for å registrere runde"); return; }
                     const totalScore = parseInt(regForm.score);
                     const course = COURSES.find(c => c.id === regForm.course);
                     if (!regForm.course || regForm.score === "" || !regForm.date) return;
@@ -2236,9 +2247,18 @@ export default function DiscGolfLeague() {
                               group_id: groupId,
                             };
                           });
-                          await supabase.from("rounds").insert(friendRounds);
+                          const { error: friendErr } = await supabase.from("rounds").insert(friendRounds);
+                          if (friendErr) {
+                            // Egen runde er allerede lagret — informer om at venners runder feilet
+                            // i stedet for å vise falsk suksess.
+                            setRoundsLoading(false);
+                            await loadRounds();
+                            await loadPlayers();
+                            setRegError(`Din runde ble lagret, men venners runder kunne ikke lagres: ${friendErr.message}`);
+                            return;
+                          }
 
-                          // Send notifications to friends
+                          // Send notifications to friends (sekundært — blokkerer ikke ved feil)
                           const friendIds = friends.map(f => f.friend_id);
                           const notifs = selectedFriendPlayers.map(pid => {
                             const fs = parseInt(friendScores[pid]);
@@ -2299,7 +2319,7 @@ export default function DiscGolfLeague() {
                     setFriendScores({});
                     setRegSuccess(true);
                     setTimeout(() => { setRegSuccess(false); setShowRegister(false); setRegForm({ course: "", score: "", date: "", aces: null, eagles: null, birdies: null, bogeys: null }); setEditRound(null); setRegError(""); setRegNote(""); setFriendSearch(""); setShowFriendScores(false); }, 2000);
-                  }} style={{ width: "100%", padding: 14, border: "none", borderRadius: 14, background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 24px rgba(101,163,13,0.25)", marginTop: 4 }}>{editRound ? "Lagre endring ✓" : "Registrer 🥏"}</button>
+                  }} style={{ width: "100%", padding: 14, border: "none", borderRadius: 14, background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 800, fontSize: 15, cursor: roundsLoading ? "wait" : "pointer", opacity: roundsLoading ? 0.6 : 1, boxShadow: "0 4px 24px rgba(101,163,13,0.25)", marginTop: 4 }}>{roundsLoading ? "Lagrer…" : editRound ? "Lagre endring ✓" : "Registrer 🥏"}</button>
                   <button onClick={() => { setShowRegister(false); setEditRound(null); setRegError(""); }} style={{ width: "100%", padding: 12, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "var(--c-bg-input)", color: "var(--c-text-muted)", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Avbryt</button>
                 </div>
               </>
