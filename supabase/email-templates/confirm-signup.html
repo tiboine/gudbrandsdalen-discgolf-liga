@@ -1,0 +1,26 @@
+<!-- Supabase → Authentication → Email Templates → "Confirm signup"
+     Subject heading: Bekreft e-postadressen din
+     Lim inn HTML-en under i "Message body". Variabel: {{ .ConfirmationURL }} -->
+<div style="font-family: 'DM Sans', -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px; color: #1a2618; background: #ffffff;">
+  <div style="text-align: center; margin-bottom: 24px;">
+    <div style="font-size: 34px; line-height: 1;">🥏</div>
+    <div style="font-size: 17px; font-weight: 800; color: #4a7a0a; margin-top: 6px;">Gudbrandsdalen Discgolf Liga</div>
+  </div>
+  <h1 style="font-size: 22px; font-weight: 800; margin: 0 0 12px;">Velkommen til ligaen!</h1>
+  <p style="font-size: 15px; line-height: 1.6; color: #3a4a30; margin: 0 0 24px;">
+    Bekreft e-postadressen din for å aktivere kontoen. Da kan du registrere runder, samle poeng og klatre på ligatabellen.
+  </p>
+  <div style="text-align: center; margin: 0 0 24px;">
+    <a href="{{ .ConfirmationURL }}" style="display: inline-block; background: linear-gradient(135deg, #A3E635, #65A30D); color: #0a0f0a; font-weight: 800; font-size: 15px; text-decoration: none; padding: 14px 28px; border-radius: 12px;">Bekreft e-post</a>
+  </div>
+  <p style="font-size: 13px; line-height: 1.6; color: #6b7a58; margin: 0 0 6px;">
+    Hvis knappen ikke virker, kopier og lim inn denne lenken i nettleseren:
+  </p>
+  <p style="font-size: 12px; line-height: 1.5; word-break: break-all; margin: 0 0 24px;">
+    <a href="{{ .ConfirmationURL }}" style="color: #4a8a10;">{{ .ConfirmationURL }}</a>
+  </p>
+  <hr style="border: none; border-top: 1px solid #e5e5dd; margin: 24px 0;">
+  <p style="font-size: 12px; line-height: 1.6; color: #8a9a70; margin: 0;">
+    Opprettet du ikke denne kontoen? Da kan du trygt ignorere denne e-posten.
+  </p>
+</div>
