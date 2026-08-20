@@ -19,7 +19,7 @@ const COURSES = [
   { id: "sandbumoen", name: "Sandbumoen Discgolfbane", location: "Sør-Fron", holes: 18, par: 55, rating: 3.9, ratings: 102, difficulty: "Moderat", length: "2.0 km", time: "~1.5 timer", udisc: "https://udisc.com/courses/sandbumoen-discgolfbane-LGPU", googleMaps: "https://www.google.com/maps/place/61.726307972190824,9.551310492924358", desc: "Flott bane i naturskjønt skogsterreng. Spillbar for alle nivåer. Etablert 2025. OBS: Partier med glatt underlag.", free: true, lat: 61.726, lng: 9.551 },
   { id: "gaala", name: "Gålå", location: "Gålå, Sør-Fron", holes: 18, par: 59, rating: 3.6, ratings: 412, difficulty: "Lett / Moderat", length: "2.4 km", time: "~1.5 timer", udisc: "https://udisc.com/courses/gala-3Ekm", googleMaps: "https://www.google.com/maps/place/Frisbeegolf+G%C3%A5l%C3%A5/@61.5010987,9.7898876,17z/data=!3m1!4b1!4m6!3m5!1s0x466ac4fb2c3022f7:0xca9e75927618e855!8m2!3d61.5010987!4d9.7924679!16s%2Fg%2F11hzxks6kk?entry=ttu&g_ep=EgoyMDI2MDQyOS4wIKXMDSoASAFQAw%3D%3D", desc: "Variert 18-hulls bane med store høydeforskjeller i alpint terreng. Fire layoutvalg: Pro, Amateur og to front-9-varianter. Sesongbane — stengt når skianlegget er åpent.", free: true, lat: 61.498, lng: 9.766 },
   { id: "kvam", name: "Kvam Idrettspark", location: "Kvam, Nord-Fron", holes: 9, par: 27, rating: 3.8, ratings: 232, difficulty: "Lett", length: "1.2 km", time: "~35 min", udisc: "https://udisc.com/courses/kvam-idrettspark-eRuW", googleMaps: "https://www.google.com/maps/place/61.66700705113708,9.688984497883279", desc: "Etablert av Kvam Idrettslag i 2023. Fin trenings- og putbane. Startkit kan lånes ved klubbhuset.", free: true, lat: 61.667, lng: 9.689 },
-  { id: "lalm", name: "Lalm Discgolfbane", location: "Lalm, Sel", holes: 12, par: 36, rating: 4.2, ratings: 511, difficulty: "Moderat", length: "1.7 km", time: "~1 time", udisc: "https://udisc.com/courses/lalm-discgolfbane-nYVD", googleMaps: "https://www.google.com/maps/place/Lalm+Discgolfbane/@61.8128071,9.284686,17z/data=!3m1!4b1!4m6!3m5!1s0x4614d76c4874c149:0x58c42e0965ebf527!8m2!3d61.8128071!4d9.2872663!16s%2Fg%2F11sxkpd425?entry=ttu&g_ep=EgoyMDI2MDQyOS4wIKXMDSoASAFQAw%3D%3D", desc: "En av de beste banene i Innlandet med 4.2-rating. Varierte hull og flott skogsterreng. Anbefales på det sterkeste!", free: true, lat: 61.812, lng: 9.287 },
+  { id: "lalm", name: "Lalm Diskgolfbane", location: "Lalm, Sel", holes: 18, par: 57, rating: 4.1, ratings: 280, difficulty: "Moderat / Krevende", length: "1.5 km", time: "~1.5 timer", udisc: "https://udisc.com/courses/lalm-diskgolfbane-R5ZA", googleMaps: "https://www.google.com/maps/place/Lalm+Discgolfbane/@61.8128071,9.284686,17z/data=!3m1!4b1!4m6!3m5!1s0x4614d76c4874c149:0x58c42e0965ebf527!8m2!3d61.8128071!4d9.2872663!16s%2Fg%2F11sxkpd425?entry=ttu&g_ep=EgoyMDI2MDQyOS4wIKXMDSoASAFQAw%3D%3D", desc: "En av de beste banene i Innlandet med 4.1-rating. 18 varierte hull i kupert og teknisk skogsterreng. Anbefales på det sterkeste!", free: true, lat: 61.812, lng: 9.287 },
   { id: "vingarparken", name: "Vingarparken Diskgolfbane", location: "Lillehammer", holes: 9, par: 27, rating: 1.2, ratings: 25, difficulty: "Middels", length: "0.54 km", time: "~60 min", udisc: "https://udisc.com/courses/vingarparken-diskgolfbane-KDW7", googleMaps: "https://www.google.com/maps/place/61.10748204673479,10.427498069998876", desc: "Familievennlig bane i folkelig rekreasjonspark. Kortbane med gressteier, renovert i 2025.", free: true, lat: 61.107, lng: 10.427 },
   { id: "mosetertoppen", name: "Mosetertoppen Diskgolfpark", location: "Øyer", holes: 18, par: 58, rating: 3.7, ratings: 159, difficulty: "Krevende", length: "3.8 km", time: "~2 timer", udisc: "https://udisc.com/courses/oti-frisbee-mosetertoppen-diskgolf-park-D5nt", googleMaps: "https://www.google.com/maps/place/61.25397574849447,10.514558774034981", desc: "Utfordrende fjellbane på toppen av Mosetertoppen/Hafjell. Bratt og variert terreng med flotte utsikter. Etablert 2024.", free: true, lat: 61.254, lng: 10.515 },
   { id: "fossen-kvitfjell", name: "Fossen Diskgolf Kvitfjell", location: "Fåvang", holes: 9, par: 29, rating: 4.5, ratings: 5, difficulty: "Middels", length: "0.7 km", time: "~54 min", udisc: "https://udisc.com/courses/fossen-diskgolf-kvitfjell-sorh", googleMaps: "https://www.google.com/maps/place/61.450026560582984,10.109954378016454", desc: "Ny bane (2025) ved Kvitfjell med vakker utsikt og varierte kast. Kupert terreng med Prodigy T2-kurver.", free: true, lat: 61.450, lng: 10.110 },
@@ -304,6 +304,8 @@ export default function DiscGolfLeague() {
   });
   const [regError, setRegError] = useState("");
   const [signupEmailSent, setSignupEmailSent] = useState(false);
+  const [resetEmailSent, setResetEmailSent] = useState(false);
+  const [recoveryMode, setRecoveryMode] = useState(false);
   const [courseSort, setCourseSort] = useState("avstand"); // avstand | populær | stjerner
   const [roundFilter, setRoundFilter] = useState("alle"); // "alle" or course_id
   const [regNote, setRegNote] = useState("");
@@ -529,8 +531,9 @@ export default function DiscGolfLeague() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
+      if (event === "PASSWORD_RECOVERY") { setRecoveryMode(true); setShowAuth(false); }
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -590,6 +593,26 @@ export default function DiscGolfLeague() {
     if (error) { setAuthError(error.message); return; }
     setAuthError("");
     setSignupEmailSent(true);
+  };
+
+  const sendPasswordReset = async () => {
+    if (!authForm.email.trim()) { setAuthError("Skriv inn e-posten din"); return; }
+    setAuthLoading(true); setAuthError("");
+    const { error } = await supabase.auth.resetPasswordForEmail(authForm.email.trim(), { redirectTo: "https://gdliga.no" });
+    setAuthLoading(false);
+    if (error) { setAuthError(error.message); return; }
+    setResetEmailSent(true);
+  };
+
+  const updatePassword = async () => {
+    if ((authForm.password || "").length < 6) { setAuthError("Passordet må være minst 6 tegn"); return; }
+    setAuthLoading(true); setAuthError("");
+    const { error } = await supabase.auth.updateUser({ password: authForm.password });
+    setAuthLoading(false);
+    if (error) { setAuthError(error.message); return; }
+    setRecoveryMode(false);
+    setAuthForm({ email: "", password: "", name: "" });
+    await appAlert("Passordet er oppdatert! Du er nå logget inn.");
   };
 
   const loadRounds = async () => {
@@ -2331,15 +2354,35 @@ export default function DiscGolfLeague() {
       )}
 
       {showAuth && (
-  <div onClick={() => { setShowAuth(false); setSignupEmailSent(false); }} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
+  <div onClick={() => { setShowAuth(false); setSignupEmailSent(false); setResetEmailSent(false); setAuthError(""); }} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
     <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, background: "var(--c-modal-bg)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 24, animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
-      {signupEmailSent ? (
+      {resetEmailSent ? (
+        <div style={{ textAlign: "center", padding: "20px 0" }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>📬</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "var(--c-text-primary)", marginBottom: 8 }}>Sjekk e-posten din!</div>
+          <div style={{ fontSize: 13, color: "var(--c-text-secondary)", lineHeight: 1.7, marginBottom: 20 }}>Vi har sendt en lenke for å tilbakestille passordet til <strong>{authForm.email}</strong>. Klikk lenken for å velge et nytt passord.</div>
+          <button onClick={() => { setShowAuth(false); setResetEmailSent(false); setAuthMode("login"); setAuthForm({ email: "", password: "", name: "" }); }} style={{ width: "100%", padding: 13, border: "none", borderRadius: 12, background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>Lukk</button>
+        </div>
+      ) : signupEmailSent ? (
         <div style={{ textAlign: "center", padding: "20px 0" }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>📬</div>
           <div style={{ fontSize: 20, fontWeight: 800, color: "var(--c-text-primary)", marginBottom: 8 }}>Sjekk e-posten din!</div>
           <div style={{ fontSize: 13, color: "var(--c-text-secondary)", lineHeight: 1.7, marginBottom: 20 }}>Vi har sendt en bekreftelseslenke til <strong>{authForm.email}</strong>. Klikk lenken for å aktivere kontoen din.</div>
           <button onClick={() => { setShowAuth(false); setSignupEmailSent(false); setAuthForm({ email: "", password: "", name: "" }); }} style={{ width: "100%", padding: 13, border: "none", borderRadius: 12, background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>Lukk</button>
         </div>
+      ) : authMode === "reset" ? (
+        <>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "var(--c-text-primary)", marginBottom: 4 }}>Tilbakestill passord</div>
+          <div style={{ fontSize: 12, color: "var(--c-text-muted)", marginBottom: 20 }}>Skriv inn e-posten din, så sender vi deg en lenke for å velge nytt passord.</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <input type="email" placeholder="E-post" value={authForm.email} onChange={e => setAuthForm({ ...authForm, email: e.target.value })} onKeyDown={e => e.key === "Enter" && sendPasswordReset()} style={{ width: "100%", padding: "12px 14px", borderRadius: 12, background: "var(--c-bg-input)", border: "1px solid rgba(0,0,0,0.1)", color: "var(--c-text-primary)", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+            {authError && <div style={{ fontSize: 12, color: "#dc2626", background: "rgba(239,68,68,0.08)", padding: "8px 12px", borderRadius: 8, border: "1px solid rgba(239,68,68,0.2)" }}>{authError}</div>}
+            <button onClick={sendPasswordReset} disabled={authLoading} style={{ width: "100%", padding: 13, border: "none", borderRadius: 12, background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 800, fontSize: 14, cursor: "pointer", opacity: authLoading ? 0.7 : 1 }}>
+              {authLoading ? "Vennligst vent..." : "Send tilbakestillingslenke"}
+            </button>
+            <button onClick={() => { setAuthMode("login"); setAuthError(""); }} style={{ background: "none", border: "none", color: "#4a8a10", fontWeight: 600, fontSize: 13, cursor: "pointer", padding: 4 }}>← Tilbake til innlogging</button>
+          </div>
+        </>
       ) : (
         <>
       <div style={{ fontSize: 20, fontWeight: 800, color: "var(--c-text-primary)", marginBottom: 4 }}>{authMode === "login" ? "Logg inn" : "Opprett konto"}</div>
@@ -2370,12 +2413,32 @@ export default function DiscGolfLeague() {
         <button onClick={() => { setAuthMode(authMode === "login" ? "signup" : "login"); setAuthError(""); }} style={{ background: "none", border: "none", color: "#4a8a10", fontWeight: 600, fontSize: 13, cursor: "pointer", padding: 4 }}>
           {authMode === "login" ? "Ny bruker? Registrer deg →" : "← Har du konto? Logg inn"}
         </button>
+        {authMode === "login" && (
+          <button onClick={() => { setAuthMode("reset"); setAuthError(""); }} style={{ background: "none", border: "none", color: "var(--c-text-muted)", fontWeight: 600, fontSize: 12, cursor: "pointer", padding: 2 }}>Glemt passord?</button>
+        )}
       </div>
         </>
       )}
     </div>
   </div>
 )}
+
+      {recoveryMode && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
+          <div style={{ width: "100%", maxWidth: 500, background: "var(--c-modal-bg)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 20, padding: 24, animation: "slideUp 0.3s ease", boxShadow: "0 -4px 30px rgba(0,0,0,0.12)" }}>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "var(--c-text-primary)", marginBottom: 4 }}>Velg nytt passord</div>
+            <div style={{ fontSize: 12, color: "var(--c-text-muted)", marginBottom: 20 }}>Skriv inn et nytt passord for kontoen din.</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <input type="password" placeholder="Nytt passord (min. 6 tegn)" value={authForm.password} onChange={e => setAuthForm({ ...authForm, password: e.target.value })} onKeyDown={e => e.key === "Enter" && updatePassword()} style={{ width: "100%", padding: "12px 14px", borderRadius: 12, background: "var(--c-bg-input)", border: "1px solid rgba(0,0,0,0.1)", color: "var(--c-text-primary)", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+              {authError && <div style={{ fontSize: 12, color: "#dc2626", background: "rgba(239,68,68,0.08)", padding: "8px 12px", borderRadius: 8, border: "1px solid rgba(239,68,68,0.2)" }}>{authError}</div>}
+              <button onClick={updatePassword} disabled={authLoading} style={{ width: "100%", padding: 13, border: "none", borderRadius: 12, background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 800, fontSize: 14, cursor: "pointer", opacity: authLoading ? 0.7 : 1 }}>
+                {authLoading ? "Vennligst vent..." : "Lagre nytt passord"}
+              </button>
+              <button onClick={() => { setRecoveryMode(false); setAuthForm({ email: "", password: "", name: "" }); setAuthError(""); }} style={{ background: "none", border: "none", color: "var(--c-text-muted)", fontWeight: 600, fontSize: 13, cursor: "pointer", padding: 4 }}>Avbryt</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showProfile && user && (
         <div onClick={() => setShowProfile(false)} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 20, animation: "fadeIn 0.2s ease" }}>
