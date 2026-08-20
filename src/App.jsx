@@ -879,7 +879,7 @@ export default function DiscGolfLeague() {
       </div>
 
       <div style={{ position: "relative", zIndex: 1, padding: "24px 20px 0" }}>
-        <div style={{ maxWidth: 600, margin: "0 auto" }}>
+        <div style={{ maxWidth: "var(--app-max-w, 600px)", margin: "0 auto" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <img src="/favicon_small.png" alt="GDG logo" style={{ width: 44, height: 44, objectFit: "cover", borderRadius: "50%" }} />
@@ -980,7 +980,7 @@ export default function DiscGolfLeague() {
         </div>
       </div>
 
-      <div style={{ position: "relative", zIndex: 1, padding: "16px 20px 100px", maxWidth: 600, margin: "0 auto" }}>
+      <div style={{ position: "relative", zIndex: 1, padding: "16px 20px 100px", maxWidth: "var(--app-max-w, 600px)", margin: "0 auto" }}>
 
         {tab === "tabell" && (
           <div>
@@ -1126,6 +1126,7 @@ export default function DiscGolfLeague() {
                 <div style={{ fontSize: 13, color: "var(--c-text-muted)" }}>Vær den første til å registrere en runde!</div>
               </div>
             )}
+            <div className="card-grid">
             {realRounds.filter(r => {
               const courseOk = roundFilter === "alle" || r.course_id === roundFilter;
               const friendIds = friends.map(f => f.friend_id);
@@ -1172,6 +1173,7 @@ export default function DiscGolfLeague() {
                 </div>
               </div>
             ))}
+            </div>
           </div>
         )}
 
@@ -1190,6 +1192,7 @@ export default function DiscGolfLeague() {
                 <button key={s.id} onClick={() => !s.disabled && setCourseSort(s.id)} style={{ padding: "6px 12px", border: "1px solid", borderColor: courseSort === s.id ? "#65A30D" : "var(--c-border-strong)", borderRadius: 20, background: courseSort === s.id ? "rgba(101,163,13,0.12)" : "var(--c-bg-card)", color: s.disabled ? "#b0b8a0" : courseSort === s.id ? "#4a8a10" : "var(--c-text-muted)", fontSize: 12, fontWeight: 600, cursor: s.disabled ? "default" : "pointer", opacity: s.disabled ? 0.5 : 1 }}>{s.label}</button>
               ))}
             </div>
+            <div className="card-grid">
             {(() => {
               const roundCounts = {};
               allRounds.forEach(r => { roundCounts[r.course_id] = (roundCounts[r.course_id] || 0) + 1; });
@@ -1248,6 +1251,7 @@ export default function DiscGolfLeague() {
               </div>
               );
             })}
+            </div>
           </div>
         )}
 
@@ -1449,7 +1453,7 @@ export default function DiscGolfLeague() {
                   {!user && (
                     <div style={{ textAlign: "center", padding: "16px", background: "rgba(101,163,13,0.07)", border: "1px solid rgba(101,163,13,0.15)", borderRadius: 14, marginBottom: 16, fontSize: 13, color: "var(--c-text-secondary)" }}>Logg inn for å se dine badges!</div>
                   )}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "var(--badge-cols, 1fr 1fr 1fr)", gap: 10 }}>
                     {BADGE_DEFS.map((badge) => {
                       const earned = user ? badge.check(myProfile, myRounds, COURSES, allRounds, players) : false;
                       return (
@@ -3223,6 +3227,13 @@ export default function DiscGolfLeague() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;0,9..40,900&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
+        /* Desktop-widening (mobil urort: alt gates bak min-width 960px) */
+        :root { --app-max-w: 600px; --badge-cols: 1fr 1fr 1fr; }
+        @media (min-width: 960px) {
+          :root { --app-max-w: 1040px; --badge-cols: repeat(6, 1fr); }
+          .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+          .card-grid > * { margin-bottom: 0 !important; }
+        }
         @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
