@@ -2414,7 +2414,7 @@ export default function DiscGolfLeague() {
           {authMode === "login" ? "Ny bruker? Registrer deg →" : "← Har du konto? Logg inn"}
         </button>
         {authMode === "login" && (
-          <button onClick={() => { setAuthMode("reset"); setAuthError(""); }} style={{ background: "none", border: "none", color: "var(--c-text-muted)", fontWeight: 600, fontSize: 12, cursor: "pointer", padding: 2 }}>Glemt passord?</button>
+          <button onClick={() => { setAuthMode("reset"); setAuthError(""); }} style={{ background: "none", border: "none", color: "#4a8a10", fontWeight: 700, fontSize: 13, cursor: "pointer", padding: 6, textDecoration: "underline" }}>Glemt passord?</button>
         )}
       </div>
         </>
