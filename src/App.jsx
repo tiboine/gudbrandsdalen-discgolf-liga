@@ -633,8 +633,10 @@ export default function DiscGolfLeague() {
     const { data: roundsData, error: roundsErr } = await supabase.from("rounds").select("*, profiles(full_name, avatar_url)");
     // Bail (keep cache) if either fetch failed — otherwise everyone shows 0 pts.
     if (!profilesData || roundsErr || !roundsData) return;
-    const profiles = profilesData;
-    const rounds = roundsData;
+    // Deactivated players (admin) are left out of standings, records and badges.
+    const disabledIds = new Set(profilesData.filter(p => p.disabled).map(p => p.id));
+    const profiles = profilesData.filter(p => !disabledIds.has(p.id));
+    const rounds = roundsData.filter(r => !disabledIds.has(r.user_id));
 
     // This unbounded fetch doubles as the source for records/badges/stats so they
     // aren't capped at the 50-round feed limit. Refreshes on every loadPlayers().
@@ -750,17 +752,10 @@ export default function DiscGolfLeague() {
 
   const acceptFriendRequest = async (request) => {
     if (!user) return;
-    // Update the request to accepted
-    await supabase.from("friends").update({ status: "accepted" }).eq("id", request.id);
-    // Create reverse friendship
-    const { data: existing } = await supabase.from("friends").select("id").eq("user_id", user.id).eq("friend_id", request.user_id);
-    if (!existing || existing.length === 0) {
-      await supabase.from("friends").insert({ user_id: user.id, friend_id: request.user_id, status: "accepted" });
-    } else {
-      await supabase.from("friends").update({ status: "accepted" }).eq("user_id", user.id).eq("friend_id", request.user_id);
-    }
-    // Notify the requester via SECURITY DEFINER RPC (sender name set server-side).
-    await supabase.rpc("notify_friend_accepted", { target: request.user_id });
+    // Accepts the request, creates the reverse row and notifies the requester server-side.
+    // Clients cannot write 'accepted' rows directly (migration 010).
+    const { error } = await supabase.rpc("accept_friend_request", { p_request_id: request.id });
+    if (error) { await appAlert(`Kunne ikke godta forespørselen: ${error.message}`); return; }
     // Update the notification for this friend request to show "Godkjent"
     await supabase.from("notifications").update({ title: "✓ Venneforespørsel godkjent", body: `Du og ${request.profiles?.full_name || "en spiller"} er nå venner`, read: true }).eq("user_id", user.id).eq("type", "friend_request").filter("data->>from_user_id", "eq", request.user_id);
     await loadFriends();
@@ -1683,7 +1678,7 @@ export default function DiscGolfLeague() {
                         ) : (
                           <div style={{ fontSize: 10, padding: "2px 8px", borderRadius: 10, background: "rgba(0,0,0,0.05)", color: "var(--c-text-faint)", fontWeight: 600 }}>Ingen runder</div>
                         )}
-                        {!ADMIN_EMAILS.includes(p.full_name) && (
+                        {p.id !== user?.id && (
                           <div style={{ display: "flex", gap: 4 }}>
                             <button onClick={async () => {
                               const action = p.disabled ? "aktivere" : "deaktivere";
@@ -2282,7 +2277,7 @@ export default function DiscGolfLeague() {
                               group_id: groupId,
                             };
                           });
-                          const { error: friendErr } = await supabase.from("rounds").insert(friendRounds);
+                          const { data: insertedFriendRounds, error: friendErr } = await supabase.from("rounds").insert(friendRounds).select("id");
                           if (friendErr) {
                             // Egen runde er allerede lagret — informer om at venners runder feilet
                             // i stedet for å vise falsk suksess.
@@ -2293,21 +2288,12 @@ export default function DiscGolfLeague() {
                             return;
                           }
 
-                          // Send notifications to friends via SECURITY DEFINER RPC (sender set server-side).
+                          // Notify friends via SECURITY DEFINER RPC: text and target are derived
+                          // server-side from the round itself.
                           const friendIds = friends.map(f => f.friend_id);
-                          await Promise.all(selectedFriendPlayers.map(pid => {
-                            const fs = parseInt(friendScores[pid]);
-                            const fvsPar = fs - course.par;
-                            const scoreStr = fvsPar === 0 ? "E" : fvsPar > 0 ? `+${fvsPar}` : `${fvsPar}`;
-                            return supabase.rpc("notify_round_registered", {
-                              target: pid,
-                              p_course_name: course.name,
-                              p_score: scoreStr,
-                              p_course_id: regForm.course,
-                              p_date: regForm.date,
-                              p_group: groupId,
-                            });
-                          }));
+                          await Promise.all((insertedFriendRounds || []).map(r =>
+                            supabase.rpc("notify_round_registered", { p_round_id: r.id })
+                          ));
 
                           // Auto-send friend requests to non-friends
                           for (const pid of selectedFriendPlayers) {
@@ -2317,26 +2303,10 @@ export default function DiscGolfLeague() {
                           }
                         }
 
-                        // Check for new course record
+                        // The server decides whether this is a new course record (strictly better
+                        // than every other player) and notifies the others once.
                         if (newRound) {
-                          const { data: courseRounds } = await supabase.from("rounds").select("user_id, score").eq("course_id", regForm.course);
-                          if (courseRounds) {
-                            const otherRounds = courseRounds.filter(r => r.user_id !== user.id);
-                            const uniqueOthers = [...new Set(otherRounds.map(r => r.user_id))];
-                            // Only a STRICTLY better score than every other player counts as a new record
-                            // (a tie should not fire "ny rekord").
-                            if (uniqueOthers.length > 0) {
-                              const prevBestOthers = Math.min(...otherRounds.map(r => r.score));
-                              if (vsPar < prevBestOthers) {
-                                const scoreStr = vsPar === 0 ? "E" : vsPar > 0 ? `+${vsPar}` : `${vsPar}`;
-                                await supabase.rpc("notify_course_record", {
-                                  targets: uniqueOthers,
-                                  p_course_name: course.name,
-                                  p_score: scoreStr,
-                                });
-                              }
-                            }
-                          }
+                          await supabase.rpc("notify_course_record", { p_round_id: newRound.id });
                         }
                       }
                       await loadRounds();
