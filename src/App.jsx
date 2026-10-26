@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { useRegisterSW } from "virtual:pwa-register/react";
 import { BADGE_ICONS } from "./components/BadgeIcons";
@@ -37,6 +37,12 @@ function getCurrentSeason(date = new Date()) {
   if (SPRING_MONTHS.includes(m)) return "Vår";
   if (FALL_MONTHS.includes(m)) return "Høst";
   return null;
+}
+
+// "YYYY-MM-DD" in local time. toISOString() is UTC and gives yesterday's date
+// between 00:00 and 02:00 in Norway.
+function toLocalISODate(d = new Date()) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 function getSeasonLabel(date = new Date()) {
@@ -159,7 +165,9 @@ function getDistance(lat1, lng1, lat2, lng2) {
   return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 }
 
-function Sparkline({ data, color = "#A3E635" }) {
+function Sparkline({ data: raw, color = "#A3E635" }) {
+  if (!raw || raw.length === 0) return null;
+  const data = raw.length === 1 ? [raw[0], raw[0]] : raw; // one point -> flat line
   const max = Math.max(...data), min = Math.min(...data), range = max - min || 1;
   const w = 80, h = 28;
   const pts = data.map((v, i) => `${(i / (data.length - 1)) * w},${h - ((v - min) / range) * (h - 4) - 2}`).join(" ");
@@ -202,7 +210,7 @@ export default function DiscGolfLeague() {
   const [showRegister, setShowRegister] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [selectedCourse, setSelectedCourse] = useState(null);
-  const [regForm, setRegForm] = useState({ course: "", score: "", date: new Date().toISOString().split("T")[0], aces: null, eagles: null, birdies: null, bogeys: null });
+  const [regForm, setRegForm] = useState({ course: "", score: "", date: toLocalISODate(), aces: null, eagles: null, birdies: null, bogeys: null });
   const [statTooltip, setStatTooltip] = useState(null);
   const [updatedToast, setUpdatedToast] = useState(false);
   const [news, setNews] = useState([]);
@@ -262,9 +270,17 @@ export default function DiscGolfLeague() {
       }
     },
     onNeedRefresh() {
-      updateServiceWorker(true);
+      // Don't reload while a round is being registered; apply when the modal closes.
+      pendingUpdateRef.current = true;
+      if (!showRegisterRef.current) updateServiceWorker(true);
     },
   });
+  const pendingUpdateRef = useRef(false);
+  const showRegisterRef = useRef(false);
+  useEffect(() => {
+    showRegisterRef.current = showRegister;
+    if (!showRegister && pendingUpdateRef.current) updateServiceWorker(true);
+  }, [showRegister]);
 
   useEffect(() => {
     const onVisibility = () => {
@@ -777,8 +793,11 @@ export default function DiscGolfLeague() {
     BADGE_DEFS.forEach(b => {
       currentBadges[b.id] = b.check(myProfile, myRounds, COURSES, currentRounds, currentPlayers);
     });
-    const storedRaw = localStorage.getItem("earnedBadges");
-    const storedBadges = storedRaw ? JSON.parse(storedRaw) : null;
+    // Per-user key: a shared device must not diff against the previous user's badges.
+    const badgeKey = `earnedBadges_${user.id}`;
+    try { localStorage.removeItem("earnedBadges"); } catch {} // legacy shared key
+    let storedBadges = null;
+    try { storedBadges = JSON.parse(localStorage.getItem(badgeKey) || "null"); } catch {}
     if (storedBadges) {
       const newNotifs = [];
       BADGE_DEFS.forEach(b => {
@@ -803,7 +822,7 @@ export default function DiscGolfLeague() {
         loadNotifications();
       }
     }
-    localStorage.setItem("earnedBadges", JSON.stringify(currentBadges));
+    try { localStorage.setItem(badgeKey, JSON.stringify(currentBadges)); } catch {}
   };
 
   useEffect(() => {
@@ -838,7 +857,6 @@ export default function DiscGolfLeague() {
   const [newsForm, setNewsForm] = useState({ title: "", body: "", important: false });
   const [newsSaving, setNewsSaving] = useState(false);
 
-  const today = new Date().toISOString().split("T")[0];
 
   const sortedCourses = userLocation
     ? [...COURSES].sort((a, b) => getDistance(userLocation.lat, userLocation.lng, a.lat, a.lng) - getDistance(userLocation.lat, userLocation.lng, b.lat, b.lng))
@@ -984,10 +1002,10 @@ export default function DiscGolfLeague() {
               const dayOfWeek = now.getDay(); // 0=Sun, 1=Mon...
               const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
               const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + mondayOffset);
-              const mondayStr = monday.toISOString().split("T")[0];
+              const mondayStr = toLocalISODate(monday);
               const sunday = new Date(monday);
               sunday.setDate(sunday.getDate() + 6);
-              const sundayStr = sunday.toISOString().split("T")[0];
+              const sundayStr = toLocalISODate(sunday);
               const weekRounds = allRounds.filter(r => r.date >= mondayStr && r.date <= sundayStr);
               if (weekRounds.length === 0) return null;
               const best = weekRounds.reduce((a, b) => a.score < b.score ? a : b);
@@ -2028,7 +2046,7 @@ export default function DiscGolfLeague() {
                   </div>
                   <div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                      <label style={{ fontSize: 11, fontWeight: 700, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em" }}>Score mot par</label>
+                      <label style={{ fontSize: 11, fontWeight: 700, color: "#5a7040", textTransform: "uppercase", letterSpacing: "0.1em" }}>Total score (antall kast)</label>
                       {regForm.course && <span style={{ fontSize: 11, color: "var(--c-text-muted)" }}>Par: {COURSES.find(c => c.id === regForm.course)?.par ?? "?"}</span>}
                     </div>
                     <input type="number" placeholder={regForm.course ? `f.eks. ${(COURSES.find(c => c.id === regForm.course)?.par ?? 54) - 3}` : "Velg bane først"} value={regForm.score} onChange={e => setRegForm({ ...regForm, score: e.target.value })} style={{ width: "100%", padding: "12px 14px", borderRadius: 12, background: "var(--c-bg-input)", border: "1px solid rgba(0,0,0,0.1)", color: "var(--c-text-primary)", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
@@ -2069,7 +2087,7 @@ export default function DiscGolfLeague() {
                         else setRegForm({ ...regForm, date: `${parts.y || "----"}-${parts.m || "--"}-${parts.d || "--"}` });
                       };
                       const months = ["Januar","Februar","Mars","April","Mai","Juni","Juli","August","September","Oktober","November","Desember"];
-                      const daysInMonth = (parts_m, parts_y) => new Date(parseInt(parts_y) || 2026, parseInt(parts_m) || 1, 0).getDate();
+                      const daysInMonth = (parts_m, parts_y) => new Date(parseInt(parts_y) || new Date().getFullYear(), parseInt(parts_m) || 1, 0).getDate();
                       const maxD = daysInMonth(m, y);
                       const selStyle = { padding: "10px 8px", borderRadius: 10, background: "var(--c-bg-input)", border: "1px solid rgba(0,0,0,0.1)", color: "var(--c-text-primary)", fontSize: 14, outline: "none", appearance: "none", cursor: "pointer" };
                       return (
@@ -2084,7 +2102,7 @@ export default function DiscGolfLeague() {
                           </select>
                           <select value={y || ""} onChange={e => setDatePart("y", e.target.value)} style={selStyle}>
                             <option value="">År</option>
-                            {[2026, 2025].map(v => <option key={v} value={String(v)}>{v}</option>)}
+                            {[new Date().getFullYear(), new Date().getFullYear() - 1].map(v => <option key={v} value={String(v)}>{v}</option>)}
                           </select>
                         </div>
                       );
@@ -2195,7 +2213,10 @@ export default function DiscGolfLeague() {
                     if (!user) { setRegError("Du må være innlogget for å registrere runde"); return; }
                     const totalScore = parseInt(regForm.score);
                     const course = COURSES.find(c => c.id === regForm.course);
-                    if (!regForm.course || regForm.score === "" || !regForm.date) return;
+                    if (!regForm.course) { setRegError("Velg bane"); return; }
+                    if (regForm.score === "") { setRegError("Fyll inn score"); return; }
+                    if (!/^\d{4}-\d{2}-\d{2}$/.test(regForm.date || "")) { setRegError("Velg dag, måned og år"); return; }
+                    if (regForm.date > toLocalISODate()) { setRegError("Datoen kan ikke være fram i tid"); return; }
                     if (!course) { setRegError("Velg en gyldig bane"); return; }
                     const vsPar = totalScore - course.par;
                     if (isNaN(totalScore) || totalScore < 1 || vsPar < -15 || vsPar > 30) {
@@ -2317,7 +2338,7 @@ export default function DiscGolfLeague() {
                     setSelectedFriendPlayers([]);
                     setFriendScores({});
                     setRegSuccess(true);
-                    setTimeout(() => { setRegSuccess(false); setShowRegister(false); setRegForm({ course: "", score: "", date: "", aces: null, eagles: null, birdies: null, bogeys: null }); setEditRound(null); setRegError(""); setRegNote(""); setFriendSearch(""); setShowFriendScores(false); }, 2000);
+                    setTimeout(() => { setRegSuccess(false); setShowRegister(false); setRegForm({ course: "", score: "", date: toLocalISODate(), aces: null, eagles: null, birdies: null, bogeys: null }); setEditRound(null); setRegError(""); setRegNote(""); setFriendSearch(""); setShowFriendScores(false); }, 2000);
                   }} style={{ width: "100%", padding: 14, border: "none", borderRadius: 14, background: "linear-gradient(135deg, #A3E635, #65A30D)", color: "#0a0f0a", fontWeight: 800, fontSize: 15, cursor: roundsLoading ? "wait" : "pointer", opacity: roundsLoading ? 0.6 : 1, boxShadow: "0 4px 24px rgba(101,163,13,0.25)", marginTop: 4 }}>{roundsLoading ? "Lagrer…" : editRound ? "Lagre endring ✓" : "Registrer 🥏"}</button>
                   <button onClick={() => { setShowRegister(false); setEditRound(null); setRegError(""); }} style={{ width: "100%", padding: 12, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, background: "var(--c-bg-input)", color: "var(--c-text-muted)", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Avbryt</button>
                 </div>
@@ -2717,7 +2738,7 @@ export default function DiscGolfLeague() {
                     );
                   })}
                   {myRounds.length > 10 && (
-                    <button onClick={() => { setShowProfile(false); setTab("runder"); setShowMyRounds(true); }} style={{ width: "100%", padding: 10, border: "1px solid rgba(0,0,0,0.08)", borderRadius: 10, background: "var(--c-bg-subtle)", color: "#4a8a10", fontWeight: 700, fontSize: 12, cursor: "pointer", marginTop: 4 }}>Vis alle ({myRounds.length} runder)</button>
+                    <button onClick={() => { setShowProfile(false); setTab("runder"); setRoundsView("mine"); setRoundFilter("alle"); }} style={{ width: "100%", padding: 10, border: "1px solid rgba(0,0,0,0.08)", borderRadius: 10, background: "var(--c-bg-subtle)", color: "#4a8a10", fontWeight: 700, fontSize: 12, cursor: "pointer", marginTop: 4 }}>Vis alle ({myRounds.length} runder)</button>
                   )}
                 </div>
               );
