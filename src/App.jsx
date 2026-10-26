@@ -847,6 +847,8 @@ export default function DiscGolfLeague() {
     // user on a shared device doesn't inherit the previous user's push.
     try { await unsubscribeFromPush(); } catch {}
     await supabase.auth.signOut();
+    // Drop the service worker's cached Supabase responses (see sw.js).
+    try { await caches.delete("supabase-cache"); } catch {}
   };
 
   const ADMIN_EMAILS = [import.meta.env.VITE_ADMIN_EMAIL, "urbanthor@gmail.com"].filter(Boolean);

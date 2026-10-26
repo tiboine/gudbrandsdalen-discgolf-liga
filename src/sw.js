@@ -19,9 +19,11 @@ self.addEventListener("activate", (event) => {
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST);
 
-// Cache Supabase REST requests with NetworkFirst so offline-ish reads still work.
+// Cache Supabase REST reads with NetworkFirst so offline-ish reads still work.
+// Only /rest/v1/ - never auth, storage or function responses. The app clears this
+// cache on logout (signOut in App.jsx) so a shared device doesn't keep the data.
 registerRoute(
-  ({ url }) => /\.supabase\.co\//i.test(url.href),
+  ({ url }) => /\.supabase\.co$/i.test(url.hostname) && url.pathname.startsWith("/rest/v1/"),
   new NetworkFirst({
     cacheName: "supabase-cache",
     plugins: [new ExpirationPlugin({ maxEntries: 50, maxAgeSeconds: 300 })],
