@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { useRegisterSW } from "virtual:pwa-register/react";
 import { BADGE_ICONS } from "./components/BadgeIcons";
@@ -43,6 +43,19 @@ function getCurrentSeason(date = new Date()) {
 // between 00:00 and 02:00 in Norway.
 function toLocalISODate(d = new Date()) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+// PostgREST caps every response (max-rows, default 1000) and silently truncates.
+// Page with .range() until an empty page so the full table comes back whatever the cap
+// is. makeQuery must return a fresh, stably ordered query each call.
+async function fetchAllRows(makeQuery, pageSize = 1000) {
+  const rows = [];
+  for (;;) {
+    const { data, error } = await makeQuery().range(rows.length, rows.length + pageSize - 1);
+    if (error) return { data: null, error };
+    if (!data || data.length === 0) return { data: rows, error: null };
+    rows.push(...data);
+  }
 }
 
 function getSeasonLabel(date = new Date()) {
@@ -300,6 +313,7 @@ export default function DiscGolfLeague() {
   const [userLocation, setUserLocation] = useState(null);
   const [locationStatus, setLocationStatus] = useState("idle"); // idle | loading | done | denied
   const [user, setUser] = useState(null);
+  const [authReady, setAuthReady] = useState(false); // true once the initial session is known
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState("login"); // "login" | "signup"
   const [authForm, setAuthForm] = useState({ email: "", password: "", name: "" });
@@ -463,7 +477,7 @@ export default function DiscGolfLeague() {
       const { data } = await supabase.from("profiles").select("push_prefs").eq("id", user.id).single();
       if (data?.push_prefs) setPushPrefs(data.push_prefs);
     })();
-  }, [user]);
+  }, [user?.id]);
 
   const updatePushPref = async (key, value) => {
     if (!user || !pushPrefs) return;
@@ -546,9 +560,11 @@ export default function DiscGolfLeague() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
+      setAuthReady(true);
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
+      setAuthReady(true);
       if (event === "PASSWORD_RECOVERY") { setRecoveryMode(true); setShowAuth(false); }
     });
     return () => subscription.unsubscribe();
@@ -558,6 +574,8 @@ export default function DiscGolfLeague() {
     if (!user) return;
     // Ensure profile exists (critical for Google OAuth users)
     const ensureProfile = async () => {
+      // Start the data load right away, in parallel with the profile check.
+      const dataLoad = Promise.all([loadRounds(), loadPlayers()]);
       const { data: existing } = await supabase.from("profiles").select("id, division, hometown").eq("id", user.id).single();
       if (existing) {
         if (existing.division) setUserDivision(existing.division);
@@ -571,19 +589,24 @@ export default function DiscGolfLeague() {
           division: "Rekreasjons",
         }, { onConflict: "id" });
       }
-      // Reload data after ensuring profile
-      await loadRounds();
-      const loadedPlayers = await loadPlayers();
       loadAllProfiles();
       loadNotifications();
       loadFriends();
       loadPendingFriendRequests();
-      // Check badge changes after data is loaded
-      const { data: allRoundsForBadges } = await supabase.from("rounds").select("*");
-      if (loadedPlayers && allRoundsForBadges) checkBadgeChanges(loadedPlayers, allRoundsForBadges);
+      // Badge diff reuses the rounds loadPlayers just fetched (no extra full fetch).
+      const [, loaded] = await dataLoad;
+      if (loaded) checkBadgeChanges(loaded.players, loaded.rounds);
     };
     ensureProfile();
-  }, [user]);
+  }, [user?.id]);
+
+  // Logged-out visitors: load public data once auth is resolved. Logged-in users get it
+  // from ensureProfile above, so the rounds aren't fetched twice on start.
+  useEffect(() => {
+    if (!authReady || user) return;
+    loadRounds();
+    loadPlayers();
+  }, [authReady, user?.id]);
 
   const signInWithGoogle = () => supabase.auth.signInWithOAuth({
     provider: "google",
@@ -645,8 +668,10 @@ export default function DiscGolfLeague() {
   };
 
   const loadPlayers = async () => {
-    const { data: profilesData } = await supabase.from("profiles").select("*");
-    const { data: roundsData, error: roundsErr } = await supabase.from("rounds").select("*, profiles(full_name, avatar_url)");
+    const [{ data: profilesData }, { data: roundsData, error: roundsErr }] = await Promise.all([
+      fetchAllRows(() => supabase.from("profiles").select("*").order("id")),
+      fetchAllRows(() => supabase.from("rounds").select("*, profiles(full_name, avatar_url)").order("created_at").order("id")),
+    ]);
     // Bail (keep cache) if either fetch failed — otherwise everyone shows 0 pts.
     if (!profilesData || roundsErr || !roundsData) return;
     // Deactivated players (admin) are left out of standings, records and badges.
@@ -712,7 +737,7 @@ export default function DiscGolfLeague() {
 
     setPlayers(result);
     try { localStorage.setItem("cache_players", JSON.stringify(result)); } catch {}
-    return result;
+    return { players: result, rounds };
   };
 
   const loadAllProfiles = async () => {
@@ -826,8 +851,6 @@ export default function DiscGolfLeague() {
   };
 
   useEffect(() => {
-    loadRounds();
-    loadPlayers();
     loadAllProfiles();
     navigator.geolocation.getCurrentPosition(
       pos => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
@@ -850,6 +873,84 @@ export default function DiscGolfLeague() {
     // Drop the service worker's cached Supabase responses (see sw.js).
     try { await caches.delete("supabase-cache"); } catch {}
   };
+
+  // Per-course round count and best round, shared by the Baner tab.
+  const courseStats = useMemo(() => {
+    const stats = {};
+    for (const r of allRounds) {
+      const s = stats[r.course_id] || (stats[r.course_id] = { count: 0, best: null });
+      s.count++;
+      if (!s.best || r.score < s.best.score) s.best = r;
+    }
+    return stats;
+  }, [allRounds]);
+
+  // Earned badges for the logged-in user, computed once per data change.
+  const earnedBadges = useMemo(() => {
+    if (!user) return {};
+    const myProfile = { id: user.id };
+    const myRounds = allRounds.filter(r => r.user_id === user.id);
+    return Object.fromEntries(BADGE_DEFS.map(b => [b.id, !!b.check(myProfile, myRounds, COURSES, allRounds, players)]));
+  }, [allRounds, players, user?.id]);
+
+  // Records tab data. Memoized: allRounds can be large and the component re-renders
+  // on every keystroke in any modal.
+  const recordsData = useMemo(() => {
+    if (allRounds.length === 0) return null;
+    const fmtScore = s => s === 0 ? "E" : s > 0 ? `+${s}` : `${s}`;
+    const scoreColor = s => s < 0 ? "#16a34a" : s > 0 ? "#ef4444" : "var(--c-text-muted)";
+
+    // All-time records (use the unbounded allRounds, not the 50-capped feed)
+    const bestRound = allRounds.reduce((a, b) => b.score < a.score ? b : a);
+    const bestRoundProfile = allProfiles.find(p => p.id === bestRound.user_id);
+
+    const bestPtsRound = allRounds.reduce((a, b) => {
+      const pa = scoreToPoints(a.score, MAJOR_COURSE_IDS.has(a.course_id));
+      const pb = scoreToPoints(b.score, MAJOR_COURSE_IDS.has(b.course_id));
+      return pb > pa ? b : a;
+    });
+    const bestPtsProfile = allProfiles.find(p => p.id === bestPtsRound.user_id);
+    const bestPts = scoreToPoints(bestPtsRound.score, MAJOR_COURSE_IDS.has(bestPtsRound.course_id));
+
+    const acesByPlayer = {};
+    allRounds.forEach(r => { acesByPlayer[r.user_id] = (acesByPlayer[r.user_id] || 0) + (r.aces || 0); });
+    const topAceId = Object.entries(acesByPlayer).sort((a, b) => b[1] - a[1])[0];
+    const topAceProfile = topAceId && topAceId[1] > 0 ? allProfiles.find(p => p.id === topAceId[0]) : null;
+
+    const roundsByPlayer = {};
+    const scoreSumByPlayer = {};
+    allRounds.forEach(r => {
+      roundsByPlayer[r.user_id] = (roundsByPlayer[r.user_id] || 0) + 1;
+      scoreSumByPlayer[r.user_id] = (scoreSumByPlayer[r.user_id] || 0) + r.score;
+    });
+    const topRoundsId = Object.entries(roundsByPlayer).sort((a, b) => b[1] - a[1])[0];
+    const topRoundsProfile = topRoundsId ? allProfiles.find(p => p.id === topRoundsId[0]) : null;
+
+    const avgByPlayer = {};
+    Object.entries(roundsByPlayer).forEach(([uid, cnt]) => {
+      if (cnt >= 3) avgByPlayer[uid] = scoreSumByPlayer[uid] / cnt;
+    });
+    const topAvgId = Object.entries(avgByPlayer).sort((a, b) => a[1] - b[1])[0];
+    const topAvgProfile = topAvgId ? allProfiles.find(p => p.id === topAvgId[0]) : null;
+
+    const allTimeCards = [
+      { label: "Beste enkeltRunde", icon: "🎯", holder: bestRoundProfile?.full_name, value: fmtScore(bestRound.score), valueColor: scoreColor(bestRound.score), sub: bestRound.date, course: COURSES.find(c => c.id === bestRound.course_id)?.name },
+      { label: "Høyeste Stableford", icon: "⚡", holder: bestPtsProfile?.full_name, value: `${bestPts} pts`, valueColor: "#4a8a10", sub: bestPtsRound.date, course: COURSES.find(c => c.id === bestPtsRound.course_id)?.name },
+      topAceProfile ? { label: "Flest aces", icon: "💥", holder: topAceProfile.full_name, value: `${topAceId[1]} ace${topAceId[1] !== 1 ? "s" : ""}`, valueColor: "#7c3aed", sub: null, course: null } : null,
+      { label: "Flest runder", icon: "🔄", holder: topRoundsProfile?.full_name, value: `${topRoundsId?.[1]} runder`, valueColor: "#0369a1", sub: null, course: null },
+      topAvgProfile ? { label: "Best snitt (min 3 runder)", icon: "📊", holder: topAvgProfile.full_name, value: fmtScore(Math.round(avgByPlayer[topAvgId[0]] * 10) / 10), valueColor: scoreColor(avgByPlayer[topAvgId[0]]), sub: `${roundsByPlayer[topAvgId[0]]} runder`, course: null } : null,
+    ].filter(Boolean);
+
+    // Course records
+    const courseRecords = COURSES.map(course => {
+      const cr = allRounds.filter(r => r.course_id === course.id);
+      if (cr.length === 0) return null;
+      const best = cr.reduce((a, b) => b.score < a.score ? b : a);
+      const holder = allProfiles.find(p => p.id === best.user_id);
+      return { course, best, holder };
+    }).filter(Boolean);
+    return { fmtScore, scoreColor, allTimeCards, courseRecords };
+  }, [allRounds, allProfiles]);
 
   const ADMIN_EMAILS = [import.meta.env.VITE_ADMIN_EMAIL, "urbanthor@gmail.com"].filter(Boolean);
   const isAdmin = ADMIN_EMAILS.includes(user?.email);
@@ -1209,15 +1310,13 @@ export default function DiscGolfLeague() {
             </div>
             <div className="card-grid">
             {(() => {
-              const roundCounts = {};
-              allRounds.forEach(r => { roundCounts[r.course_id] = (roundCounts[r.course_id] || 0) + 1; });
               let sorted;
-              if (courseSort === "populær") sorted = [...COURSES].sort((a, b) => (roundCounts[b.id] || 0) - (roundCounts[a.id] || 0));
+              if (courseSort === "populær") sorted = [...COURSES].sort((a, b) => (courseStats[b.id]?.count || 0) - (courseStats[a.id]?.count || 0));
               else if (courseSort === "stjerner") sorted = [...COURSES].sort((a, b) => b.rating - a.rating);
               else sorted = userLocation ? [...COURSES].sort((a, b) => getDistance(userLocation.lat, userLocation.lng, a.lat, a.lng) - getDistance(userLocation.lat, userLocation.lng, b.lat, b.lng)) : COURSES;
               return sorted;
             })().map((c, i) => {
-              const roundCount = allRounds.filter(r => r.course_id === c.id).length;
+              const roundCount = courseStats[c.id]?.count || 0;
               const dist = userLocation ? getDistance(userLocation.lat, userLocation.lng, c.lat, c.lng) : null;
               return (
               <div key={c.id} onClick={() => setSelectedCourse(selectedCourse?.id === c.id ? null : c)} style={{ background: selectedCourse?.id === c.id ? "rgba(101,163,13,0.08)" : "var(--c-bg-card)", border: selectedCourse?.id === c.id ? "1px solid rgba(101,163,13,0.25)" : "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "16px", cursor: "pointer", transition: "all 0.2s", marginBottom: 10, animation: `fadeSlideUp 0.4s ease ${i * 0.05}s both`, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
@@ -1241,9 +1340,8 @@ export default function DiscGolfLeague() {
                   ))}
                 </div>
                 {(() => {
-                  const courseRounds = allRounds.filter(r => r.course_id === c.id);
-                  if (courseRounds.length === 0) return null;
-                  const bestRound = courseRounds.reduce((a, b) => a.score < b.score ? a : b);
+                  const bestRound = courseStats[c.id]?.best;
+                  if (!bestRound) return null;
                   const scoreStr = bestRound.score === 0 ? "E" : bestRound.score > 0 ? `+${bestRound.score}` : `${bestRound.score}`;
                   const playerName = bestRound.profiles?.full_name ?? "Ukjent";
                   return (
@@ -1358,57 +1456,7 @@ export default function DiscGolfLeague() {
                 <div style={{ fontSize: 13, color: "var(--c-text-muted)" }}>Registrer runder for å sette rekorder</div>
               </div>
             ) : (() => {
-              const fmtScore = s => s === 0 ? "E" : s > 0 ? `+${s}` : `${s}`;
-              const scoreColor = s => s < 0 ? "#16a34a" : s > 0 ? "#ef4444" : "var(--c-text-muted)";
-
-              // All-time records (use the unbounded allRounds, not the 50-capped feed)
-              const bestRound = allRounds.reduce((a, b) => b.score < a.score ? b : a);
-              const bestRoundProfile = allProfiles.find(p => p.id === bestRound.user_id);
-
-              const bestPtsRound = allRounds.reduce((a, b) => {
-                const pa = scoreToPoints(a.score, MAJOR_COURSE_IDS.has(a.course_id));
-                const pb = scoreToPoints(b.score, MAJOR_COURSE_IDS.has(b.course_id));
-                return pb > pa ? b : a;
-              });
-              const bestPtsProfile = allProfiles.find(p => p.id === bestPtsRound.user_id);
-              const bestPts = scoreToPoints(bestPtsRound.score, MAJOR_COURSE_IDS.has(bestPtsRound.course_id));
-
-              const acesByPlayer = {};
-              allRounds.forEach(r => { acesByPlayer[r.user_id] = (acesByPlayer[r.user_id] || 0) + (r.aces || 0); });
-              const topAceId = Object.entries(acesByPlayer).sort((a, b) => b[1] - a[1])[0];
-              const topAceProfile = topAceId && topAceId[1] > 0 ? allProfiles.find(p => p.id === topAceId[0]) : null;
-
-              const roundsByPlayer = {};
-              allRounds.forEach(r => { roundsByPlayer[r.user_id] = (roundsByPlayer[r.user_id] || 0) + 1; });
-              const topRoundsId = Object.entries(roundsByPlayer).sort((a, b) => b[1] - a[1])[0];
-              const topRoundsProfile = topRoundsId ? allProfiles.find(p => p.id === topRoundsId[0]) : null;
-
-              const avgByPlayer = {};
-              Object.entries(roundsByPlayer).forEach(([uid, cnt]) => {
-                if (cnt >= 3) {
-                  const sum = allRounds.filter(r => r.user_id === uid).reduce((s, r) => s + r.score, 0);
-                  avgByPlayer[uid] = sum / cnt;
-                }
-              });
-              const topAvgId = Object.entries(avgByPlayer).sort((a, b) => a[1] - b[1])[0];
-              const topAvgProfile = topAvgId ? allProfiles.find(p => p.id === topAvgId[0]) : null;
-
-              const allTimeCards = [
-                { label: "Beste enkeltRunde", icon: "🎯", holder: bestRoundProfile?.full_name, value: fmtScore(bestRound.score), valueColor: scoreColor(bestRound.score), sub: bestRound.date, course: COURSES.find(c => c.id === bestRound.course_id)?.name },
-                { label: "Høyeste Stableford", icon: "⚡", holder: bestPtsProfile?.full_name, value: `${bestPts} pts`, valueColor: "#4a8a10", sub: bestPtsRound.date, course: COURSES.find(c => c.id === bestPtsRound.course_id)?.name },
-                topAceProfile ? { label: "Flest aces", icon: "💥", holder: topAceProfile.full_name, value: `${topAceId[1]} ace${topAceId[1] !== 1 ? "s" : ""}`, valueColor: "#7c3aed", sub: null, course: null } : null,
-                { label: "Flest runder", icon: "🔄", holder: topRoundsProfile?.full_name, value: `${topRoundsId?.[1]} runder`, valueColor: "#0369a1", sub: null, course: null },
-                topAvgProfile ? { label: "Best snitt (min 3 runder)", icon: "📊", holder: topAvgProfile.full_name, value: fmtScore(Math.round(avgByPlayer[topAvgId[0]] * 10) / 10), valueColor: scoreColor(avgByPlayer[topAvgId[0]]), sub: `${roundsByPlayer[topAvgId[0]]} runder`, course: null } : null,
-              ].filter(Boolean);
-
-              // Course records
-              const courseRecords = COURSES.map(course => {
-                const cr = allRounds.filter(r => r.course_id === course.id);
-                if (cr.length === 0) return null;
-                const best = cr.reduce((a, b) => b.score < a.score ? b : a);
-                const holder = allProfiles.find(p => p.id === best.user_id);
-                return { course, best, holder };
-              }).filter(Boolean);
+              const { fmtScore, scoreColor, allTimeCards, courseRecords } = recordsData;
 
               return (
                 <>
@@ -1456,9 +1504,7 @@ export default function DiscGolfLeague() {
         {tab === "badges" && (
           <div style={{ animation: "fadeSlideUp 0.4s ease" }}>
             {(() => {
-              const myProfile = user ? { id: user.id } : null;
-              const myRounds = user ? allRounds.filter(r => r.user_id === user.id) : [];
-              const earnedCount = BADGE_DEFS.filter(b => b.check(myProfile, myRounds, COURSES, allRounds, players)).length;
+              const earnedCount = BADGE_DEFS.filter(b => earnedBadges[b.id]).length;
               return (
                 <>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
@@ -1470,7 +1516,7 @@ export default function DiscGolfLeague() {
                   )}
                   <div style={{ display: "grid", gridTemplateColumns: "var(--badge-cols, 1fr 1fr 1fr)", gap: 10 }}>
                     {BADGE_DEFS.map((badge) => {
-                      const earned = user ? badge.check(myProfile, myRounds, COURSES, allRounds, players) : false;
+                      const earned = !!earnedBadges[badge.id];
                       return (
                         <div key={badge.id} style={{ background: earned ? "rgba(101,163,13,0.08)" : "var(--c-bg-card)", border: earned ? "1px solid rgba(101,163,13,0.3)" : "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "14px 8px", textAlign: "center", boxShadow: earned ? "0 0 16px rgba(101,163,13,0.15)" : "0 2px 8px rgba(0,0,0,0.05)", transition: "all 0.3s" }}>
                           <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
