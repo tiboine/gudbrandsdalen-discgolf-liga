@@ -6,11 +6,11 @@ En ligaapp for frisbeegolf/discgolf i Gudbrandsdalen, Innlandet. Spillere regist
 
 Målgruppe: Lokale discgolfspillere i Gudbrandsdalen (Lillehammer, Øyer, Ringebu, Sør-Fron, Nord-Fron, Sel). Appen skal være enkel, mobilvennlig og morsom å bruke.
 
-**Status:** Produksjon. Live på **https://gdliga.no** (v1.6.x). Full-stack med ekte data — dette er ikke lenger en demo.
+**Status:** Produksjon. Live på **https://gdliga.no** (v1.7.x). Full-stack med ekte data — dette er ikke lenger en demo.
 
 ## Tech stack
 
-- **Frontend:** React 18 + Vite 6, single-file (`src/App.jsx`, ~3200 linjer). Inline styles, ingen UI-bibliotek.
+- **Frontend:** React 18 + Vite 6. Det meste i `src/App.jsx` (~3300 linjer), med delte hjelpere i `src/lib/` og komponenter i `src/components/`. Inline styles, ingen UI-bibliotek.
 - **Backend:** Supabase (Postgres + Auth + Row Level Security + RPC-er + Edge Functions). Klient opprettes i `src/App.jsx` (`createClient` fra `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`).
 - **Auth:** Supabase Auth — e-post/passord, Google OAuth, og glemt-passord (recovery). Se «Autentisering» under.
 - **Push:** Web Push (VAPID) via en Deno Edge Function (`supabase/functions/send-push`), trigget av en `pg_net`-webhook på `notifications`.
@@ -24,19 +24,23 @@ Målgruppe: Lokale discgolfspillere i Gudbrandsdalen (Lillehammer, Øyer, Ringeb
 ```
 ├── index.html                 # Entry point, norsk meta/SEO/OG, canonical gdliga.no
 ├── vite.config.js             # Vite + React + VitePWA (injectManifest). Injiserer __APP_VERSION__/__COMMIT_HASH__/__BUILD_DATE__
-├── vercel.json                # SPA rewrite (/(.*) -> /)
+├── vercel.json                # SPA rewrite + sikkerhetshoder (CSP i Report-Only)
 ├── package.json               # version = app-versjon (vises i footer, driver update-toast)
 ├── .env                       # VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_VAPID_PUBLIC_KEY (ikke committet med verdier)
 ├── src/
 │   ├── main.jsx               # React root + <Analytics/>
-│   ├── App.jsx                # HELE appen (single-file): state, auth, data, scoring, alle faner/modaler
-│   ├── sw.js                  # Service worker: precache + Supabase NetworkFirst + push/notificationclick
+│   ├── App.jsx                # Hovedappen: state, auth, data, scoring, alle faner/modaler
+│   ├── sw.js                  # Service worker: precache + Supabase /rest/v1/ NetworkFirst + push/notificationclick
 │   ├── themes.js              # 5 fargetema (skog/fjell/solnedgang/host/kontrast), applyTheme() setter CSS-vars
+│   ├── lib/
+│   │   └── format.js          # formatVsPar (-3/E/+2), fmtDate (rundedato), fmtTimestamp (created_at)
 │   └── components/
+│       ├── Avatar.jsx         # Profilbilde/forbokstav; med onClick blir den <button>
+│       ├── BottomSheet.jsx    # Modal (backdrop + panel), role=dialog, Escape lukker overste
 │       ├── BadgeIcons.jsx     # BADGE_ICONS — ~25 SVG-badges (achievements)
 │       └── TabIcons.jsx       # TAB_ICONS, STAT_ICONS, LogoIcon, BellIcon
 ├── supabase/
-│   ├── migrations/            # 001–009 SQL (kjøres MANUELT i Supabase SQL Editor / db push)
+│   ├── migrations/            # 001–012 SQL (kjøres MANUELT i Supabase SQL Editor / db push)
 │   └── functions/send-push/   # Deno Edge Function for VAPID Web Push
 ├── android-app/               # Android TWA (twa-manifest.json, Gradle, AndroidManifest)
 └── public/                    # favicon/ikoner, robots.txt, sitemap.xml
@@ -49,18 +53,23 @@ Målgruppe: Lokale discgolfspillere i Gudbrandsdalen (Lillehammer, Øyer, Ringeb
 - **Glemt passord:** «Glemt passord?» i login-modalen → `sendPasswordReset` (`supabase.auth.resetPasswordForEmail`) sender e-post med lenke til `gdliga.no`. Lenken utløser et `PASSWORD_RECOVERY`-event i `onAuthStateChange` → `recoveryMode` viser «Velg nytt passord» → `updatePassword` (`supabase.auth.updateUser`).
   - Krever at `https://gdliga.no` står i Supabase → Authentication → URL Configuration → Redirect URLs (samme liste som Google OAuth bruker).
 - `ensureProfile` (kjører på `user`-endring) oppretter en rad i `profiles` hvis den mangler — kritisk for Google OAuth-brukere.
-- **Admin:** `ADMIN_EMAILS` / `isAdmin` (p.t. `urbanthor@gmail.com`). Admin-fanen har underfaner (oversikt/runder/spillere/profiler/meldinger/nyheter/test).
+- **Admin:** klient: `ADMIN_EMAILS` / `isAdmin` (kun UI). Server: `public.is_admin()` (migrasjon 010) brukes av alle admin-policyer — admin-e-posten står der + i feedback-triggeren fra 004. Admin-fanen har underfaner (oversikt/runder/spillere/profiler/meldinger/nyheter/test).
+- **Deaktivering:** `profiles.disabled` kan bare endres av admin (trigger). Deaktiverte kan ikke skrive runder, og utelates fra tabell/rekorder/badges.
 
 ## Supabase-backend
 
-Tabeller (basisskjemaet ble laget i Supabase-UI; migrasjonene 001–009 lag-på-lag):
+Tabeller (basisskjemaet ble laget i Supabase-UI; migrasjonene 001–012 lag-på-lag):
 - `profiles` — brukerprofil (full_name, avatar_url, division, hometown, push_prefs)
 - `rounds` — registrerte runder (`score` = mot par, `total_score` = absolutt, course_id, date, aces/eagles/birdies/bogeys, group_id for gruppespill)
 - `news`, `feedback`, `notifications`, `friends`, `push_subscriptions`
 
 Viktig:
 - **RLS er på** for alle tabeller. Migrasjon `007` herdet policyene (admin-tilgang, egne rader, venneregistrering). Se filene for detaljer.
-- **Cross-user-varsler** går via fire `SECURITY DEFINER`-RPC-er (migrasjon `008`): `notify_friend_request`, `notify_friend_accepted`, `notify_round_registered`, `notify_course_record`. Tittel/tekst settes server-side (anti-spoofing) — ikke skriv til `notifications` direkte fra klienten for andre brukere.
+- **Cross-user-varsler** går via `SECURITY DEFINER`-RPC-er (008, strammet i 010): `notify_friend_request(target)`, `notify_friend_accepted(target)`, `notify_round_registered(p_round_id)`, `notify_course_record(p_round_id)`. Tittel/tekst/mottakere utledes server-side fra runden (anti-spoofing), maks ett varsel per runde — ikke skriv til `notifications` direkte for andre brukere.
+- **Venner (010):** klienten kan bare INSERT-e `status='pending'`. Godkjenning går via RPC-en `accept_friend_request(p_request_id)` (oppdaterer begge rader + varsler). Ingen UPDATE-policy på `friends`. `are_friends(a, b)` = godkjent begge veier; brukes av rounds-policyen for å registrere runder for venner.
+- **Validering av runder (010):** trigger `validate_round` — score mot par −15..+30, dato ikke fram i tid (Oslo-tid), hullstatistikk 0..30, `user_id` kan ikke byttes ved UPDATE, deaktiverte kontoer blokkeres. Admin er unntatt. Holder grensene i synk med klientvalideringen i registreringsmodalen.
+- **Feedback (011):** `user_id`/`user_name` settes server-side av trigger.
+- **Storage `avatars` (012):** offentlig lesing; brukere kan bare skrive `avatars/<egen id>.webp`; 2 MB-grense.
 - **Push-pipeline:** INSERT i `notifications` → `pg_net`-trigger (migrasjon `006`) POST-er til `send-push` Edge Function → VAPID-push til alle subs (respekterer `push_prefs`, rydder 410/404) → service worker viser varsel → klikk sender `{type:'navigate', path}` til appen som bytter fane.
 - **Migrasjoner kjøres MANUELT** — Vercel-deploy kjører dem ikke. Kjør ny SQL i Supabase SQL Editor eller `supabase db push`. Alle er idempotente.
 
@@ -73,10 +82,13 @@ Viktig:
 - **Baner** — 12 ligabaner (13 i COURSES inkl. vingarparken) med UDisc-data; sorter på lengde/popularitet/rating.
 - **Rekorder** — all-time + banerekorder per bane. Bruker `allRounds` (ubegrenset), ikke bare feeden.
 - **Badges** — grid fra `BADGE_DEFS` / `BADGE_ICONS`.
-- **Registrer runde** (modal) — velg bane (GPS sorterer nærmeste først), score mot par med live poeng-preview, dato, gruppespillere. Lagrer `score` + `total_score`.
+- **Registrer runde** (modal) — velg bane (GPS sorterer nærmeste først), total score med live poeng-preview, dato, gruppespillere. Lagrer `score` + `total_score`.
+- **Posisjon:** spørres BARE ved brukerhandling (åpne registrering, trykke «Avstand»), aldri ved oppstart. Nei lagres i `localStorage.geoDenied` (iOS husker ikke web-avslag og spurte ellers hver gang); posisjon (~100 m) caches i `localStorage.lastLocation` i 2 timer.
 - **Nytt / Regler / Intro / Venner / Admin.**
 
 Egne dialoger: `appConfirm` / `appAlert` / `appPrompt` (ikke browser-native `confirm/alert`).
+
+**Datalasting:** `loadPlayers` henter alle profiler og runder paginert med `fetchAllRows()` (PostgREST kutter stille ved max-rows) og returnerer `{ players, rounds }`. Innloggede laster via `ensureProfile`, utloggede via en egen effekt når `authReady` — ikke legg til ekstra hentinger ved oppstart. Tunge utregninger (`courseStats`, `earnedBadges`, `recordsData`) ligger i `useMemo`.
 
 ## Poengsystem (Score-Stableford)
 
@@ -85,7 +97,7 @@ Egne dialoger: `appConfirm` / `appAlert` / `appPrompt` (ikke browser-native `con
 - **Standings:** for hver spiller, filtrer runder til `LEAGUE_COURSE_IDS`, behold beste runde per `(course_id, seasonKey)`, summer poeng. Alle runder teller, men bare beste per bane per sesong gir ligapoeng.
 - Ingen oppmøtepoeng — man må prestere for å klatre.
 - **Sesong:** `getSeasonKey` gir f.eks. `2026-V` / `2026-H`. `SPRING_MONTHS = [5, 6, 7]` (mai–juli), `FALL_MONTHS = [8, 9, 10]` (aug–okt). Utenfor sesong (`null`) teller ikke for liga, men teller for badges/rekorder.
-- **`par` er ikke bare pynt:** absolutt totalscore rekonstrueres som `score + course.par` når `total_score` mangler (gamle runder). Endrer du en banes `par`, kan historiske totaler forskyves — vurder en backfill-migrasjon (se `009` for Lalm-eksempelet).
+- **`par` er ikke bare pynt:** absolutt totalscore rekonstrueres som `score + course.par` når `total_score` mangler (gamle runder) — bruk `getTotalScore(r)`. Endrer du en banes `par`, kan historiske totaler forskyves — vurder en backfill-migrasjon (se `009` for Lalm-eksempelet).
 
 ## Baner i ligaen (fra UDisc)
 
@@ -173,13 +185,16 @@ Supabase, e-post + Google-innlogging, glemt passord, runder/poeng i Postgres, au
 - **Score:** Vises alltid mot par (f.eks. -3, +2, E for even). Poeng forkortes "pts".
 - **Baner:** Lenk alltid til UDisc der mulig.
 - **Ingen eksterne UI-biblioteker:** Inline styles (nåværende mønster). Bruk `var(--c-*)`-tokens for farger.
-- **Single-file:** `App.jsx` inneholder alt (~3200 linjer). Vurder å splitte ut når det vokser mer.
+- **Gjenbruk:** score mot par med `formatVsPar`, datoer med `fmtDate`/`fmtTimestamp`, totalscore med `getTotalScore`, avatarer med `<Avatar>`, modaler med `<BottomSheet>`. Ikke kopier inn nye varianter.
+- **Tilgjengelighet:** bruk `<button>` for klikkbare ting. Hvis elementet inneholder andre knapper/lenker (kort, rader), spre `{...clickable(handler)}` (role, tabIndex, Enter/Space). Ikonknapper skal ha `aria-label`.
 - **Cross-user-skriving** går via SECURITY DEFINER-RPC-er, ikke direkte tabell-INSERT.
 
 ## Ting å være obs på
 
-- `App.jsx` er stor (~3200 linjer). Ved større tillegg, vurder å splitte ut:
-  - `src/data/courses.js` (COURSES), `src/data/stableford.js` (poeng), flere `src/components/`, `src/hooks/`.
+- `App.jsx` er stor (~3300 linjer). Ved større tillegg, splitt videre ut:
+  - `src/data/courses.js` (COURSES), `src/data/stableford.js` (poeng), flere `src/components/` (f.eks. `RoundRow`, `PlayerRow`), `src/hooks/`.
+- CSP står i `Content-Security-Policy-Report-Only` i `vercel.json`. Nye eksterne domener (bilder, API-er, fonter) må legges inn der før den gjøres håndhevet.
+- Redesign-skisser (Material 3, mørkt skogtema) ligger på et Design-lerret på claude.ai: https://claude.ai/artifact/PyP5ksRs578YsyjhAAtmQC
 - Data er ekte (Supabase), ikke demo. Endringer i scoring/standings påvirker live ligatabell — test nøye.
 - `par`/`holes` i COURSES brukes i visning OG i validering/total-rekonstruksjon (se Poengsystem). Backfill ved par-endring.
 - Migrasjoner må kjøres manuelt i Supabase — det skjer ikke automatisk ved deploy.
