@@ -33,9 +33,12 @@ Målgruppe: Lokale discgolfspillere i Gudbrandsdalen (Lillehammer, Øyer, Ringeb
 │   ├── sw.js                  # Service worker: precache + Supabase /rest/v1/ NetworkFirst + push/notificationclick
 │   ├── themes.js              # 5 fargetema (skog/fjell/solnedgang/host/kontrast), applyTheme() setter CSS-vars
 │   ├── lib/
-│   │   └── format.js          # formatVsPar (-3/E/+2), fmtDate (rundedato), fmtTimestamp (created_at)
+│   │   ├── format.js          # formatVsPar (-3/E/+2), fmtDate (rundedato), fmtTimestamp (created_at)
+│   │   └── a11y.js            # clickable(handler): role/tabIndex/Enter+Space for klikkbare kort/rader
 │   └── components/
 │       ├── Avatar.jsx         # Profilbilde/forbokstav; med onClick blir den <button>
+│       ├── PlayerRow.jsx      # Rad i ligatabellen (rang, avatar, navn) + stat-celler som children
+│       ├── RoundRow.jsx       # Kompakt rundelinje (bane, dato, total, mot par, notat) i spiller-/profilmodal
 │       ├── BottomSheet.jsx    # Modal (backdrop + panel), role=dialog, Escape lukker overste
 │       ├── BadgeIcons.jsx     # BADGE_ICONS — ~25 SVG-badges (achievements)
 │       └── TabIcons.jsx       # TAB_ICONS, STAT_ICONS, LogoIcon, BellIcon
@@ -129,7 +132,11 @@ UDisc har ingen offentlig API. Spillere kan eksportere runder som CSV fra UDisc-
 - **Primær/accent:** Lime-grønn (`#A3E635`, gradient til `#65A30D`); lenker `#4a8a10`
 - **Tekst:** Varm hvit (`#e8e8e0`); sekundær/dempet grønn (`#6b7a58`, `#8a9a70`)
 - **Negativt:** Rød (`#ef4444`) for scores over par; **Rating-stjerner:** Gul (`#facc15`)
-- Temaene styres via CSS-variabler (`--c-*` / `--theme-*`) satt av `applyTheme()` i `themes.js`. Bruk `var(--c-...)` i ny UI, ikke hardkodede farger der et token finnes.
+- Temaene styres via CSS-variabler satt av `applyTheme()` i `themes.js` (kalles før første render):
+  - `--md-*` (M3-fargeroller fra aktivt tema): `--md-primary`, `-light`, `-dark`, `--md-primary-text` (aksent som tekst/lenker), `--md-label` (skjemaetiketter), `--md-tertiary` (lilla: varsler/sosialt), og gjennomsiktige varianter `--md-<rolle>-aNN` (04, 05, 06, 07, 08, 10, 12, 15, 20, 25, 30, 40) for tint og kanter.
+  - `--c-*` (flater/tekst, lys/mørk) og `--theme-*` (eldre).
+  - Bruk alltid `var(--md-...)`/`var(--c-...)` — ikke hardkod merkefargene (`#65A30D`, `#4a8a10`, `rgba(101,163,13,…)`), ellers følger de ikke temaet.
+- **Typografi:** `TYPE` i `themes.js` (headline, title, titleSmall, body, bodySmall, label, labelSmall, number) — spres inn i inline-stiler: `style={{ ...TYPE.titleSmall, color: … }}`.
 
 ### Typografi
 - **Font:** DM Sans (Google Fonts). Headings 800, body 400–600.
@@ -185,8 +192,8 @@ Supabase, e-post + Google-innlogging, glemt passord, runder/poeng i Postgres, au
 - **Score:** Vises alltid mot par (f.eks. -3, +2, E for even). Poeng forkortes "pts".
 - **Baner:** Lenk alltid til UDisc der mulig.
 - **Ingen eksterne UI-biblioteker:** Inline styles (nåværende mønster). Bruk `var(--c-*)`-tokens for farger.
-- **Gjenbruk:** score mot par med `formatVsPar`, datoer med `fmtDate`/`fmtTimestamp`, totalscore med `getTotalScore`, avatarer med `<Avatar>`, modaler med `<BottomSheet>`. Ikke kopier inn nye varianter.
-- **Tilgjengelighet:** bruk `<button>` for klikkbare ting. Hvis elementet inneholder andre knapper/lenker (kort, rader), spre `{...clickable(handler)}` (role, tabIndex, Enter/Space). Ikonknapper skal ha `aria-label`.
+- **Gjenbruk:** score mot par med `formatVsPar`, datoer med `fmtDate`/`fmtTimestamp`, totalscore med `getTotalScore`, avatarer med `<Avatar>`, modaler med `<BottomSheet>`, tabellrader med `<PlayerRow>`, rundelinjer med `<RoundRow>`. Ikke kopier inn nye varianter.
+- **Tilgjengelighet:** bruk `<button>` for klikkbare ting. Hvis elementet inneholder andre knapper/lenker (kort, rader), spre `{...clickable(handler)}` fra `src/lib/a11y.js` (role, tabIndex, Enter/Space). Ikonknapper skal ha `aria-label`.
 - **Cross-user-skriving** går via SECURITY DEFINER-RPC-er, ikke direkte tabell-INSERT.
 
 ## Ting å være obs på

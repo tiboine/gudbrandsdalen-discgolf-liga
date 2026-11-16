@@ -18,6 +18,7 @@ export const THEMES = {
     accentDark: "#4a8a10",
     text: "#1c2b12",
     textMuted: "#6b7a58",
+    label: "#5a7040",
     mountain: "#A3E635",
     isDark: false,
     bgImage: "course_signage",
@@ -115,9 +116,55 @@ const DARK_VARS = {
   "--c-modal-bg": "linear-gradient(180deg, #1a1a1a, #0a0a0a)",
 };
 
+// Material 3-style color roles, derived from the active theme. Use these in new UI:
+//   --md-primary / -light / -dark   brand accent (buttons, active states, gradients)
+//   --md-primary-text               accent used as text/links; readable on the theme's surface
+//   --md-label                      form labels and small headings
+//   --md-tertiary                   secondary accent (notifications, social)
+//   --md-<role>-aNN                 the role at NN% opacity (04 … 40), for tints and borders
+// The legacy --c-* (surfaces/text) and --theme-* variables below are kept as they are.
+const ALPHAS = [4, 5, 6, 7, 8, 10, 12, 15, 20, 25, 30, 40];
+const TERTIARY = "#6b34a3";
+
+function hexToRgb(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  return `${(n >> 16) & 255},${(n >> 8) & 255},${n & 255}`;
+}
+
+function roleVars(t) {
+  const roles = {
+    "primary": t.accent,
+    "primary-light": t.accentLight,
+    "primary-dark": t.accentDark,
+    "primary-text": t.isDark ? t.accentLight : t.accentDark,
+    "label": t.label || t.textMuted,
+    "tertiary": t.isDark ? "#c4a3f0" : TERTIARY,
+  };
+  const vars = {};
+  for (const [name, hex] of Object.entries(roles)) vars[`--md-${name}`] = hex;
+  for (const name of ["primary", "primary-light", "tertiary"]) {
+    const rgb = hexToRgb(roles[name]);
+    for (const a of ALPHAS) vars[`--md-${name}-a${String(a).padStart(2, "0")}`] = `rgba(${rgb},${a / 100})`;
+  }
+  return vars;
+}
+
+// Type scale (M3 roles, sized for this app's dense mobile layout). Spread into inline styles.
+export const TYPE = {
+  headline: { fontSize: 22, fontWeight: 800, lineHeight: 1.2 },
+  title: { fontSize: 15, fontWeight: 700, lineHeight: 1.3 },
+  titleSmall: { fontSize: 13, fontWeight: 700, lineHeight: 1.3 },
+  body: { fontSize: 13, fontWeight: 500, lineHeight: 1.45 },
+  bodySmall: { fontSize: 11, fontWeight: 400, lineHeight: 1.4 },
+  label: { fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" },
+  labelSmall: { fontSize: 10, fontWeight: 600 },
+  number: { fontWeight: 900, fontVariantNumeric: "tabular-nums" },
+};
+
 export function applyTheme(themeId) {
   const t = THEMES[themeId] || THEMES.skog;
   const root = document.documentElement;
+  for (const [k, v] of Object.entries(roleVars(t))) root.style.setProperty(k, v);
   root.style.setProperty("--theme-bg", t.bg);
   root.style.setProperty("--theme-accent", t.accent);
   root.style.setProperty("--theme-accent-light", t.accentLight);
