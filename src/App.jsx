@@ -188,6 +188,28 @@ function getDistance(lat1, lng1, lat2, lng2) {
   return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 }
 
+// Location is only requested on a user action, and the result is remembered locally:
+// iOS does not persist a web "Don't allow" and would otherwise prompt on every visit.
+const GEO_CACHE_KEY = "lastLocation";
+const GEO_DENIED_KEY = "geoDenied";
+const GEO_MAX_AGE_MS = 2 * 60 * 60 * 1000;
+
+function readCachedLocation() {
+  try {
+    const c = JSON.parse(localStorage.getItem(GEO_CACHE_KEY) || "null");
+    if (c && Date.now() - c.ts < GEO_MAX_AGE_MS) return { lat: c.lat, lng: c.lng };
+  } catch {}
+  return null;
+}
+
+function isGeoDenied() {
+  try { return localStorage.getItem(GEO_DENIED_KEY) === "1"; } catch { return false; }
+}
+
+function nearestCourse(loc) {
+  return [...COURSES].sort((a, b) => getDistance(loc.lat, loc.lng, a.lat, a.lng) - getDistance(loc.lat, loc.lng, b.lat, b.lng))[0];
+}
+
 function Sparkline({ data: raw, color = "#A3E635" }) {
   if (!raw || raw.length === 0) return null;
   const data = raw.length === 1 ? [raw[0], raw[0]] : raw; // one point -> flat line
@@ -320,8 +342,8 @@ export default function DiscGolfLeague() {
   const [regSuccess, setRegSuccess] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [userDivision, setUserDivision] = useState("Åpen");
-  const [userLocation, setUserLocation] = useState(null);
-  const [locationStatus, setLocationStatus] = useState("idle"); // idle | loading | done | denied
+  const [userLocation, setUserLocation] = useState(readCachedLocation);
+  const [locationStatus, setLocationStatus] = useState(() => readCachedLocation() ? "done" : "idle"); // idle | loading | done | denied
   const [user, setUser] = useState(null);
   const [authReady, setAuthReady] = useState(false); // true once the initial session is known
   const [showAuth, setShowAuth] = useState(false);
@@ -552,20 +574,35 @@ export default function DiscGolfLeague() {
     loadSelectedPlayerRounds();
   }, [selectedPlayer]);
 
-  useEffect(() => {
-    if (!showRegister || locationStatus !== "idle") return;
+  const requestLocation = () => {
+    if (!("geolocation" in navigator)) { setLocationStatus("denied"); return; }
     setLocationStatus("loading");
     navigator.geolocation.getCurrentPosition(
       pos => {
-        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        // ~100 m precision is plenty for sorting courses, and is all we keep.
+        const loc = { lat: +pos.coords.latitude.toFixed(3), lng: +pos.coords.longitude.toFixed(3) };
         setUserLocation(loc);
         setLocationStatus("done");
-        const nearest = [...COURSES].sort((a, b) => getDistance(loc.lat, loc.lng, a.lat, a.lng) - getDistance(loc.lat, loc.lng, b.lat, b.lng))[0];
-        setRegForm(f => ({ ...f, course: f.course || nearest.id }));
+        try {
+          localStorage.setItem(GEO_CACHE_KEY, JSON.stringify({ ...loc, ts: Date.now() }));
+          localStorage.removeItem(GEO_DENIED_KEY);
+        } catch {}
       },
-      () => setLocationStatus("denied")
+      err => {
+        setLocationStatus("denied");
+        if (err.code === 1) { try { localStorage.setItem(GEO_DENIED_KEY, "1"); } catch {} }
+      },
+      { maximumAge: 10 * 60 * 1000, timeout: 15000 }
     );
-  }, [showRegister]);
+  };
+
+  // Registration: preselect the nearest course. Asks for location only if the user
+  // hasn't said no before; otherwise the modal shows a "Bruk posisjon" button.
+  useEffect(() => {
+    if (!showRegister) return;
+    if (userLocation) { setRegForm(f => ({ ...f, course: f.course || nearestCourse(userLocation).id })); return; }
+    if (locationStatus === "idle" && !isGeoDenied()) requestLocation();
+  }, [showRegister, userLocation]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -862,10 +899,6 @@ export default function DiscGolfLeague() {
 
   useEffect(() => {
     loadAllProfiles();
-    navigator.geolocation.getCurrentPosition(
-      pos => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => {}
-    );
     // PWA install prompt
     const handler = (e) => { e.preventDefault(); setDeferredPrompt(e); };
     window.addEventListener("beforeinstallprompt", handler);
@@ -1303,11 +1336,11 @@ export default function DiscGolfLeague() {
             </div>
             <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
               {[
-                { id: "avstand", label: "📍 Avstand", disabled: !userLocation },
+                { id: "avstand", label: "📍 Avstand" },
                 { id: "populær", label: "🔥 Populær" },
                 { id: "stjerner", label: "⭐ Rating" },
               ].map(s => (
-                <button key={s.id} onClick={() => !s.disabled && setCourseSort(s.id)} style={{ padding: "6px 12px", border: "1px solid", borderColor: courseSort === s.id ? "#65A30D" : "var(--c-border-strong)", borderRadius: 20, background: courseSort === s.id ? "rgba(101,163,13,0.12)" : "var(--c-bg-card)", color: s.disabled ? "#b0b8a0" : courseSort === s.id ? "#4a8a10" : "var(--c-text-muted)", fontSize: 12, fontWeight: 600, cursor: s.disabled ? "default" : "pointer", opacity: s.disabled ? 0.5 : 1 }}>{s.label}</button>
+                <button key={s.id} onClick={() => { if (s.id === "avstand" && !userLocation && locationStatus !== "loading") requestLocation(); setCourseSort(s.id); }} style={{ padding: "6px 12px", border: "1px solid", borderColor: courseSort === s.id ? "#65A30D" : "var(--c-border-strong)", borderRadius: 20, background: courseSort === s.id ? "rgba(101,163,13,0.12)" : "var(--c-bg-card)", color: s.disabled ? "#b0b8a0" : courseSort === s.id ? "#4a8a10" : "var(--c-text-muted)", fontSize: 12, fontWeight: 600, cursor: s.disabled ? "default" : "pointer", opacity: s.disabled ? 0.5 : 1 }}>{s.label}</button>
               ))}
             </div>
             <div className="card-grid">
@@ -2025,7 +2058,7 @@ export default function DiscGolfLeague() {
       )}
 
       {showRegister && (
-        <BottomSheet onClose={() => { setShowRegister(false); setRegSuccess(false); setLocationStatus("idle"); setUserLocation(null); setEditRound(null); setRegError(""); setSelectedFriendPlayers([]); setFriendScores({}); setFriendSearch(""); setShowFriendScores(false); }} backdropStyle={{ padding: 16 }} panelStyle={{ maxHeight: "calc(100vh - 32px)", overflowY: "auto" }}>
+        <BottomSheet onClose={() => { setShowRegister(false); setRegSuccess(false); setEditRound(null); setRegError(""); setSelectedFriendPlayers([]); setFriendScores({}); setFriendSearch(""); setShowFriendScores(false); }} backdropStyle={{ padding: 16 }} panelStyle={{ maxHeight: "calc(100vh - 32px)", overflowY: "auto" }}>
             {regSuccess ? (
               <div style={{ textAlign: "center", padding: "30px 0" }}>
                 <div style={{ fontSize: 48, marginBottom: 12 }}>🎉</div>
@@ -2048,8 +2081,10 @@ export default function DiscGolfLeague() {
                       <span style={{ fontSize: 10, color: locationStatus === "loading" ? "#b07a00" : locationStatus === "done" ? "#4a8a10" : locationStatus === "denied" ? "var(--c-text-muted)" : "var(--c-text-muted)" }}>
                         {locationStatus === "loading" && "📍 Finner posisjon…"}
                         {locationStatus === "done" && "📍 Sortert etter avstand"}
-                        {locationStatus === "denied" && "GPS ikke tilgjengelig"}
                       </span>
+                      {(locationStatus === "idle" || locationStatus === "denied") && (
+                        <button type="button" onClick={requestLocation} style={{ border: "none", background: "none", padding: 0, fontSize: 11, fontWeight: 700, color: "#4a8a10", cursor: "pointer" }}>📍 Bruk posisjon</button>
+                      )}
                     </div>
                     <select value={regForm.course} onChange={e => setRegForm({ ...regForm, course: e.target.value })} style={{ width: "100%", padding: "12px 14px", borderRadius: 12, background: "var(--c-bg-input)", border: "1px solid rgba(0,0,0,0.1)", color: "var(--c-text-primary)", fontSize: 14, outline: "none", appearance: "none", boxSizing: "border-box" }}>
                       <option value="">Velg bane...</option>
