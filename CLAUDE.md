@@ -38,6 +38,9 @@ Målgruppe: Lokale discgolfspillere i Gudbrandsdalen (Lillehammer, Øyer, Ringeb
 │   └── components/
 │       ├── Avatar.jsx         # Profilbilde/forbokstav; med onClick blir den <button>
 │       ├── NavBar.jsx         # Navigasjonslinje nederst (NAV_HEIGHT), aktiv destinasjon med pille
+│       ├── Podium.jsx         # Topp 3-kort i ligatabellen (medaljemerker, #1 storst)
+│       ├── RoundCard.jsx      # Rundekort i Runder-feeden (score, pts, banerekord, statistikk, gruppe)
+│       ├── ScoreStepper.jsx   # −/+ teller for antall kast i registreringen
 │       ├── PlayerRow.jsx      # Rad i ligatabellen (rang, avatar, navn) + stat-celler som children
 │       ├── RoundRow.jsx       # Kompakt rundelinje (bane, dato, total, mot par, notat) i spiller-/profilmodal
 │       ├── BottomSheet.jsx    # Modal (backdrop + panel), role=dialog, Escape lukker overste
@@ -79,7 +82,7 @@ Viktig:
 
 ## Kjernefunksjonalitet (faner)
 
-`tab`-state (lagres i sessionStorage): `tabell, runder, baner, nytt, rekorder, regler, badges, venner, intro, admin`. Navigasjon: `NavBar` (M3-navigasjonslinje, fast nederst) med Tabell/Runder/Baner/Nytt/Mer; «Mer» åpner et `BottomSheet` med resten (inkl. Admin for admin). «Registrer runde» er en flytende knapp (FAB) over navigasjonslinjen. Faste elementer nederst må plasseres over `NAV_HEIGHT` + `env(safe-area-inset-bottom)`.
+`tab`-state (lagres i sessionStorage): `tabell, runder, baner, nytt, rekorder, regler, badges, venner, intro, admin`. Navigasjon: `NavBar` (M3-navigasjonslinje, fast nederst) med Tabell/Runder/Baner/Nytt/Mer; «Mer» åpner et `BottomSheet` med resten (inkl. Admin for admin). «Registrer runde» er en flytende +-knapp (FAB, `aria-label`) over navigasjonslinjen. Faste elementer nederst må plasseres over `NAV_HEIGHT` + `env(safe-area-inset-bottom)`.
 
 - **Ligatabell** — podium topp 3 + full tabell med sparkline-trend. Filter: Alle / Åpen / Rekreasjons / Venner.
 - **Runder** — feed med siste runder (capped 50), viser spiller, bane, score mot par, poeng, gruppespillere.

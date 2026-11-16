@@ -10,6 +10,9 @@ import BottomSheet from "./components/BottomSheet";
 import RoundRow from "./components/RoundRow";
 import PlayerRow from "./components/PlayerRow";
 import NavBar, { NAV_HEIGHT } from "./components/NavBar";
+import Podium from "./components/Podium";
+import RoundCard from "./components/RoundCard";
+import ScoreStepper from "./components/ScoreStepper";
 import { clickable } from "./lib/a11y";
 
 const supabase = createClient(
@@ -1140,22 +1143,7 @@ export default function DiscGolfLeague() {
               </div>
             )}
             {qualifiedPlayers.length >= 3 && division !== "Rekreasjons" && (
-              <div style={{ display: "flex", gap: 8, marginBottom: 16, alignItems: "flex-end", justifyContent: "center" }}>
-                {[qualifiedPlayers[1], qualifiedPlayers[0], qualifiedPlayers[2]].filter(Boolean).map((p, i) => {
-                  const h = [100, 130, 80], m = ["🥈", "🥇", "🥉"], sz = [44, 56, 40];
-                  return (
-                    <div key={p.id} {...clickable(() => setSelectedPlayer(p))} style={{ textAlign: "center", cursor: "pointer", flex: 1, animation: `fadeSlideUp 0.5s ease ${i * 0.1}s both` }}>
-                      <Avatar url={p.avatar} name={p.name} size={sz[i]} style={{ margin: "0 auto 6px", background: i === 1 ? "linear-gradient(135deg, var(--md-primary-light), var(--md-primary))" : "var(--c-bg-card-strong)", border: i === 1 ? "2px solid var(--md-primary)" : "2px solid rgba(0,0,0,0.08)", fontSize: sz[i] * 0.45, boxShadow: i === 1 ? "0 4px 20px var(--md-primary-a30)" : "0 2px 8px rgba(0,0,0,0.1)" }} />
-                      <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 2 }}>{p.name.split(" ")[0]}</div>
-                      <div style={{ height: h[i], borderRadius: "12px 12px 0 0", background: i === 1 ? "linear-gradient(180deg, var(--md-primary-a15), var(--md-primary-a04))" : "var(--c-bg-card)", border: i === 1 ? "1px solid var(--md-primary-a20)" : "1px solid rgba(0,0,0,0.08)", borderBottom: "none", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                        <div style={{ fontSize: 20 }}>{m[i]}</div>
-                        <div style={{ fontSize: 22, fontWeight: 900, color: i === 1 ? "var(--md-primary-text)" : "#2a3a1a" }}>{p.pts}</div>
-                        <div style={{ fontSize: 9, color: "var(--c-text-muted)", textTransform: "uppercase", letterSpacing: "0.1em" }}>pts</div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <Podium top3={qualifiedPlayers.slice(0, 3)} onSelect={setSelectedPlayer} />
             )}
             {qualifiedPlayers.length > 0 && (
             <div style={{ background: "var(--c-bg-card)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
@@ -1229,45 +1217,20 @@ export default function DiscGolfLeague() {
               const friendIds = friends.map(f => f.friend_id);
               const viewOk = roundsView === "alle" ? true : roundsView === "mine" ? r.user_id === user?.id : friendIds.includes(r.user_id);
               return courseOk && viewOk;
-            }).map((r, i) => (
-              <div key={r.id} {...clickable(() => setSelectedRound(r))} style={{ background: "var(--c-bg-card)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "14px 16px", marginBottom: 8, animation: `fadeSlideUp 0.4s ease ${i * 0.06}s both`, boxShadow: "0 2px 8px rgba(0,0,0,0.05)", cursor: "pointer", transition: "background 0.2s" }}
-                onMouseEnter={e => e.currentTarget.style.background = "var(--md-primary-a06)"}
-                onMouseLeave={e => e.currentTarget.style.background = "var(--c-bg-card)"}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 12, alignItems: "center" }}>
-                  <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                    <Avatar url={r.profiles?.avatar_url} name={r.profiles?.full_name} size={32} onClick={(e) => { e.stopPropagation(); const p = players.find(p => p.id === r.user_id); if (p) setSelectedPlayer(p); }} />
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 2 }}>{r.profiles?.full_name ?? "Ukjent spiller"}</div>
-                      <div style={{ fontSize: 11, color: "var(--c-text-muted)", marginBottom: 4 }}>{r.course_name}</div>
-                      <div style={{ fontSize: 11, color: "var(--c-text-faint)" }}>
-                        {fmtDate(r.date)}
-                      </div>
-                      {r.note && <div style={{ fontSize: 11, color: "var(--md-label)", marginTop: 4, fontStyle: "italic", background: "var(--md-primary-a06)", padding: "3px 8px", borderRadius: 6, display: "inline-block" }}>💬 {r.note}</div>}
-                      {r.group_id && (() => {
-                        const groupMates = realRounds.filter(gr => gr.group_id === r.group_id && gr.id !== r.id);
-                        if (groupMates.length === 0) return null;
-                        return (
-                          <div style={{ fontSize: 11, color: "var(--c-text-muted)", marginTop: 4 }}>
-                            Spilt med: {groupMates.map((gm, gi) => (
-                              <span key={gm.id}>
-                                {gi > 0 && ", "}
-                                <span {...clickable((e) => { e.stopPropagation(); const p = players.find(pl => pl.id === gm.user_id); if (p) setSelectedPlayer(p); })} style={{ color: "var(--md-primary-text)", fontWeight: 600, cursor: "pointer" }}>{gm.profiles?.full_name?.split(" ")[0] ?? "Ukjent"}</span>
-                              </span>
-                            ))}
-                          </div>
-                        );
-                      })()}
-                    </div>
-                  </div>
-                  <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: 22, fontWeight: 900, color: r.score <= 0 ? "var(--md-primary-text)" : "#ef4444", lineHeight: 1 }}>
-                      {getTotalScore(r)}
-                    </div>
-                    <div style={{ fontSize: 11, color: "var(--c-text-muted)", marginTop: 2 }}>({formatVsPar(r.score)})</div>
-                  </div>
-                </div>
-              </div>
-            ))}
+            }).map((r, i) => {
+              const course = COURSE_BY_ID[r.course_id];
+              const isLeague = LEAGUE_COURSE_IDS.includes(r.course_id);
+              const isMajor = MAJOR_COURSE_IDS.has(r.course_id);
+              return (
+                <RoundCard key={r.id} round={r} delay={i * 0.04}
+                  courseName={course?.name || r.course_name || "Ukjent bane"} par={course?.par} total={getTotalScore(r)}
+                  points={isLeague ? scoreToPoints(r.score, isMajor) : null} isMajor={isMajor}
+                  isRecord={courseStats[r.course_id]?.best?.id === r.id}
+                  groupMates={r.group_id ? realRounds.filter(gr => gr.group_id === r.group_id && gr.id !== r.id) : []}
+                  onOpen={() => setSelectedRound(r)}
+                  onOpenPlayer={uid => { const p = players.find(pl => pl.id === uid); if (p) setSelectedPlayer(p); }} />
+              );
+            })}
             </div>
           </div>
         )}
@@ -2045,7 +2008,7 @@ export default function DiscGolfLeague() {
                       <label style={{ fontSize: 11, fontWeight: 700, color: "var(--md-label)", textTransform: "uppercase", letterSpacing: "0.1em" }}>Total score (antall kast)</label>
                       {regForm.course && <span style={{ fontSize: 11, color: "var(--c-text-muted)" }}>Par: {COURSES.find(c => c.id === regForm.course)?.par ?? "?"}</span>}
                     </div>
-                    <input type="number" placeholder={regForm.course ? `f.eks. ${(COURSES.find(c => c.id === regForm.course)?.par ?? 54) - 3}` : "Velg bane først"} value={regForm.score} onChange={e => setRegForm({ ...regForm, score: e.target.value })} style={{ width: "100%", padding: "12px 14px", borderRadius: 12, background: "var(--c-bg-input)", border: "1px solid rgba(0,0,0,0.1)", color: "var(--c-text-primary)", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+                    <ScoreStepper value={regForm.score} onChange={v => setRegForm(f => ({ ...f, score: v }))} par={COURSE_BY_ID[regForm.course]?.par} disabled={!regForm.course} />
                     {regForm.course && regForm.score !== "" && (() => {
                       const par = COURSES.find(c => c.id === regForm.course)?.par;
                       const diff = parseInt(regForm.score) - par;
@@ -3105,10 +3068,9 @@ export default function DiscGolfLeague() {
         return (
           <>
             <NavBar items={navItems} active={navActive} onSelect={id => id === "mer" ? setShowMer(true) : goTo(id)} />
-            <button type="button" onClick={() => user ? setShowRegister(true) : (setShowAuth(true), setAuthMode("signup"))}
-              style={{ position: "fixed", zIndex: 55, right: "max(16px, calc((100vw - var(--app-max-w, 600px)) / 2 + 16px))", bottom: `calc(${NAV_HEIGHT + 16}px + env(safe-area-inset-bottom))`, height: 56, padding: "0 20px 0 16px", border: "none", borderRadius: 16, background: "var(--md-primary-light)", color: "#0a0f0a", fontFamily: "inherit", fontWeight: 800, fontSize: 15, display: "flex", alignItems: "center", gap: 8, cursor: "pointer", boxShadow: "0 6px 20px rgba(0,0,0,0.22)" }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
-              Registrer runde
+            <button type="button" aria-label="Registrer runde" title="Registrer runde" onClick={() => user ? setShowRegister(true) : (setShowAuth(true), setAuthMode("signup"))}
+              style={{ position: "fixed", zIndex: 55, right: "max(16px, calc((100vw - var(--app-max-w, 600px)) / 2 + 16px))", bottom: `calc(${NAV_HEIGHT + 16}px + env(safe-area-inset-bottom))`, width: 56, height: 56, padding: 0, border: "none", borderRadius: 16, background: "var(--md-primary-light)", color: "#0a0f0a", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 6px 20px rgba(0,0,0,0.22)" }}>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
             </button>
             {showMer && (
               <BottomSheet onClose={() => setShowMer(false)} zIndex={120} label="Mer">
@@ -3211,6 +3173,7 @@ export default function DiscGolfLeague() {
           .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
           .card-grid > * { margin-bottom: 0 !important; }
         }
+        .no-spin::-webkit-inner-spin-button, .no-spin::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         button:focus-visible, [role="button"]:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--md-primary); outline-offset: 2px; }
         @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; } }
         @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
