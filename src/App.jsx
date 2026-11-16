@@ -3,12 +3,13 @@ import { createClient } from "@supabase/supabase-js";
 import { useRegisterSW } from "virtual:pwa-register/react";
 import { BADGE_ICONS } from "./components/BadgeIcons";
 import { TAB_ICONS, STAT_ICONS, LogoIcon, BellIcon } from "./components/TabIcons";
-import { THEMES, BG_IMAGES, applyTheme } from "./themes";
+import { THEMES, BG_IMAGES, TYPE, applyTheme } from "./themes";
 import { formatVsPar, fmtDate, fmtTimestamp } from "./lib/format";
 import Avatar from "./components/Avatar";
 import BottomSheet from "./components/BottomSheet";
 import RoundRow from "./components/RoundRow";
 import PlayerRow from "./components/PlayerRow";
+import NavBar, { NAV_HEIGHT } from "./components/NavBar";
 import { clickable } from "./lib/a11y";
 
 const supabase = createClient(
@@ -1092,61 +1093,10 @@ export default function DiscGolfLeague() {
             ))}
           </div>
 
-          <button onClick={() => user ? setShowRegister(true) : (setShowAuth(true), setAuthMode("signup"))} style={{ width: "100%", padding: "14px", border: "none", borderRadius: 14, background: "linear-gradient(135deg, var(--md-primary-light) 0%, var(--md-primary) 100%)", color: "#0a0f0a", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 24px var(--md-primary-light-a25), inset 0 1px 0 rgba(255,255,255,0.2)", transition: "transform 0.15s", marginBottom: 16 }}
-            onMouseDown={e => e.currentTarget.style.transform = "scale(0.97)"}
-            onMouseUp={e => e.currentTarget.style.transform = "scale(1)"}
-          >+ Registrer runde</button>
-
-          {(() => {
-            const MORE_TAB_IDS = ["rekorder", "regler", "badges", "venner", "intro"];
-            const allTabs = [
-              { id: "tabell", label: "Ligatabell" },
-              { id: "runder", label: "Runder" },
-              { id: "baner", label: "Baner" },
-              { id: "nytt", label: "Siste nytt" },
-            ];
-            const merActive = MORE_TAB_IDS.includes(tab);
-            const isTabActive = (t) => tab === t.id;
-            const tabBtnStyle = (t, rowLen) => { const active = isTabActive(t); return { flex: `1 1 ${100/rowLen}%`, minWidth: 0, padding: "8px 4px 6px", border: "none", borderRadius: 10, background: active ? "#ffffff" : "transparent", color: active ? "var(--md-primary-text)" : "var(--c-text-muted)", fontWeight: active ? 700 : 500, fontSize: 11, cursor: "pointer", transition: "all 0.2s", boxShadow: active ? "0 1px 4px rgba(0,0,0,0.1)" : "none", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }; };
-            return (
-              <div style={{ background: "var(--c-bg-muted)", borderRadius: 12, padding: 4 }}>
-                <div style={{ display: "flex", gap: 4 }}>
-                  {allTabs.map(t => (
-                    <button key={t.id} onClick={() => setTab(t.id)} style={tabBtnStyle(t, allTabs.length)}>
-                      {TAB_ICONS[t.id] ? TAB_ICONS[t.id]({ size: 22, color: isTabActive(t) ? "var(--md-primary-text)" : "var(--md-tertiary)" }) : null}{t.label}
-                    </button>
-                  ))}
-                </div>
-                {(() => {
-                  const secondaryTabs = [
-                    { id: "rekorder", label: "Rekorder" },
-                    { id: "regler", label: "Poeng" },
-                    { id: "badges", label: "Badges" },
-                    ...(user && friends.length > 0 ? [{ id: "venner", label: "Venner" }] : []),
-                    { id: "intro", label: "Ny her?" },
-                  ];
-                  return (
-                    <div style={{ maxHeight: showMer ? 80 : 0, overflow: "hidden", transition: "max-height 0.3s ease" }}>
-                      <div style={{ display: "flex", gap: 4, marginTop: 4 }}>
-                        {secondaryTabs.map(t => (
-                          <button key={t.id} onClick={() => setTab(t.id)} style={tabBtnStyle(t, secondaryTabs.length)}>
-                            {TAB_ICONS[t.id] ? TAB_ICONS[t.id]({ size: 22, color: tab === t.id ? "var(--md-primary-text)" : "var(--md-tertiary)" }) : null}{t.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })()}
-                <button onClick={() => setShowMer(!showMer)} aria-label={showMer ? "Lukk" : "Mer"} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", marginTop: 4, padding: "8px 0", border: "none", borderRadius: 8, background: merActive || showMer ? "var(--c-bg-card-strong)" : "transparent", color: merActive ? "var(--md-primary-text)" : "var(--c-text-muted)", cursor: "pointer", transition: "all 0.2s", boxShadow: merActive || showMer ? "0 1px 4px rgba(0,0,0,0.08)" : "none" }}>
-                  <span style={{ fontSize: 20, lineHeight: 1, display: "inline-block", transition: "transform 0.3s ease", transform: showMer ? "rotate(180deg)" : "rotate(0)" }}>▾</span>
-                </button>
-              </div>
-            );
-          })()}
         </div>
       </div>
 
-      <div style={{ position: "relative", zIndex: 1, padding: "16px 20px 100px", maxWidth: "var(--app-max-w, 600px)", margin: "0 auto" }}>
+      <div style={{ position: "relative", zIndex: 1, padding: "16px 20px 170px", maxWidth: "var(--app-max-w, 600px)", margin: "0 auto" }}>
 
         {tab === "tabell" && (
           <div>
@@ -2942,12 +2892,12 @@ export default function DiscGolfLeague() {
 
       {/* Floating onboarding bar for logged-out users */}
       {!user && !onboardingDismissed && (
-        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 90, padding: "0 12px 12px", animation: "slideUp 0.4s ease 1s both" }}>
-          <div style={{ maxWidth: 500, margin: "0 auto", background: "linear-gradient(135deg, #1c3a0a, #2a4a16)", borderRadius: 16, padding: "14px 16px", boxShadow: "0 -4px 30px rgba(0,0,0,0.3)", display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ position: "fixed", bottom: `calc(${NAV_HEIGHT}px + env(safe-area-inset-bottom))`, left: 0, right: 0, zIndex: 90, padding: "0 12px 12px", animation: "slideUp 0.4s ease 1s both" }}>
+          <div style={{ maxWidth: 500, margin: "0 auto", background: "var(--md-inverse-surface)", borderRadius: 16, padding: "14px 16px", boxShadow: "0 -4px 30px rgba(0,0,0,0.3)", display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ fontSize: 28, flexShrink: 0 }}>🥏</div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#e8e8e0", marginBottom: 2 }}>Bli med i ligaen!</div>
-              <div style={{ fontSize: 11, color: "#a0b090", lineHeight: 1.4 }}>Opprett konto for å registrere runder og klatre på tabellen</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--md-on-inverse-surface)", marginBottom: 2 }}>Bli med i ligaen!</div>
+              <div style={{ fontSize: 11, color: "var(--md-on-inverse-surface-variant)", lineHeight: 1.4 }}>Opprett konto for å registrere runder og klatre på tabellen</div>
             </div>
             <button onClick={() => { setShowAuth(true); setAuthMode("signup"); }} style={{ padding: "8px 16px", borderRadius: 12, border: "none", background: "linear-gradient(135deg, var(--md-primary-light), var(--md-primary))", color: "#0a0f0a", fontWeight: 800, fontSize: 12, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>Registrer deg</button>
             <button aria-label="Lukk" onClick={() => { setOnboardingDismissed(true); localStorage.setItem("onboardingDismissed", "true"); }} style={{ background: "none", border: "none", color: "var(--c-text-muted)", fontSize: 18, cursor: "pointer", padding: "0 4px", flexShrink: 0, lineHeight: 1 }}>×</button>
@@ -2957,7 +2907,7 @@ export default function DiscGolfLeague() {
 
       {/* PWA install tooltip */}
       {showInstallTip && !window.matchMedia("(display-mode: standalone)").matches && (
-        <div style={{ position: "fixed", bottom: !user && !onboardingDismissed ? 80 : 16, right: 16, zIndex: 85, animation: "slideUp 0.3s ease", maxWidth: 280 }}>
+        <div style={{ position: "fixed", bottom: `calc(${NAV_HEIGHT + (!user && !onboardingDismissed ? 160 : 84)}px + env(safe-area-inset-bottom))`, right: 16, zIndex: 85, animation: "slideUp 0.3s ease", maxWidth: 280 }}>
           <div style={{ background: "var(--c-bg-card-solid)", borderRadius: 14, padding: "12px 14px", boxShadow: "0 4px 24px rgba(0,0,0,0.15)", border: "1px solid rgba(0,0,0,0.08)" }}>
             <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
               <div style={{ fontSize: 22, flexShrink: 0 }}>📲</div>
@@ -3077,20 +3027,20 @@ export default function DiscGolfLeague() {
 
       {/* GDPR Cookie Banner */}
       {!cookieConsent && (
-        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 200, animation: "slideUp 0.4s ease 0.5s both" }}>
-          <div style={{ maxWidth: 500, margin: "0 auto 12px", borderRadius: 16, background: "linear-gradient(135deg, #1c3a0a, #2a4a16)", border: "1px solid var(--md-primary-light-a15)", padding: "16px 18px", boxShadow: "0 -4px 30px rgba(0,0,0,0.3)", marginLeft: 12, marginRight: 12 }}>
+        <div style={{ position: "fixed", bottom: `calc(${NAV_HEIGHT}px + env(safe-area-inset-bottom))`, left: 0, right: 0, zIndex: 200, animation: "slideUp 0.4s ease 0.5s both" }}>
+          <div style={{ maxWidth: 500, margin: "0 auto 12px", borderRadius: 16, background: "var(--md-inverse-surface)", border: "1px solid var(--md-primary-light-a15)", padding: "16px 18px", boxShadow: "0 -4px 30px rgba(0,0,0,0.3)", marginLeft: 12, marginRight: 12 }}>
             <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>
               <div style={{ fontSize: 22, flexShrink: 0, marginTop: 2 }}>🍪</div>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#e8e8e0", marginBottom: 4 }}>Vi bruker informasjonskapsler</div>
-                <div style={{ fontSize: 12, color: "#a0b090", lineHeight: 1.6 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--md-on-inverse-surface)", marginBottom: 4 }}>Vi bruker informasjonskapsler</div>
+                <div style={{ fontSize: 12, color: "var(--md-on-inverse-surface-variant)", lineHeight: 1.6 }}>
                   Vi bruker informasjonskapsler for innlogging og for å huske innstillingene dine.
                 </div>
               </div>
             </div>
             <div style={{ display: "flex", gap: 8 }}>
               <button onClick={() => { setCookieConsent("accepted"); localStorage.setItem("cookieConsent", "accepted"); }} style={{ flex: 1, padding: "10px 0", borderRadius: 12, border: "none", background: "linear-gradient(135deg, var(--md-primary-light), var(--md-primary))", color: "#0a0f0a", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>Godta</button>
-              <button onClick={() => { setCookieConsent("necessary"); localStorage.setItem("cookieConsent", "necessary"); }} style={{ flex: 1, padding: "10px 0", borderRadius: 12, border: "1px solid var(--md-primary-light-a20)", background: "rgba(255,255,255,0.08)", color: "#e8e8e0", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Kun nødvendige</button>
+              <button onClick={() => { setCookieConsent("necessary"); localStorage.setItem("cookieConsent", "necessary"); }} style={{ flex: 1, padding: "10px 0", borderRadius: 12, border: "1px solid var(--md-primary-light-a20)", background: "rgba(255,255,255,0.08)", color: "var(--md-on-inverse-surface)", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Kun nødvendige</button>
             </div>
             <div style={{ fontSize: 10, color: "var(--c-text-faint)", marginTop: 8, textAlign: "center", lineHeight: 1.5 }}>
               Les mer i vår <button onClick={() => setShowPrivacy(true)} style={{ background: "none", border: "none", color: "var(--md-primary-light)", fontWeight: 700, cursor: "pointer", fontSize: 10, textDecoration: "underline", padding: 0 }}>personvernerklæring</button>
@@ -3133,22 +3083,70 @@ export default function DiscGolfLeague() {
           </BottomSheet>
       )}
 
+      {(() => {
+        // Bottom navigation (M3 navigation bar). Secondary pages live in the "Mer" sheet.
+        const moreTabs = [
+          { id: "rekorder", label: "Rekorder" },
+          { id: "regler", label: "Poeng" },
+          { id: "badges", label: "Badges" },
+          ...(user && friends.length > 0 ? [{ id: "venner", label: "Venner" }] : []),
+          { id: "intro", label: "Ny her?" },
+          ...(isAdmin ? [{ id: "admin", label: "Admin" }] : []),
+        ];
+        const navItems = [
+          { id: "tabell", label: "Tabell", icon: TAB_ICONS.tabell },
+          { id: "runder", label: "Runder", icon: TAB_ICONS.runder },
+          { id: "baner", label: "Baner", icon: TAB_ICONS.baner },
+          { id: "nytt", label: "Nytt", icon: TAB_ICONS.nytt },
+          { id: "mer", label: "Mer", icon: TAB_ICONS.mer },
+        ];
+        const navActive = moreTabs.some(t => t.id === tab) ? "mer" : tab;
+        const goTo = (id) => { setTab(id); setShowMer(false); window.scrollTo({ top: 0 }); };
+        return (
+          <>
+            <NavBar items={navItems} active={navActive} onSelect={id => id === "mer" ? setShowMer(true) : goTo(id)} />
+            <button type="button" onClick={() => user ? setShowRegister(true) : (setShowAuth(true), setAuthMode("signup"))}
+              style={{ position: "fixed", zIndex: 55, right: "max(16px, calc((100vw - var(--app-max-w, 600px)) / 2 + 16px))", bottom: `calc(${NAV_HEIGHT + 16}px + env(safe-area-inset-bottom))`, height: 56, padding: "0 20px 0 16px", border: "none", borderRadius: 16, background: "var(--md-primary-light)", color: "#0a0f0a", fontFamily: "inherit", fontWeight: 800, fontSize: 15, display: "flex", alignItems: "center", gap: 8, cursor: "pointer", boxShadow: "0 6px 20px rgba(0,0,0,0.22)" }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+              Registrer runde
+            </button>
+            {showMer && (
+              <BottomSheet onClose={() => setShowMer(false)} zIndex={120} label="Mer">
+                <div style={{ ...TYPE.title, marginBottom: 14 }}>Mer</div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8 }}>
+                  {moreTabs.map(t => {
+                    const on = tab === t.id;
+                    return (
+                      <button key={t.id} type="button" onClick={() => goTo(t.id)} aria-current={on ? "page" : undefined}
+                        style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "14px 6px", borderRadius: 14, border: on ? "1px solid var(--md-primary-a40)" : "1px solid var(--c-border)", background: on ? "var(--md-primary-a12)" : "var(--c-bg-subtle)", color: on ? "var(--md-primary-text)" : "var(--c-text-primary)", fontFamily: "inherit", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                        {TAB_ICONS[t.id] ? TAB_ICONS[t.id]({ size: 26, color: on ? "var(--md-primary-text)" : "var(--md-tertiary)" }) : <span style={{ fontSize: 22, lineHeight: 1 }}>⚙️</span>}
+                        {t.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </BottomSheet>
+            )}
+          </>
+        );
+      })()}
+
       {updatedToast && (
-        <div onClick={() => setUpdatedToast(false)} style={{ position: "fixed", top: 16, left: 16, right: 16, zIndex: 300, maxWidth: 380, margin: "0 auto", background: "rgba(28,58,10,0.95)", backdropFilter: "blur(12px)", borderRadius: 12, padding: "10px 14px", boxShadow: "0 6px 24px rgba(0,0,0,0.3)", display: "flex", alignItems: "center", gap: 10, animation: "slideDown 0.3s ease", cursor: "pointer" }}>
+        <div onClick={() => setUpdatedToast(false)} style={{ position: "fixed", top: 16, left: 16, right: 16, zIndex: 300, maxWidth: 380, margin: "0 auto", background: "var(--md-inverse-surface)", backdropFilter: "blur(12px)", borderRadius: 12, padding: "10px 14px", boxShadow: "0 6px 24px rgba(0,0,0,0.3)", display: "flex", alignItems: "center", gap: 10, animation: "slideDown 0.3s ease", cursor: "pointer" }}>
           <div style={{ fontSize: 18, flexShrink: 0 }}>✨</div>
-          <div style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 600, color: "#e8e8e0" }}>Appen er oppdatert til v{__APP_VERSION__} <span style={{ opacity: 0.6, fontWeight: 400 }}>({__COMMIT_HASH__})</span></div>
+          <div style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 600, color: "var(--md-on-inverse-surface)" }}>Appen er oppdatert til v{__APP_VERSION__} <span style={{ opacity: 0.6, fontWeight: 400 }}>({__COMMIT_HASH__})</span></div>
         </div>
       )}
 
       {showPushBanner && user && (
-        <div style={{ position: "fixed", top: 12, left: 12, right: 12, zIndex: 290, maxWidth: 500, margin: "0 auto", background: "linear-gradient(135deg, #1c3a0a, #2a4a16)", borderRadius: 14, padding: "12px 14px", boxShadow: "0 6px 24px rgba(0,0,0,0.35)", display: "flex", alignItems: "center", gap: 10, animation: "slideDown 0.3s ease" }}>
+        <div style={{ position: "fixed", top: 12, left: 12, right: 12, zIndex: 290, maxWidth: 500, margin: "0 auto", background: "var(--md-inverse-surface)", borderRadius: 14, padding: "12px 14px", boxShadow: "0 6px 24px rgba(0,0,0,0.35)", display: "flex", alignItems: "center", gap: 10, animation: "slideDown 0.3s ease" }}>
           <div style={{ fontSize: 22, flexShrink: 0 }}>🔔</div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#e8e8e0", marginBottom: 2 }}>Få varsler på telefonen?</div>
-            <div style={{ fontSize: 11, color: "#a0b090", lineHeight: 1.4 }}>Vi varsler kun om viktige ting (runder, venneforespørsler)</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--md-on-inverse-surface)", marginBottom: 2 }}>Få varsler på telefonen?</div>
+            <div style={{ fontSize: 11, color: "var(--md-on-inverse-surface-variant)", lineHeight: 1.4 }}>Vi varsler kun om viktige ting (runder, venneforespørsler)</div>
           </div>
           <button onClick={async () => { const ok = await subscribeToPush(); if (ok) setShowPushBanner(false); }} style={{ padding: "8px 14px", borderRadius: 10, border: "none", background: "linear-gradient(135deg, var(--md-primary-light), var(--md-primary))", color: "#0a0f0a", fontWeight: 800, fontSize: 12, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>Aktiver</button>
-          <button aria-label="Lukk" onClick={() => { setShowPushBanner(false); try { localStorage.setItem("pushBannerDismissed", "1"); } catch {} }} style={{ background: "none", border: "none", color: "#6b7a58", fontSize: 18, cursor: "pointer", padding: "0 4px", flexShrink: 0, lineHeight: 1 }}>×</button>
+          <button aria-label="Lukk" onClick={() => { setShowPushBanner(false); try { localStorage.setItem("pushBannerDismissed", "1"); } catch {} }} style={{ background: "none", border: "none", color: "var(--md-on-inverse-surface-variant)", fontSize: 18, cursor: "pointer", padding: "0 4px", flexShrink: 0, lineHeight: 1 }}>×</button>
         </div>
       )}
 

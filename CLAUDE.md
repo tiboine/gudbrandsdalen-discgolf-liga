@@ -37,6 +37,7 @@ Målgruppe: Lokale discgolfspillere i Gudbrandsdalen (Lillehammer, Øyer, Ringeb
 │   │   └── a11y.js            # clickable(handler): role/tabIndex/Enter+Space for klikkbare kort/rader
 │   └── components/
 │       ├── Avatar.jsx         # Profilbilde/forbokstav; med onClick blir den <button>
+│       ├── NavBar.jsx         # Navigasjonslinje nederst (NAV_HEIGHT), aktiv destinasjon med pille
 │       ├── PlayerRow.jsx      # Rad i ligatabellen (rang, avatar, navn) + stat-celler som children
 │       ├── RoundRow.jsx       # Kompakt rundelinje (bane, dato, total, mot par, notat) i spiller-/profilmodal
 │       ├── BottomSheet.jsx    # Modal (backdrop + panel), role=dialog, Escape lukker overste
@@ -78,7 +79,7 @@ Viktig:
 
 ## Kjernefunksjonalitet (faner)
 
-`tab`-state (lagres i sessionStorage): `tabell, runder, baner, nytt, rekorder, regler, badges, venner, intro, admin`. 4 primære + resten bak «Mer».
+`tab`-state (lagres i sessionStorage): `tabell, runder, baner, nytt, rekorder, regler, badges, venner, intro, admin`. Navigasjon: `NavBar` (M3-navigasjonslinje, fast nederst) med Tabell/Runder/Baner/Nytt/Mer; «Mer» åpner et `BottomSheet` med resten (inkl. Admin for admin). «Registrer runde» er en flytende knapp (FAB) over navigasjonslinjen. Faste elementer nederst må plasseres over `NAV_HEIGHT` + `env(safe-area-inset-bottom)`.
 
 - **Ligatabell** — podium topp 3 + full tabell med sparkline-trend. Filter: Alle / Åpen / Rekreasjons / Venner.
 - **Runder** — feed med siste runder (capped 50), viser spiller, bane, score mot par, poeng, gruppespillere.
@@ -134,6 +135,7 @@ UDisc har ingen offentlig API. Spillere kan eksportere runder som CSV fra UDisc-
 - **Negativt:** Rød (`#ef4444`) for scores over par; **Rating-stjerner:** Gul (`#facc15`)
 - Temaene styres via CSS-variabler satt av `applyTheme()` i `themes.js` (kalles før første render):
   - `--md-*` (M3-fargeroller fra aktivt tema): `--md-primary`, `-light`, `-dark`, `--md-primary-text` (aksent som tekst/lenker), `--md-label` (skjemaetiketter), `--md-tertiary` (lilla: varsler/sosialt), og gjennomsiktige varianter `--md-<rolle>-aNN` (04, 05, 06, 07, 08, 10, 12, 15, 20, 25, 30, 40) for tint og kanter.
+  - `--md-inverse-surface` / `--md-on-inverse-surface(-variant)`: mørk temafarget flate for bannere og toasts.
   - `--c-*` (flater/tekst, lys/mørk) og `--theme-*` (eldre).
   - Bruk alltid `var(--md-...)`/`var(--c-...)` — ikke hardkod merkefargene (`#65A30D`, `#4a8a10`, `rgba(101,163,13,…)`), ellers følger de ikke temaet.
 - **Typografi:** `TYPE` i `themes.js` (headline, title, titleSmall, body, bodySmall, label, labelSmall, number) — spres inn i inline-stiler: `style={{ ...TYPE.titleSmall, color: … }}`.

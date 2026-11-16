@@ -122,6 +122,7 @@ const DARK_VARS = {
 //   --md-label                      form labels and small headings
 //   --md-tertiary                   secondary accent (notifications, social)
 //   --md-<role>-aNN                 the role at NN% opacity (04 … 40), for tints and borders
+//   --md-inverse-surface / --md-on-inverse-surface(-variant)   banners and toasts
 // The legacy --c-* (surfaces/text) and --theme-* variables below are kept as they are.
 const ALPHAS = [4, 5, 6, 7, 8, 10, 12, 15, 20, 25, 30, 40];
 const TERTIARY = "#6b34a3";
@@ -140,7 +141,12 @@ function roleVars(t) {
     "label": t.label || t.textMuted,
     "tertiary": t.isDark ? "#c4a3f0" : TERTIARY,
   };
-  const vars = {};
+  const vars = {
+    // Dark, theme-tinted surface for banners/toasts on top of the light page.
+    "--md-inverse-surface": t.isDark ? "#262626" : t.text,
+    "--md-on-inverse-surface": "#f2f2ea",
+    "--md-on-inverse-surface-variant": "rgba(242,242,234,0.72)",
+  };
   for (const [name, hex] of Object.entries(roles)) vars[`--md-${name}`] = hex;
   for (const name of ["primary", "primary-light", "tertiary"]) {
     const rgb = hexToRgb(roles[name]);
