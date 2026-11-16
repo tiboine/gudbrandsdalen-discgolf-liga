@@ -24,7 +24,7 @@ Målgruppe: Lokale discgolfspillere i Gudbrandsdalen (Lillehammer, Øyer, Ringeb
 ```
 ├── index.html                 # Entry point, norsk meta/SEO/OG, canonical gdliga.no
 ├── vite.config.js             # Vite + React + VitePWA (injectManifest). Injiserer __APP_VERSION__/__COMMIT_HASH__/__BUILD_DATE__
-├── vercel.json                # SPA rewrite + sikkerhetshoder (CSP i Report-Only)
+├── vercel.json                # SPA rewrite + sikkerhetshoder (CSP håndhevet)
 ├── package.json               # version = app-versjon (vises i footer, driver update-toast)
 ├── .env                       # VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_VAPID_PUBLIC_KEY (ikke committet med verdier)
 ├── src/
@@ -193,7 +193,7 @@ Supabase, e-post + Google-innlogging, glemt passord, runder/poeng i Postgres, au
 
 - `App.jsx` er stor (~3300 linjer). Ved større tillegg, splitt videre ut:
   - `src/data/courses.js` (COURSES), `src/data/stableford.js` (poeng), flere `src/components/` (f.eks. `RoundRow`, `PlayerRow`), `src/hooks/`.
-- CSP står i `Content-Security-Policy-Report-Only` i `vercel.json`. Nye eksterne domener (bilder, API-er, fonter) må legges inn der før den gjøres håndhevet.
+- CSP er håndhevet (`Content-Security-Policy` i `vercel.json`). Nye eksterne domener for skript, API-er (`connect-src`), fonter eller stiler må legges inn der, ellers blokkeres de i produksjon. Bilder er åpne for alle https-adresser. Test nye domener trygt ved å bytte nøkkelen midlertidig til `Content-Security-Policy-Report-Only`.
 - Redesign-skisser (Material 3, mørkt skogtema) ligger på et Design-lerret på claude.ai: https://claude.ai/artifact/PyP5ksRs578YsyjhAAtmQC
 - Data er ekte (Supabase), ikke demo. Endringer i scoring/standings påvirker live ligatabell — test nøye.
 - `par`/`holes` i COURSES brukes i visning OG i validering/total-rekonstruksjon (se Poengsystem). Backfill ved par-endring.
